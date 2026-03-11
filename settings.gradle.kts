@@ -1,5 +1,5 @@
 rootProject.name = "Justwoo-KMP"
-
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 pluginManagement {
     repositories {
         google {
@@ -30,3 +30,4 @@ dependencyResolutionManagement {
 }
 include(":shared")
 include(":core")
+include(":backend")
