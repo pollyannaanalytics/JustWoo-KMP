@@ -5,15 +5,22 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Task(
-    val id: Long,
+    val id: Long = 0L,
     val title: String,
     val description: String,
     val accessLevel: AccessLevel,
-    val assignStatus: AssignStatus,
-    val taskStatus: TaskStatus,
+    var taskStatus: TaskStatus,
     val ownerId: Long,
+    val executorId: Long = 0L,
+    val houseId: Long,
     val dueTime: LocalDateTime,
-    val assigneeIds: List<Long>
+    val assignees: List<TaskAssignee>
+)
+
+@Serializable
+data class TaskAssignee(
+    val userId: Long,
+    val status: AssignStatus = AssignStatus.UNASSIGNED
 )
 
 @Serializable
