@@ -8,4 +8,18 @@ object Profiles : LongIdTable("profiles") {
     val name = varchar("name", 100)
     val avatar = text("avatar")
     val bankAccount = varchar("bank_account", 50)
+
+    fun toDomain(row: org.jetbrains.exposed.sql.ResultRow) = com.pollyannawu.justwoo.core.Profile(
+        id = row[userId].value,
+        name = row[name],
+        avatar = row[avatar],
+        bankAccount = row[bankAccount]
+    )
+
+    fun from(it: org.jetbrains.exposed.sql.statements.UpdateBuilder<*>, profile: com.pollyannawu.justwoo.core.Profile) {
+        it[userId] = profile.id
+        it[name] = profile.name
+        it[avatar] = profile.avatar
+        it[bankAccount] = profile.bankAccount
+    }
 }

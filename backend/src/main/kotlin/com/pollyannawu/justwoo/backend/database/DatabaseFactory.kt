@@ -21,7 +21,9 @@ object DatabaseFactory {
     fun init(config: ApplicationConfig){
         val driverName = "org.postgresql.Driver"
         val jdbcUrl = config.property("storage.jdbcUrl").getString()
-        val database = Database.connect(jdbcUrl, driverName)
+        val user = config.property("storage.user").getString()
+        val password = config.property("storage.password").getString()
+        val database = Database.connect(jdbcUrl, driverName, user, password)
 
         transaction(database) {
             SchemaUtils.create(

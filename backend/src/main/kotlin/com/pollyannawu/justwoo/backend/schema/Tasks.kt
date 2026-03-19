@@ -21,7 +21,9 @@ internal object Tasks : LongIdTable("tasks"){
 
     var executorId = long("executor_id")
     val description = text("description")
-    val dueTime = datetime("dueTime")
+    val dueTime = datetime("due_time")
+    val createTime = datetime("create_time")
+    val updateTime = datetime("update_time")
 
     val accessLevel = customEnumeration(
         name = "accessLevel",
@@ -63,7 +65,9 @@ internal object Tasks : LongIdTable("tasks"){
         dueTime = row[dueTime],
         accessLevel = row[accessLevel],
         taskStatus = row[taskStatus],
-        assignees = assignees
+        assignees = assignees,
+        createTime = row[createTime],
+        updateTime = row[updateTime]
     )
 }
 
