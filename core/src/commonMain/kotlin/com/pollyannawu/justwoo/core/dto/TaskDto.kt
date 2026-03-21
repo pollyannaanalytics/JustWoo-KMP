@@ -1,5 +1,8 @@
-package com.pollyannawu.justwoo.core
+package com.pollyannawu.justwoo.core.dto
 
+import com.pollyannawu.justwoo.core.AccessLevel
+import com.pollyannawu.justwoo.core.AssignStatus
+import com.pollyannawu.justwoo.core.TaskStatus
 import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.Serializable
 
@@ -11,13 +14,12 @@ data class CreateTaskRequest(
     val houseId: Long,
     val accessLevel: AccessLevel,
     val assigneeIds: List<Long>,
-    val dueTime: LocalDateTime,
-    val createTime: LocalDateTime,
-    val updateTime: LocalDateTime
+    val dueTime: LocalDateTime
 )
 
 @Serializable
-data class TaskResponse(
+data class
+TaskResponse(
     val id: Long,
     val title: String,
     val description: String,

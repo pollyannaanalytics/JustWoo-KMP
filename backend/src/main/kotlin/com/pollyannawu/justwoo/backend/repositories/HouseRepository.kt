@@ -4,6 +4,8 @@ import com.pollyannawu.justwoo.backend.database.DatabaseFactory.dbQuery
 import com.pollyannawu.justwoo.backend.schema.HouseMembers
 import com.pollyannawu.justwoo.backend.schema.Houses
 import com.pollyannawu.justwoo.core.House
+import com.pollyannawu.justwoo.core.HouseMember
+import com.pollyannawu.justwoo.core.MemberRole
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.batchInsert
@@ -19,9 +21,10 @@ interface HouseRepository {
     suspend fun isMember(userId: Long, houseId: Long): Boolean
     suspend fun getHouseDetails(userId: Long, houseId: Long? = null): List<House>
     suspend fun createHouse(house: House, userId: Long): House
-    suspend fun addMember(userId: Long, memberRole: Long, houseId: Long): House
+    suspend fun addMember(userId: Long, memberRole: MemberRole, houseId: Long): House
     suspend fun removeMember(userId: Long, houseId: Long): House
     suspend fun updateHouseContent(house: House): House
+    suspend fun getHouseMembers(houseId: Long): List<HouseMember>
 }
 
 internal class DefaultHouseRepository: HouseRepository{
@@ -45,13 +48,13 @@ internal class DefaultHouseRepository: HouseRepository{
             .selectAll()
         
         if (houseId != null) {
-            query.where { Houses.id eq houseId }
+            query.where { Houses.id eq houseId }.first()
         } else {
             val userHouseIds = HouseMembers.selectAll()
                 .where { HouseMembers.memberId eq userId }
                 .map { it[HouseMembers.houseId].value }
             
-            if (userHouseIds.isEmpty()) return@dbQuery emptyList<House>()
+            if (userHouseIds.isEmpty()) return@dbQuery emptyList()
             
             query.where { Houses.id inList userHouseIds }
         }
@@ -76,12 +79,12 @@ internal class DefaultHouseRepository: HouseRepository{
             }
         }
 
-        getHouseById(houseId) ?: throw IllegalStateException("House was not created successfully")
+       return@dbQuery getHouseById(houseId) ?: throw IllegalStateException("House was not created successfully")
     }
 
     override suspend fun addMember(
         userId: Long,
-        memberRole: Long,
+        memberRole: MemberRole,
         houseId: Long
     ): House = dbQuery {
         log.trace("start addMember")
@@ -89,7 +92,7 @@ internal class DefaultHouseRepository: HouseRepository{
             HouseMembers.from(it, houseId, userId, memberRole)
         }
 
-        getHouseById(houseId) ?: throw IllegalStateException("House was not created successfully")
+       return@dbQuery getHouseById(houseId) ?: throw IllegalStateException("House was not created successfully")
     }
 
     override suspend fun removeMember(
@@ -98,7 +101,7 @@ internal class DefaultHouseRepository: HouseRepository{
     ): House = dbQuery {
         log.trace("start removeMember")
         HouseMembers.deleteWhere { (memberId eq userId) and (HouseMembers.houseId eq houseId) }
-        getHouseById(houseId) ?: throw IllegalStateException("House not found after member removal")
+        return@dbQuery getHouseById(houseId) ?: throw IllegalStateException("House not found after member removal")
     }
 
     override suspend fun updateHouseContent(house: House): House = dbQuery {
@@ -106,7 +109,17 @@ internal class DefaultHouseRepository: HouseRepository{
         Houses.update({ Houses.id eq house.id }) {
             Houses.from(it, house)
         }
-        getHouseById(house.id) ?: throw IllegalStateException("House not found after update")
+        return@dbQuery getHouseById(house.id) ?: throw IllegalStateException("House not found after update")
+    }
+
+    override suspend fun getHouseMembers(houseId: Long): List<HouseMember> = dbQuery {
+        log.trace("start getHouseMembers")
+        val resultRow = HouseMembers.selectAll().where { HouseMembers.houseId eq houseId }.toList()
+
+        val members = resultRow.map {
+            HouseMembers.toDomain(it)
+        }
+        return@dbQuery members
     }
 
     private suspend fun getHouseById(houseId: Long): House? = dbQuery {
@@ -116,7 +129,7 @@ internal class DefaultHouseRepository: HouseRepository{
         
         if (rows.isEmpty()) return@dbQuery null
         
-        rows.toHouseDomain().firstOrNull()
+        return@dbQuery rows.toHouseDomain().firstOrNull()
     }
 
     private fun List<ResultRow>.toHouseDomain(): List<House> {

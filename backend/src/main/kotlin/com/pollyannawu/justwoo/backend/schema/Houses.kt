@@ -51,10 +51,10 @@ internal object HouseMembers : LongIdTable("house_members") {
 
     val joinAt = datetime("joined_at")
 
-    fun from(it: UpdateBuilder<*>, houseId: Long, userId: Long, role: Long) {
+    fun from(it: UpdateBuilder<*>, houseId: Long, userId: Long, role: MemberRole) {
         it[this.houseId] = houseId
         it[this.memberId] = userId
-        it[this.role] = HouseMembers.role
+        it[this.role] = role
     }
 
     fun toDomain(row: ResultRow) = HouseMember(

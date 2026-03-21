@@ -13,8 +13,10 @@ data class Task(
     val ownerId: Long,
     val executorId: Long = 0L,
     val houseId: Long,
+    val assignees: List<TaskAssignee>,
     val dueTime: LocalDateTime,
-    val assignees: List<TaskAssignee>
+    val createTime: LocalDateTime,
+    val updateTime: LocalDateTime
 )
 
 @Serializable
@@ -54,7 +56,9 @@ data class Profile(
     val id: Long,
     val name: String,
     val avatar: String,
-    val bankAccount: String
+    val bankAccount: String,
+    val updateTime: LocalDateTime,
+    val createTime: LocalDateTime
 )
 
 @Serializable
@@ -63,6 +67,19 @@ data class House(
     val name: String,
     val description: String,
     val avatar: String,
-    val memberIds: List<Long>,
-    val rules: List<String>
+    val members: List<HouseMember>,
+    val createTime: LocalDateTime,
+    val updateTime: LocalDateTime
 )
+
+@Serializable
+data class HouseMember(
+    val houseId: Long,
+    val userId: Long,
+    val role: MemberRole,
+    val joinedAt: LocalDateTime
+)
+
+enum class MemberRole{
+    ADMIN, MEMBER
+}
