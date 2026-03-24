@@ -73,7 +73,7 @@ fun Profile.toResponse(): ProfileResponse {
         id = this.id,
         name = this.name,
         avatar = this.avatar,
-        updateTime = updateTime
+        updateTime = this.updateTime
     )
 }
 

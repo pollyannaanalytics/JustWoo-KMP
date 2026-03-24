@@ -19,10 +19,12 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.patch
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
+import org.koin.ktor.ext.inject
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
-fun Route.toTaskRoute(taskService: TaskService) {
+fun Route.taskRoute() {
+    val taskService by inject<TaskService>()
     authenticate("auth-jwt") {
         val getUserId = { call: ApplicationCall ->
             call.principal<JWTPrincipal>()?.payload?.getClaim("userId")?.asLong()

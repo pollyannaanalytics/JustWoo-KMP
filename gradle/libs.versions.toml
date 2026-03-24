@@ -27,6 +27,9 @@ espressoCore = "3.7.0"
 appcompat = "1.7.1"
 material = "1.13.0"
 jetbrainsKotlinJvm = "2.2.0"
+testcontainers = "1.20.4"
+mockk = "1.13.16"
+jib = "3.4.0"
 
 [libraries]
 
@@ -90,6 +93,10 @@ androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "j
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 
 [plugins]
 
@@ -103,3 +110,4 @@ sqlDelight = { id = "app.cash.sqldelight", version.ref = "sqlDelight" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "jetbrainsKotlinJvm" }
 ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
+jib = {id = "com.google.cloud.tools.jib", version.ref = "jib"}

@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.jvm)
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.ktor)
+    alias(libs.plugins.jib)
 }
 
 application {
@@ -23,6 +24,7 @@ dependencies {
     implementation(projects.core)
     implementation(libs.ktor.server.netty)
     implementation(libs.ktor.server.auth)
+    implementation(libs.ktor.server.auth.jwt)
     implementation(libs.ktor.serialization.json)
     implementation(libs.ktor.client.cio)
     implementation(libs.ktor.client.content.negotiation)
@@ -58,6 +60,12 @@ dependencies {
     implementation(libs.logback.classic)
 
     testImplementation(libs.ktor.server.test.host)
+    testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.testcontainers.junit.jupiter)
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.kotlinx.datetime)
 }
 
 tasks.test {

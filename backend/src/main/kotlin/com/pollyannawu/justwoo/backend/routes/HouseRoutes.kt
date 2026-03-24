@@ -17,8 +17,10 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.patch
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
+import org.koin.ktor.ext.inject
 
-fun Route.toHouseRoute(houseService: HouseService) {
+fun Route.houseRoute() {
+    val houseService by inject<HouseService>()
     authenticate("auth-jwt") {
         val getUserId = { call: ApplicationCall ->
             call.principal<JWTPrincipal>()?.payload?.getClaim("userId")?.asLong()
@@ -32,13 +34,13 @@ fun Route.toHouseRoute(houseService: HouseService) {
             }
 
             post {
-                val userId = getUserId(call) ?: return@post call.respond(HttpStatusCode.Unauthorized)
+                getUserId(call) ?: return@post call.respond(HttpStatusCode.Unauthorized)
                 try {
                     val request = call.receive<HouseRequest>()
                     val result = houseService.createHouse(request)
                     call.respondResult(result)
                 } catch (e: ContentTransformationException) {
-                    call.respond(HttpStatusCode.BadRequest, "Invalid JSON format")
+                    call.respond(HttpStatusCode.BadRequest, "Invalid JSON format $e")
                 }
             }
 
@@ -60,7 +62,7 @@ fun Route.toHouseRoute(houseService: HouseService) {
                         val result = houseService.updateHouseContent(userId, houseId, request)
                         call.respondResult(result)
                     } catch (e: ContentTransformationException) {
-                        call.respond(HttpStatusCode.BadRequest, "Invalid JSON format")
+                        call.respond(HttpStatusCode.BadRequest, "Invalid JSON format $e")
                     }
                 }
 
@@ -71,7 +73,7 @@ fun Route.toHouseRoute(houseService: HouseService) {
                             ?: return@post call.respond(HttpStatusCode.BadRequest, "Invalid House ID")
                         val memberId = call.parameters["memberId"]?.toLongOrNull()
                             ?: return@post call.respond(HttpStatusCode.BadRequest, "Invalid Member ID")
-                        
+
                         val result = houseService.addMember(requesterId, memberId, houseId)
                         call.respondResult(result)
                     }
@@ -97,7 +99,7 @@ private suspend fun <T> ApplicationCall.respondResult(result: HouseDataResult<T>
         is HouseDataResult.Success -> respond(HttpStatusCode.OK, result.data as Any)
         is HouseDataResult.Error -> {
             val (status, message) = when (result) {
-                is HouseDataResult.Error.DatabaseError -> HttpStatusCode.InternalServerError to (result.message ?: "Database error")
+                is HouseDataResult.Error.DatabaseError -> HttpStatusCode.InternalServerError to (result.message)
                 is HouseDataResult.Error.UserNotAllowed -> HttpStatusCode.Forbidden to "User ${result.id} is not allowed (${result.type})"
                 is HouseDataResult.Error.HouseNotFound, HouseDataResult.Error.NotFound -> HttpStatusCode.NotFound to "House not found"
             }
