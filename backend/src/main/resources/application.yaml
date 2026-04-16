@@ -15,7 +15,7 @@ database:
   dbName: ${DB0_NAME:test}
 
 jwt:
-  secret: ${JWT_SECRET:-my-super-secret-12345}
+  secret: "-my-super-secret-12345"
   issuer: "https://justwoo.api.com"
   audience: "justwoo-users"
   realm: "access to justwoo"

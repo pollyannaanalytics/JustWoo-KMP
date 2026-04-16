@@ -9,12 +9,9 @@ import org.jetbrains.exposed.sql.update
 import org.slf4j.LoggerFactory
 
 interface ProfileRepository {
-
     suspend fun getProfile(userId: Long): Profile
     suspend fun getProfiles(userIds: List<Long>): List<Profile>
-
     suspend fun createProfile(profile: Profile): Profile
-
     suspend fun updateProfile(profile: Profile): Profile
 }
 

@@ -58,6 +58,10 @@ dependencies {
 
     implementation(libs.hikaricp)
     implementation(libs.logback.classic)
+    implementation(libs.bcrypt)
+    implementation(libs.jedis)
+
+    implementation(libs.kotlinx.datetime)
 
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.testcontainers.postgresql)
@@ -65,7 +69,6 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation(libs.kotlinx.datetime)
 }
 
 tasks.test {

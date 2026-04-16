@@ -3,6 +3,7 @@ package com.pollyannawu.justwoo.core.dto
 import com.pollyannawu.justwoo.core.AccessLevel
 import com.pollyannawu.justwoo.core.AssignStatus
 import com.pollyannawu.justwoo.core.TaskStatus
+import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.Serializable
 
@@ -14,7 +15,7 @@ data class CreateTaskRequest(
     val houseId: Long,
     val accessLevel: AccessLevel,
     val assigneeIds: List<Long>,
-    val dueTime: LocalDateTime
+    val dueTime: Instant
 )
 
 @Serializable

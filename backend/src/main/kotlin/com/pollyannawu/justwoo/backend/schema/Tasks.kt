@@ -9,7 +9,7 @@ import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.kotlin.datetime.datetime
+import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
 import org.jetbrains.exposed.sql.statements.UpdateBuilder
 
 internal object Tasks : LongIdTable("tasks"){
@@ -21,9 +21,9 @@ internal object Tasks : LongIdTable("tasks"){
 
     var executorId = long("executor_id")
     val description = text("description")
-    val dueTime = datetime("due_time")
-    val createTime = datetime("create_time")
-    val updateTime = datetime("update_time")
+    val dueTime = timestamp("due_time")
+    val createTime = timestamp("create_time")
+    val updateTime = timestamp("update_time")
 
     val accessLevel = customEnumeration(
         name = "accessLevel",
@@ -45,6 +45,7 @@ internal object Tasks : LongIdTable("tasks"){
         toDb = { it.ordinal }
     )
 
+
     fun from(it: UpdateBuilder<*>, task: Task) {
         it[title] = task.title
         it[ownerId] = task.ownerId
@@ -54,6 +55,7 @@ internal object Tasks : LongIdTable("tasks"){
         it[accessLevel] = task.accessLevel
         it[taskStatus] = task.taskStatus
     }
+
 
     fun toDomain(row: ResultRow, assignees: List<TaskAssignee> = emptyList()) = Task(
         id = row[id].value,

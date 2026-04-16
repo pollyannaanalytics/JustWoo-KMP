@@ -5,6 +5,7 @@ import com.pollyannawu.justwoo.backend.utils.dataresult.HouseDataResult
 import com.pollyannawu.justwoo.core.dto.HouseRequest
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
+import io.ktor.server.auth.UserIdPrincipal
 import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.principal
@@ -23,7 +24,7 @@ fun Route.houseRoute() {
     val houseService by inject<HouseService>()
     authenticate("auth-jwt") {
         val getUserId = { call: ApplicationCall ->
-            call.principal<JWTPrincipal>()?.payload?.getClaim("userId")?.asLong()
+            call.principal<UserIdPrincipal>()?.name?.toLongOrNull()
         }
 
         route("/houses") {

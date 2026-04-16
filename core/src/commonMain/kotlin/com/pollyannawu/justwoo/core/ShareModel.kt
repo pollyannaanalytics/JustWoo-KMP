@@ -1,6 +1,6 @@
 package com.pollyannawu.justwoo.core
 
-import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -14,9 +14,9 @@ data class Task(
     val executorId: Long = 0L,
     val houseId: Long,
     val assignees: List<TaskAssignee>,
-    val dueTime: LocalDateTime,
-    val createTime: LocalDateTime,
-    val updateTime: LocalDateTime
+    val dueTime: Instant,
+    val createTime: Instant,
+    val updateTime: Instant
 )
 
 @Serializable
@@ -48,7 +48,19 @@ enum class TaskStatus {
 data class User(
     val id: Long,
     val email: String,
-    val password: String
+    val passwordHash: String,
+    val userRefreshTokenId: Long,
+    val createTime: Instant,
+    val updateTime: Instant
+)
+
+@Serializable
+data class UserRefreshToken(
+    val id: Long,
+    val userId: Long,
+    val token: String,
+    val deviceId: String,
+    val expireAt: Instant,
 )
 
 @Serializable
@@ -57,8 +69,8 @@ data class Profile(
     val name: String,
     val avatar: String,
     val bankAccount: String,
-    val updateTime: LocalDateTime,
-    val createTime: LocalDateTime
+    val updateTime: Instant,
+    val createTime: Instant
 )
 
 @Serializable
@@ -68,8 +80,8 @@ data class House(
     val description: String,
     val avatar: String,
     val members: List<HouseMember>,
-    val createTime: LocalDateTime,
-    val updateTime: LocalDateTime
+    val createTime: kotlinx.datetime.Instant,
+    val updateTime: kotlinx.datetime.Instant
 )
 
 @Serializable
@@ -77,7 +89,7 @@ data class HouseMember(
     val houseId: Long,
     val userId: Long,
     val role: MemberRole,
-    val joinedAt: LocalDateTime
+    val joinedAt: kotlinx.datetime.Instant
 )
 
 enum class MemberRole{

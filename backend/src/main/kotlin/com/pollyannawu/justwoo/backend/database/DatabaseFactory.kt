@@ -46,8 +46,9 @@ object DatabaseFactory {
 
             transaction(database) {
                 SchemaUtils.create(
-                    Tasks, Houses, Users, Profiles, Chats,
-                    TasksAssignees, HouseMembers, ChatsTasks
+                    Tasks, Houses, Profiles, Chats,
+                    TasksAssignees, HouseMembers, ChatsTasks,
+                    Users
                 )
             }
         } catch (e: Exception) {

@@ -11,12 +11,11 @@ import com.pollyannawu.justwoo.core.TaskStatus
 import com.pollyannawu.justwoo.core.dto.ProfileResponse
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
+import kotlinx.datetime.Clock
 
-@OptIn(ExperimentalTime::class)
+
 fun CreateTaskRequest.toDomain(): Task {
-    val now = Clock.System.now().toLocalDateTime(TimeZone.UTC)
+    val now = Clock.System.now()
 
     return Task(
         id = 0,
@@ -40,7 +39,7 @@ fun CreateTaskRequest.toDomain(): Task {
 }
 
 
-@OptIn(ExperimentalTime::class)
+
 fun Task.toResponse(assigneeResponse: List<TaskAssigneeResponse>): TaskResponse {
     val now = Clock.System.now().toLocalDateTime(TimeZone.UTC)
 
@@ -67,6 +66,7 @@ fun TaskAssignee.toResponse(profile: Profile): TaskAssigneeResponse {
         avatar = profile.avatar,
     )
 }
+
 
 fun Profile.toResponse(): ProfileResponse {
     return ProfileResponse(

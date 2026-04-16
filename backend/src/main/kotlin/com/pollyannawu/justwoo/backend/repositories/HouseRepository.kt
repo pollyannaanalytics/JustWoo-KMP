@@ -6,6 +6,7 @@ import com.pollyannawu.justwoo.backend.schema.Houses
 import com.pollyannawu.justwoo.core.House
 import com.pollyannawu.justwoo.core.HouseMember
 import com.pollyannawu.justwoo.core.MemberRole
+import kotlinx.datetime.Clock
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.batchInsert
@@ -64,19 +65,26 @@ internal class DefaultHouseRepository: HouseRepository{
         return@dbQuery rows.toHouseDomain()
     }
 
+
     override suspend fun createHouse(house: House, userId: Long): House = dbQuery {
         log.trace("start createHouse")
         val houseId = Houses.insertAndGetId {
             Houses.from(it, house)
         }.value
 
-        if (house.members.isNotEmpty()) {
-            HouseMembers.batchInsert(house.members) { member ->
-                this[HouseMembers.houseId] = houseId
-                this[HouseMembers.memberId] = member.userId
-                this[HouseMembers.joinAt] = member.joinedAt
-                this[HouseMembers.role] = member.role
-            }
+        log.trace("house id: {}", houseId)
+
+        val membersToAdd = if (house.members.any { it.userId == userId }) {
+            house.members
+        } else {
+            house.members + HouseMember(userId = userId, role = MemberRole.ADMIN, houseId = houseId, joinedAt = Clock.System.now())
+        }
+
+        HouseMembers.batchInsert(membersToAdd) { member ->
+            this[HouseMembers.houseId] = houseId
+            this[HouseMembers.memberId] = member.userId
+            this[HouseMembers.joinAt] = member.joinedAt
+            this[HouseMembers.role] = member.role
         }
 
        return@dbQuery getHouseById(houseId) ?: throw IllegalStateException("House was not created successfully")
@@ -116,20 +124,27 @@ internal class DefaultHouseRepository: HouseRepository{
         log.trace("start getHouseMembers")
         val resultRow = HouseMembers.selectAll().where { HouseMembers.houseId eq houseId }.toList()
 
+        log.trace("Rows found: ${resultRow.size}")
         val members = resultRow.map {
             HouseMembers.toDomain(it)
         }
         return@dbQuery members
     }
 
-    private suspend fun getHouseById(houseId: Long): House? = dbQuery {
+    private fun getHouseById(houseId: Long): House? {
+        val houseExists = Houses.selectAll().where { Houses.id eq houseId }.any()
+        log.trace("House exists check: {}, ID: {}", houseExists, houseId)
+
         val rows = (Houses leftJoin HouseMembers)
-            .selectAll().where { Houses.id eq houseId }
+            .selectAll()
+            .where { Houses.id eq houseId }
             .toList()
-        
-        if (rows.isEmpty()) return@dbQuery null
-        
-        return@dbQuery rows.toHouseDomain().firstOrNull()
+
+        log.trace("Rows size after join: {}", rows.size)
+
+        if (rows.isEmpty()) return null
+
+        return rows.toHouseDomain().firstOrNull()
     }
 
     private fun List<ResultRow>.toHouseDomain(): List<House> {

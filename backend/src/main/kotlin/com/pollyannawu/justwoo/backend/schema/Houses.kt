@@ -3,11 +3,10 @@ package com.pollyannawu.justwoo.backend.schema
 import com.pollyannawu.justwoo.core.House
 import com.pollyannawu.justwoo.core.HouseMember
 import com.pollyannawu.justwoo.core.MemberRole
-import com.pollyannawu.justwoo.core.Task
 import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.kotlin.datetime.datetime
+import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
 import org.jetbrains.exposed.sql.statements.UpdateBuilder
 
 internal object Houses : LongIdTable("houses") {
@@ -15,8 +14,9 @@ internal object Houses : LongIdTable("houses") {
     val description = text("description")
     val avatar = text("avatar")
 
-    val createTime = datetime("create_time")
-    val updateTime = datetime("update_time")
+    val createTime = timestamp("create_time")
+    val updateTime = timestamp("update_time")
+
 
 
     fun toDomain(row: ResultRow, members: List<HouseMember> = emptyList()) = House(
@@ -28,6 +28,7 @@ internal object Houses : LongIdTable("houses") {
         createTime = row[createTime],
         updateTime = row[updateTime]
     )
+
 
     fun from(it: UpdateBuilder<*>, house: House) {
         it[name] = house.name
@@ -49,13 +50,14 @@ internal object HouseMembers : LongIdTable("house_members") {
         toDb = { it.ordinal }
     )
 
-    val joinAt = datetime("joined_at")
+    val joinAt = timestamp("joined_at")
 
     fun from(it: UpdateBuilder<*>, houseId: Long, userId: Long, role: MemberRole) {
         it[this.houseId] = houseId
         it[this.memberId] = userId
         it[this.role] = role
     }
+
 
     fun toDomain(row: ResultRow) = HouseMember(
         houseId = row[houseId].value,

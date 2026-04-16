@@ -20,9 +20,8 @@ import io.ktor.server.routing.patch
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import org.koin.ktor.ext.inject
-import kotlin.time.ExperimentalTime
 
-@OptIn(ExperimentalTime::class)
+
 fun Route.taskRoute() {
     val taskService by inject<TaskService>()
     authenticate("auth-jwt") {

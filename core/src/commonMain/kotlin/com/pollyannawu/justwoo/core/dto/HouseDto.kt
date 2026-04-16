@@ -1,6 +1,7 @@
 package com.pollyannawu.justwoo.core.dto
 
 import com.pollyannawu.justwoo.core.MemberRole
+import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.Serializable
 
@@ -11,8 +12,8 @@ data class HouseRequest(
     val adminUserId: Long,
     val memberIds: List<Long>,
     val description: String,
-    val createTime: LocalDateTime,
-    val updateTime: LocalDateTime
+    val createTime: Instant,
+    val updateTime: Instant
     )
 
 
@@ -23,8 +24,8 @@ data class HouseResponse(
     val name: String,
     val members: List<MemberProfileResponse>,
     val description: String,
-    val createTime: LocalDateTime,
-    val updateTime: LocalDateTime
+    val createTime: Instant,
+    val updateTime: Instant
 )
 
 @Serializable
