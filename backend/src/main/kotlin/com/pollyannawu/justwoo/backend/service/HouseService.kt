@@ -11,6 +11,7 @@ import com.pollyannawu.justwoo.core.MemberRole
 import com.pollyannawu.justwoo.core.dto.HouseRequest
 import com.pollyannawu.justwoo.core.dto.HouseResponse
 import com.pollyannawu.justwoo.core.dto.MemberProfileResponse
+import kotlinx.datetime.Clock
 import kotlin.collections.mapNotNull
 
 interface HouseService {
@@ -40,10 +41,20 @@ class DefaultHouseService(
 
     override suspend fun addMember(requesterId: Long, userId: Long, houseId: Long): HouseDataResult<HouseResponse> =
         ensureMember(requesterId, houseId) {
-            val house = houseRepository.addMember(userId, MemberRole.MEMBER, houseId)
-            return HouseDataResult.Success(
-                mergeHouseAndProfileDetails(house)
-            )
+            val currentMembers = houseRepository.getHouseMembers(houseId)
+            if (!currentMembers.any { it.userId == userId }) {
+                val now = Clock.System.now()
+                val house = houseRepository.addMember(userId, MemberRole.MEMBER, houseId, now)
+                return HouseDataResult.Success(
+                    mergeHouseAndProfileDetails(house)
+                )
+            } else {
+                val house = houseRepository.getHouseDetails(requesterId, houseId).first()
+                HouseDataResult.Success(
+                    mergeHouseAndProfileDetails(house)
+                )
+            }
+
         }
 
     override suspend fun removeMember(requesterId: Long, userId: Long, houseId: Long): HouseDataResult<HouseResponse> =
@@ -67,7 +78,7 @@ class DefaultHouseService(
         )
     }
 
-    override suspend fun getHouses(userId: Long): HouseDataResult<List<HouseResponse>>  {
+    override suspend fun getHouses(userId: Long): HouseDataResult<List<HouseResponse>> {
         val houses = getHouseDetails(userId)
         val memberId = houses.flatMap { it.members }.map { it.userId }
         val profiles = profileRepository.getProfiles(memberId).associateBy { it.id }

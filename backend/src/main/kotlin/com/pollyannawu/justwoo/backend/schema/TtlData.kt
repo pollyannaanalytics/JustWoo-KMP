@@ -30,11 +30,11 @@ data class RefreshToken(
     val expiresAt: Long = 0L
 ) {
     fun toMap(): Map<String, String> = mapOf(
-        "userId" to userId.toString(),
         "token" to token,
+        "userId" to userId.toString(),
         "device" to device,
         "createdAt" to createdAt.toString(),
-        "createdAt" to createdAt.toString()
+        "expiresAt" to expiresAt.toString()
     )
 
     companion object {
@@ -43,7 +43,8 @@ data class RefreshToken(
             val userId = map["userId"]?.toLongOrNull() ?: return null
             val device = map["device"] ?: return null
             val createdAt = map["createdAt"]?.toLongOrNull() ?: return null
-            val expiresAt = map["expiresAt"]?.toLongOrNull() ?: return null
+            val expiresAt = map["expiresAt"]?.toLongOrNull() ?: 0L
+
             return RefreshToken(token, userId, device, createdAt, expiresAt)
         }
     }

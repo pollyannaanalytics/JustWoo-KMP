@@ -7,6 +7,7 @@ import com.pollyannawu.justwoo.core.House
 import com.pollyannawu.justwoo.core.HouseMember
 import com.pollyannawu.justwoo.core.MemberRole
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.batchInsert
@@ -22,7 +23,7 @@ interface HouseRepository {
     suspend fun isMember(userId: Long, houseId: Long): Boolean
     suspend fun getHouseDetails(userId: Long, houseId: Long? = null): List<House>
     suspend fun createHouse(house: House, userId: Long): House
-    suspend fun addMember(userId: Long, memberRole: MemberRole, houseId: Long): House
+    suspend fun addMember(userId: Long, memberRole: MemberRole, houseId: Long, joinedAt: Instant): House
     suspend fun removeMember(userId: Long, houseId: Long): House
     suspend fun updateHouseContent(house: House): House
     suspend fun getHouseMembers(houseId: Long): List<HouseMember>
@@ -36,7 +37,7 @@ internal class DefaultHouseRepository: HouseRepository{
         val resultRow = HouseMembers.selectAll().where{
             (HouseMembers.houseId eq houseId) and (HouseMembers.memberId eq userId)
         }.toList()
-        log.trace("members: {}", resultRow)
+        log.trace("members: {}", resultRow.size)
         return@dbQuery resultRow.isNotEmpty()
     }
 
@@ -84,7 +85,7 @@ internal class DefaultHouseRepository: HouseRepository{
             this[HouseMembers.houseId] = houseId
             this[HouseMembers.memberId] = member.userId
             this[HouseMembers.joinAt] = member.joinedAt
-            this[HouseMembers.role] = member.role
+            this[HouseMembers.role] = member.role.value
         }
 
        return@dbQuery getHouseById(houseId) ?: throw IllegalStateException("House was not created successfully")
@@ -93,11 +94,13 @@ internal class DefaultHouseRepository: HouseRepository{
     override suspend fun addMember(
         userId: Long,
         memberRole: MemberRole,
-        houseId: Long
+        houseId: Long,
+        joinedAt: Instant
     ): House = dbQuery {
         log.trace("start addMember")
         HouseMembers.insert{
-            HouseMembers.from(it, houseId, userId, memberRole)
+
+            HouseMembers.from(it, houseId, userId, memberRole, joinedAt)
         }
 
        return@dbQuery getHouseById(houseId) ?: throw IllegalStateException("House was not created successfully")

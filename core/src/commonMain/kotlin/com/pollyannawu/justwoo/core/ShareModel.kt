@@ -92,6 +92,7 @@ data class HouseMember(
     val joinedAt: kotlinx.datetime.Instant
 )
 
-enum class MemberRole{
-    ADMIN, MEMBER
+enum class MemberRole(val value: Int){
+    ADMIN(0), MEMBER(1);
+
 }

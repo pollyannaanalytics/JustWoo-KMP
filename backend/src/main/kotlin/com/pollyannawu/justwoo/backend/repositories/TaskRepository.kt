@@ -17,7 +17,6 @@ import org.slf4j.LoggerFactory
 
 interface TaskRepository {
     suspend fun createTask(task: Task): Task
-    suspend fun getTaskById(taskId: Long): Task?
     suspend fun getTasks(houseId: Long, taskStatus: TaskStatus? = null): List<Task>
     suspend fun getTasksByOwnerId(
         houseId: Long,
@@ -58,6 +57,7 @@ internal class DefaultTaskRepository: TaskRepository {
             TasksAssignees.batchInsert(task.assignees) { assignee ->
                 this[TasksAssignees.taskId] = taskId
                 this[TasksAssignees.userId] = assignee.userId
+                this[TasksAssignees.status] = assignee.status
             }
         } else {
             log.error("task assignees are empty")
@@ -66,18 +66,18 @@ internal class DefaultTaskRepository: TaskRepository {
         getTaskById(taskId) ?: throw IllegalStateException("task is not created successfully")
     }
 
-    override suspend fun getTaskById(taskId: Long): Task? = dbQuery {
+    private fun getTaskById(taskId: Long): Task? {
         val rows = (Tasks leftJoin TasksAssignees)
             .selectAll().where { Tasks.id eq taskId }
             .toList()
 
-        if (rows.isEmpty()) return@dbQuery null
+        if (rows.isEmpty()) return null
 
         val firstRow = rows.first()
 
         val assignees = rows.mapNotNull { TasksAssignees.toDomain(it) }
 
-        Tasks.toDomain(firstRow, assignees)
+        return Tasks.toDomain(firstRow, assignees)
     }
 
     override suspend fun getTasks(
@@ -187,10 +187,10 @@ internal class DefaultTaskRepository: TaskRepository {
         return@dbQuery getTaskById(taskId) ?: throw IllegalStateException("Unknown Exception: task has been updated but no task found $taskId")
     }
 
-    override suspend fun isTaskExecutor(userId: Long, taskId: Long): Boolean {
+    override suspend fun isTaskExecutor(userId: Long, taskId: Long): Boolean = dbQuery {
         val resultRow = Tasks.selectAll().where { (Tasks.id eq taskId) and (Tasks.executorId eq userId) }.toList()
 
-        return resultRow.isNotEmpty()
+        return@dbQuery resultRow.isNotEmpty()
     }
 
     override suspend fun updateTaskContent(task: Task): Task = dbQuery {

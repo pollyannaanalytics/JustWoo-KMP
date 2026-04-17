@@ -12,7 +12,7 @@ import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.kotlin.datetime.timestamp
 import org.jetbrains.exposed.sql.statements.UpdateBuilder
 
-internal object Tasks : LongIdTable("tasks"){
+internal object Tasks : LongIdTable("tasks") {
 
     val title: Column<String> = varchar("title", length = 255)
     val ownerId = long("ownerId")
@@ -52,8 +52,11 @@ internal object Tasks : LongIdTable("tasks"){
         it[houseId] = task.houseId
         it[description] = task.description
         it[dueTime] = task.dueTime
+        it[executorId] = task.executorId
         it[accessLevel] = task.accessLevel
         it[taskStatus] = task.taskStatus
+        it[createTime] = task.createTime
+        it[updateTime] = task.updateTime
     }
 
 
@@ -79,7 +82,10 @@ internal object TasksAssignees : LongIdTable("tasks_assignees") {
     val status = customEnumeration(
         name = "status",
         sql = "INTEGER",
-        fromDb = { value -> AssignStatus.entries[value as Int] },
+        fromDb = { value ->
+            val intValue = value as Int
+            AssignStatus.entries.getOrNull(intValue) ?: AssignStatus.UNASSIGNED
+        },
         toDb = { it.ordinal }
     )
 
@@ -92,7 +98,7 @@ internal object TasksAssignees : LongIdTable("tasks_assignees") {
     }
 }
 
-internal object ChatsTasks: LongIdTable("chats_tasks"){
+internal object ChatsTasks : LongIdTable("chats_tasks") {
     val taskId = reference("task_id", Tasks, onDelete = ReferenceOption.CASCADE)
     val chatId = reference("chat_id", Chats, onDelete = ReferenceOption.CASCADE)
 }

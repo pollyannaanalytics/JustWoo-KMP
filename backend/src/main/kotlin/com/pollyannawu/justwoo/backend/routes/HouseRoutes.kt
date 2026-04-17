@@ -17,6 +17,7 @@ import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.patch
 import io.ktor.server.routing.post
+import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import org.koin.ktor.ext.inject
 
@@ -68,12 +69,12 @@ fun Route.houseRoute() {
                 }
 
                 route("/members") {
-                    post("/{memberId}") {
-                        val requesterId = getUserId(call) ?: return@post call.respond(HttpStatusCode.Unauthorized)
+                    put("/{memberId}") {
+                        val requesterId = getUserId(call) ?: return@put call.respond(HttpStatusCode.Unauthorized)
                         val houseId = call.parameters["houseId"]?.toLongOrNull()
-                            ?: return@post call.respond(HttpStatusCode.BadRequest, "Invalid House ID")
+                            ?: return@put call.respond(HttpStatusCode.BadRequest, "Invalid House ID")
                         val memberId = call.parameters["memberId"]?.toLongOrNull()
-                            ?: return@post call.respond(HttpStatusCode.BadRequest, "Invalid Member ID")
+                            ?: return@put call.respond(HttpStatusCode.BadRequest, "Invalid Member ID")
 
                         val result = houseService.addMember(requesterId, memberId, houseId)
                         call.respondResult(result)

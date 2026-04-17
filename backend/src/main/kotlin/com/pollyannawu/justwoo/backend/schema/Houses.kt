@@ -3,6 +3,7 @@ package com.pollyannawu.justwoo.backend.schema
 import com.pollyannawu.justwoo.core.House
 import com.pollyannawu.justwoo.core.HouseMember
 import com.pollyannawu.justwoo.core.MemberRole
+import kotlinx.datetime.Instant
 import org.jetbrains.exposed.dao.id.LongIdTable
 import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.ResultRow
@@ -43,26 +44,22 @@ internal object HouseMembers : LongIdTable("house_members") {
     val houseId = reference("house_id", Houses, onDelete = ReferenceOption.CASCADE)
     val memberId = reference("member_id", Users, onDelete = ReferenceOption.CASCADE)
 
-    val role = customEnumeration(
-        name = "role",
-        sql = "INTEGER",
-        fromDb = { value -> MemberRole.entries[value as Int] },
-        toDb = { it.ordinal }
-    )
+    val role = integer("role")
 
     val joinAt = timestamp("joined_at")
 
-    fun from(it: UpdateBuilder<*>, houseId: Long, userId: Long, role: MemberRole) {
+    fun from(it: UpdateBuilder<*>, houseId: Long, userId: Long, role: MemberRole, joinAt: Instant) {
         it[this.houseId] = houseId
         it[this.memberId] = userId
-        it[this.role] = role
+        it[this.role] = role.value
+        it[this.joinAt] = joinAt
     }
 
 
     fun toDomain(row: ResultRow) = HouseMember(
         houseId = row[houseId].value,
         userId = row[memberId].value,
-        role = row[role],
+        role = MemberRole.entries.first { it.value == row[role] },
         joinedAt = row[joinAt]
     )
 }

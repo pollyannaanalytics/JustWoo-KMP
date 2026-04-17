@@ -41,8 +41,6 @@ fun CreateTaskRequest.toDomain(): Task {
 
 
 fun Task.toResponse(assigneeResponse: List<TaskAssigneeResponse>): TaskResponse {
-    val now = Clock.System.now().toLocalDateTime(TimeZone.UTC)
-
     return TaskResponse(
         id = this.id,
         title = this.title,
@@ -73,6 +71,8 @@ fun Profile.toResponse(): ProfileResponse {
         id = this.id,
         name = this.name,
         avatar = this.avatar,
+        bankAccount = this.bankAccount,
+        createTime = this.createTime,
         updateTime = this.updateTime
     )
 }

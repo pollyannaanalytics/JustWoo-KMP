@@ -9,7 +9,7 @@ import org.jetbrains.exposed.sql.update
 import org.slf4j.LoggerFactory
 
 interface ProfileRepository {
-    suspend fun getProfile(userId: Long): Profile
+    suspend fun getProfileById(userId: Long): Profile
     suspend fun getProfiles(userIds: List<Long>): List<Profile>
     suspend fun createProfile(profile: Profile): Profile
     suspend fun updateProfile(profile: Profile): Profile
@@ -18,13 +18,17 @@ interface ProfileRepository {
 internal class DefaultProfileRepository : ProfileRepository {
     private val log = LoggerFactory.getLogger("ProfileRepository")
 
-    override suspend fun getProfile(userId: Long): Profile = dbQuery {
+    private fun getProfile(userId: Long): Profile {
         log.trace("start getProfile for userId: {}", userId)
         val row = Profiles.selectAll()
             .where { Profiles.userId eq userId }
             .singleOrNull() ?: throw NoSuchElementException("Profile not found for userId: $userId")
 
-        Profiles.toDomain(row)
+        return Profiles.toDomain(row)
+    }
+
+    override suspend fun getProfileById(userId: Long): Profile = dbQuery {
+       getProfile(userId)
     }
 
     override suspend fun getProfiles(userIds: List<Long>): List<Profile> = dbQuery {
