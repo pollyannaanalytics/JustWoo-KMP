@@ -1,7 +1,6 @@
 package com.pollyannawu.justwoo.core.dto
 
 import kotlinx.datetime.Instant
-import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -27,14 +26,14 @@ data class RefreshRequest(
 
 @Serializable
 data class AuthResponse(
-    val user: UserResponse,
+    val user: User,
     val accessToken: String,
     val token: TokenResponse
 )
 
 
 @Serializable
-data class UserResponse(
+data class User(
     val id: Long,
     val email: String,
     val createTime: Instant

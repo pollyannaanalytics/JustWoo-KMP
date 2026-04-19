@@ -44,24 +44,6 @@ enum class TaskStatus {
     DONE
 }
 
-@Serializable
-data class User(
-    val id: Long,
-    val email: String,
-    val passwordHash: String,
-    val userRefreshTokenId: Long,
-    val createTime: Instant,
-    val updateTime: Instant
-)
-
-@Serializable
-data class UserRefreshToken(
-    val id: Long,
-    val userId: Long,
-    val token: String,
-    val deviceId: String,
-    val expireAt: Instant,
-)
 
 @Serializable
 data class Profile(
