@@ -150,7 +150,7 @@ Key design choices:
 ./gradlew :backend:run
 ```
 
-The server starts on the port configured in `application.yaml`. Swagger docs are available at `/swagger`.
+The server starts on port `8000` (configurable in `application.yaml`). Swagger UI is available at [http://localhost:8000/swagger](http://localhost:8000/swagger).
 
 ---
 

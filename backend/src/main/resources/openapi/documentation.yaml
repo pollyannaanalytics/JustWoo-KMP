@@ -1,0 +1,898 @@
+openapi: 3.0.3
+info:
+  title: JustWoo API
+  description: RESTful API for JustWoo household task distribution application
+  version: 1.0.0
+  contact:
+    name: Pin-Yun (Pollyanna) Wu
+
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+
+tags:
+  - name: Auth
+    description: Authentication and token management
+  - name: Houses
+    description: House (household group) management
+  - name: Tasks
+    description: Task creation, assignment, and status management
+  - name: Profiles
+    description: User profile management
+
+paths:
+  # ── Auth ──────────────────────────────────────────────
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "200":
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "409":
+          description: User already registered
+        "400":
+          description: Invalid request data
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login with email and password
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+        "429":
+          description: Too many login attempts (max 10 per 24 hours)
+        "400":
+          description: Invalid request data or user not found
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "200":
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "400":
+          description: Invalid or expired refresh token
+
+  # ── Houses ────────────────────────────────────────────
+  /houses:
+    get:
+      tags: [Houses]
+      summary: List houses for the authenticated user
+      operationId: getHouses
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+      responses:
+        "200":
+          description: Paginated list of houses
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageResponseHouseResponse"
+        "401":
+          description: Unauthorized
+
+    post:
+      tags: [Houses]
+      summary: Create a new house
+      operationId: createHouse
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HouseRequest"
+      responses:
+        "200":
+          description: House created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HouseResponse"
+        "400":
+          description: Invalid JSON format
+        "401":
+          description: Unauthorized
+
+  /houses/{houseId}:
+    get:
+      tags: [Houses]
+      summary: Get a house by ID
+      operationId: getHouse
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/houseId"
+      responses:
+        "200":
+          description: House details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HouseResponse"
+        "400":
+          description: Invalid house ID
+        "401":
+          description: Unauthorized
+        "404":
+          description: House not found
+
+    patch:
+      tags: [Houses]
+      summary: Update a house
+      operationId: updateHouse
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/houseId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HouseRequest"
+      responses:
+        "200":
+          description: House updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HouseResponse"
+        "400":
+          description: Invalid JSON format or house ID
+        "401":
+          description: Unauthorized
+        "403":
+          description: User not allowed to update this house
+
+  /houses/{houseId}/members/{memberId}:
+    put:
+      tags: [Houses]
+      summary: Add a member to a house
+      operationId: addHouseMember
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/houseId"
+        - $ref: "#/components/parameters/memberId"
+      responses:
+        "200":
+          description: Member added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HouseResponse"
+        "400":
+          description: Invalid house or member ID
+        "401":
+          description: Unauthorized
+        "403":
+          description: User not allowed to manage members
+
+    delete:
+      tags: [Houses]
+      summary: Remove a member from a house
+      operationId: removeHouseMember
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/houseId"
+        - $ref: "#/components/parameters/memberId"
+      responses:
+        "200":
+          description: Member removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HouseResponse"
+        "400":
+          description: Invalid house or member ID
+        "401":
+          description: Unauthorized
+        "403":
+          description: User not allowed to manage members
+
+  # ── Tasks ─────────────────────────────────────────────
+  /houses/{houseId}/tasks:
+    get:
+      tags: [Tasks]
+      summary: List tasks in a house
+      description: >
+        Returns paginated tasks. Optionally filter by owner or assignee.
+        If both ownerId and assigneeId are provided, ownerId takes precedence.
+      operationId: getTasks
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/houseId"
+        - name: ownerId
+          in: query
+          description: Filter tasks by owner user ID
+          schema:
+            type: integer
+            format: int64
+        - name: assigneeId
+          in: query
+          description: Filter tasks by assignee user ID
+          schema:
+            type: integer
+            format: int64
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+      responses:
+        "200":
+          description: Paginated list of tasks
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageResponseTaskResponse"
+        "400":
+          description: Invalid house ID
+        "401":
+          description: Unauthorized
+
+    post:
+      tags: [Tasks]
+      summary: Create a new task
+      operationId: createTask
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/houseId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTaskRequest"
+      responses:
+        "200":
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskResponse"
+        "400":
+          description: Invalid JSON format or house ID
+        "401":
+          description: Unauthorized
+
+  /houses/{houseId}/tasks/{taskId}:
+    patch:
+      tags: [Tasks]
+      summary: Update task content
+      operationId: updateTask
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/houseId"
+        - $ref: "#/components/parameters/taskId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Task"
+      responses:
+        "200":
+          description: Task updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskResponse"
+        "400":
+          description: Invalid house ID
+        "401":
+          description: Unauthorized
+        "403":
+          description: User is not a house member
+        "404":
+          description: Task not found
+
+  /houses/{houseId}/tasks/{taskId}/assignees/{userId}:
+    patch:
+      tags: [Tasks]
+      summary: Update assignee status for a task
+      operationId: updateAssigneeStatus
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/houseId"
+        - $ref: "#/components/parameters/taskId"
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: The assignee's user ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignStatus"
+      responses:
+        "200":
+          description: Assignee status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskResponse"
+        "400":
+          description: Invalid IDs
+        "401":
+          description: Unauthorized
+        "403":
+          description: User is not a house member
+        "404":
+          description: Task not found
+
+  /houses/{houseId}/tasks/{taskId}/status:
+    patch:
+      tags: [Tasks]
+      summary: Update task status
+      operationId: updateTaskStatus
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/houseId"
+        - $ref: "#/components/parameters/taskId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskStatus"
+      responses:
+        "200":
+          description: Task status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskResponse"
+        "400":
+          description: Invalid IDs
+        "401":
+          description: Unauthorized
+        "403":
+          description: User is not a house member
+        "404":
+          description: Task not found
+
+  # ── Profiles ──────────────────────────────────────────
+  /profiles:
+    post:
+      tags: [Profiles]
+      summary: Create a profile for the authenticated user
+      operationId: createProfile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileRequest"
+      responses:
+        "200":
+          description: Profile created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileResponse"
+        "400":
+          description: Invalid request data
+        "401":
+          description: Unauthorized
+
+  /profiles/me:
+    get:
+      tags: [Profiles]
+      summary: Get the authenticated user's profile
+      operationId: getMyProfile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Profile details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileResponse"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Profile not found
+
+    patch:
+      tags: [Profiles]
+      summary: Update the authenticated user's profile
+      operationId: updateMyProfile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileRequest"
+      responses:
+        "200":
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileResponse"
+        "400":
+          description: Invalid JSON format
+        "401":
+          description: Unauthorized
+        "404":
+          description: Profile not found
+
+  /profiles/{userId}:
+    get:
+      tags: [Profiles]
+      summary: Get a user's profile by ID
+      operationId: getProfileById
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Profile details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileResponse"
+        "400":
+          description: Invalid user ID
+        "401":
+          description: Unauthorized
+        "404":
+          description: Profile not found
+
+  # ── Health ────────────────────────────────────────────
+  /hello:
+    get:
+      tags: [Health]
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        "200":
+          description: Server is running
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "你好，JustWoo 後端已就緒！"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token (1-hour expiry)
+
+  parameters:
+    houseId:
+      name: houseId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: House ID
+    memberId:
+      name: memberId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: Member user ID
+    taskId:
+      name: taskId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: Task ID
+
+  schemas:
+    # ── Auth ──
+    RegisterRequest:
+      type: object
+      required: [email, plainPassword, deviceId]
+      properties:
+        email:
+          type: string
+          format: email
+        plainPassword:
+          type: string
+        deviceId:
+          type: string
+
+    LoginRequest:
+      type: object
+      required: [email, password, deviceId]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        deviceId:
+          type: string
+
+    RefreshRequest:
+      type: object
+      required: [deviceId, token]
+      properties:
+        deviceId:
+          type: string
+        token:
+          type: string
+          description: The refresh token
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        accessToken:
+          type: string
+          description: JWT access token (expires in 1 hour)
+        token:
+          $ref: "#/components/schemas/TokenResponse"
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        email:
+          type: string
+          format: email
+        createTime:
+          type: string
+          format: date-time
+
+    TokenResponse:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+        expireAt:
+          type: string
+          format: date-time
+
+    # ── House ──
+    HouseRequest:
+      type: object
+      required: [title, name, adminUserId, memberIds, description, createTime, updateTime]
+      properties:
+        title:
+          type: string
+        name:
+          type: string
+        adminUserId:
+          type: integer
+          format: int64
+        memberIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+        description:
+          type: string
+        createTime:
+          type: string
+          format: date-time
+        updateTime:
+          type: string
+          format: date-time
+
+    HouseResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        name:
+          type: string
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/MemberProfileResponse"
+        description:
+          type: string
+        createTime:
+          type: string
+          format: date-time
+        updateTime:
+          type: string
+          format: date-time
+
+    MemberProfileResponse:
+      type: object
+      properties:
+        profile:
+          $ref: "#/components/schemas/ProfileResponse"
+        role:
+          $ref: "#/components/schemas/MemberRole"
+
+    MemberRole:
+      type: string
+      enum: [ADMIN, MEMBER]
+
+    # ── Task ──
+    CreateTaskRequest:
+      type: object
+      required: [title, ownerId, houseId, accessLevel, assigneeIds, dueTime]
+      properties:
+        title:
+          type: string
+        ownerId:
+          type: integer
+          format: int64
+        description:
+          type: string
+          nullable: true
+        houseId:
+          type: integer
+          format: int64
+        accessLevel:
+          $ref: "#/components/schemas/AccessLevel"
+        assigneeIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+        dueTime:
+          type: string
+          format: date-time
+
+    Task:
+      type: object
+      required: [title, description, accessLevel, taskStatus, ownerId, houseId, assignees, dueTime, createTime, updateTime]
+      properties:
+        id:
+          type: integer
+          format: int64
+          default: 0
+        title:
+          type: string
+        description:
+          type: string
+        accessLevel:
+          $ref: "#/components/schemas/AccessLevel"
+        taskStatus:
+          $ref: "#/components/schemas/TaskStatus"
+        ownerId:
+          type: integer
+          format: int64
+        executorId:
+          type: integer
+          format: int64
+          default: 0
+        houseId:
+          type: integer
+          format: int64
+        assignees:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaskAssignee"
+        dueTime:
+          type: string
+          format: date-time
+        createTime:
+          type: string
+          format: date-time
+        updateTime:
+          type: string
+          format: date-time
+
+    TaskAssignee:
+      type: object
+      required: [userId]
+      properties:
+        userId:
+          type: integer
+          format: int64
+        status:
+          $ref: "#/components/schemas/AssignStatus"
+
+    TaskResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: "#/components/schemas/TaskStatus"
+        accessLevel:
+          $ref: "#/components/schemas/AccessLevel"
+        ownerId:
+          type: integer
+          format: int64
+        executorId:
+          type: integer
+          format: int64
+          nullable: true
+        houseId:
+          type: integer
+          format: int64
+        assignees:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaskAssigneeResponse"
+        dueTime:
+          type: string
+        createTime:
+          type: string
+
+    TaskAssigneeResponse:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        userName:
+          type: string
+        avatar:
+          type: string
+        status:
+          $ref: "#/components/schemas/AssignStatus"
+
+    AccessLevel:
+      type: string
+      enum: [PRIVATE, PUBLIC]
+
+    TaskStatus:
+      type: string
+      enum: [TODO, IN_PROGRESS, DONE]
+
+    AssignStatus:
+      type: string
+      enum: [UNASSIGNED, PENDING_APPROVAL, ACCEPTED, REJECTED, COMPLETED]
+
+    # ── Profile ──
+    ProfileRequest:
+      type: object
+      required: [name, avatar, bankAccount]
+      properties:
+        name:
+          type: string
+        avatar:
+          type: string
+        bankAccount:
+          type: string
+
+    ProfileResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        avatar:
+          type: string
+        bankAccount:
+          type: string
+        updateTime:
+          type: string
+          format: date-time
+        createTime:
+          type: string
+          format: date-time
+
+    # ── Pagination ──
+    PageResponseHouseResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/HouseResponse"
+        pageNumber:
+          type: integer
+        pageSize:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        isLast:
+          type: boolean
+
+    PageResponseTaskResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaskResponse"
+        pageNumber:
+          type: integer
+        pageSize:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        isLast:
+          type: boolean
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
