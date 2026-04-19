@@ -1,6 +1,6 @@
 package com.pollyannawu.justwoo.backend.repositories
 
-import com.pollyannawu.justwoo.backend.database.DatabaseFactory.dbQuery
+import com.pollyannawu.justwoo.backend.database.utils.dbQuery
 import com.pollyannawu.justwoo.backend.schema.Profiles
 import com.pollyannawu.justwoo.core.Profile
 import org.jetbrains.exposed.sql.insertAndGetId

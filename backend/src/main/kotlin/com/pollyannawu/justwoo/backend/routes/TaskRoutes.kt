@@ -41,11 +41,12 @@ fun Route.taskRoute() {
 
                 val ownerId = call.request.queryParameters["ownerId"]?.toLongOrNull() ?: 0L
                 val assigneeId = call.request.queryParameters["assigneeId"]?.toLongOrNull() ?: 0L
+                val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
 
                 val result = when {
-                    ownerId != 0L -> taskService.getTasksByOwnerId(houseId, userId, ownerId)
-                    assigneeId != 0L -> taskService.getTasksByAssigneeId(houseId, userId, assigneeId)
-                    else -> taskService.getTaskDetails(houseId, userId)
+                    ownerId != 0L -> taskService.getTasksByOwnerId(houseId, userId, ownerId, page = page)
+                    assigneeId != 0L -> taskService.getTasksByAssigneeId(houseId, userId, assigneeId, page = page)
+                    else -> taskService.getTaskDetails(houseId, userId, page = page)
                 }
 
                 call.respondResult(result)

@@ -31,7 +31,8 @@ fun Route.houseRoute() {
         route("/houses") {
             get {
                 val userId = getUserId(call) ?: return@get call.respond(HttpStatusCode.Unauthorized)
-                val result = houseService.getHouses(userId)
+                val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
+                val result = houseService.getHouses(userId, page)
                 call.respondResult(result)
             }
 

@@ -1,5 +1,6 @@
 package com.pollyannawu.justwoo.backend.service
 
+import com.pollyannawu.justwoo.backend.database.utils.PagedResult
 import com.pollyannawu.justwoo.backend.repositories.HouseRepository
 import com.pollyannawu.justwoo.backend.repositories.ProfileRepository
 import com.pollyannawu.justwoo.backend.utils.dataresult.HouseDataResult
@@ -11,8 +12,10 @@ import com.pollyannawu.justwoo.core.MemberRole
 import com.pollyannawu.justwoo.core.dto.HouseRequest
 import com.pollyannawu.justwoo.core.dto.HouseResponse
 import com.pollyannawu.justwoo.core.dto.MemberProfileResponse
+import com.pollyannawu.justwoo.core.dto.PageResponse
 import kotlinx.datetime.Clock
 import kotlin.collections.mapNotNull
+import kotlin.math.ceil
 
 interface HouseService {
     suspend fun createHouse(request: HouseRequest): HouseDataResult<HouseResponse>
@@ -24,7 +27,7 @@ interface HouseService {
         house: HouseRequest
     ): HouseDataResult<HouseResponse>
 
-    suspend fun getHouses(userId: Long): HouseDataResult<List<HouseResponse>>
+    suspend fun getHouses(userId: Long, page: Int): HouseDataResult<PageResponse<HouseResponse>>
     suspend fun getHouse(userId: Long, houseId: Long): HouseDataResult<HouseResponse>
 }
 
@@ -49,7 +52,7 @@ class DefaultHouseService(
                     mergeHouseAndProfileDetails(house)
                 )
             } else {
-                val house = houseRepository.getHouseDetails(requesterId, houseId).first()
+                val house = houseRepository.getPagedHouses(requesterId, houseId, 1, 0).items.first()
                 HouseDataResult.Success(
                     mergeHouseAndProfileDetails(house)
                 )
@@ -78,35 +81,54 @@ class DefaultHouseService(
         )
     }
 
-    override suspend fun getHouses(userId: Long): HouseDataResult<List<HouseResponse>> {
-        val houses = getHouseDetails(userId)
-        val memberId = houses.flatMap { it.members }.map { it.userId }
+    override suspend fun getHouses(userId: Long, page: Int): HouseDataResult<PageResponse<HouseResponse>> {
+        val offset = (page - 1).toLong() * HOUSE_PAGE_SIZE
+
+
+        val pagedHouses = getPagedHouses(userId = userId, offset = offset)
+        val totalCount = pagedHouses.totalCount
+        val totalPages = ceil(totalCount.toDouble() / HOUSE_PAGE_SIZE).toInt()
+        val isLast = (page.toLong() * HOUSE_PAGE_SIZE) >= totalCount
+
+        val memberId = pagedHouses.items.flatMap { it.members }.map { it.userId }
         val profiles = profileRepository.getProfiles(memberId).associateBy { it.id }
 
-        return HouseDataResult.Success(houses.map { house ->
-            val members = house.members.map { it }
-            val responses = members.mapNotNull { member ->
-                val profileResponse = profiles[member.userId]?.toResponse() ?: return@mapNotNull null
-                MemberProfileResponse(profile = profileResponse, role = member.role)
+        val houseResponses = pagedHouses.items.map { house ->
+            val memberResponses = house.members.mapNotNull { member ->
+                val profile = profiles[member.userId] ?: return@mapNotNull null
+                MemberProfileResponse(
+                    profile = profile.toResponse(),
+                    role = member.role
+                )
             }
-            house.toResponse(responses)
-        })
+            house.toResponse(memberResponses)
+        }
+
+        return HouseDataResult.Success(
+            PageResponse(
+                content = houseResponses,
+                pageNumber = page,
+                pageSize = HOUSE_PAGE_SIZE,
+                totalElements = totalCount,
+                totalPages = totalPages,
+                isLast = isLast
+            ))
     }
 
     override suspend fun getHouse(
         userId: Long,
         houseId: Long
     ): HouseDataResult<HouseResponse> = ensureMember(userId, houseId) {
-        return getHouseDetails(userId, houseId).takeIf { it.isNotEmpty() }?.let {
-            val house = it.first()
+        return getPagedHouses(userId, houseId, offset = 0).takeIf { it.items.isNotEmpty() }?.let {
+            val house = it.items.first()
             return HouseDataResult.Success(mergeHouseAndProfileDetails(house))
         } ?: run {
             HouseDataResult.Error.HouseNotFound
         }
     }
 
-    private suspend fun getHouseDetails(userId: Long, houseId: Long? = null): List<House> {
-        return houseRepository.getHouseDetails(userId, houseId)
+    private suspend fun getPagedHouses(userId: Long, houseId: Long? = null, offset: Long): PagedResult<House> {
+        return houseRepository.getPagedHouses(userId, houseId, HOUSE_PAGE_SIZE, offset)
     }
 
     private suspend fun mergeHouseAndProfileDetails(
@@ -134,5 +156,8 @@ class DefaultHouseService(
         } else {
             HouseDataResult.Error.UserNotAllowed(userId, HouseUserType.REQUEST)
         }
+    }
+    companion object{
+        private const val HOUSE_PAGE_SIZE = 20
     }
 }

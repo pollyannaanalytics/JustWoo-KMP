@@ -1,6 +1,8 @@
 package com.pollyannawu.justwoo.backend.repositories
 
-import com.pollyannawu.justwoo.backend.database.DatabaseFactory.dbQuery
+import com.pollyannawu.justwoo.backend.database.utils.PagedResult
+import com.pollyannawu.justwoo.backend.database.utils.dbQuery
+import com.pollyannawu.justwoo.backend.database.utils.toPagedRows
 import com.pollyannawu.justwoo.backend.schema.Tasks
 import com.pollyannawu.justwoo.backend.schema.TasksAssignees
 import com.pollyannawu.justwoo.core.AssignStatus
@@ -17,18 +19,22 @@ import org.slf4j.LoggerFactory
 
 interface TaskRepository {
     suspend fun createTask(task: Task): Task
-    suspend fun getTasks(houseId: Long, taskStatus: TaskStatus? = null): List<Task>
+    suspend fun getTasks(houseId: Long, taskStatus: TaskStatus? = null, size: Int, offset: Long): PagedResult<Task>
     suspend fun getTasksByOwnerId(
         houseId: Long,
         ownerId: Long,
-        taskStatus: TaskStatus? = null
-    ): List<Task>
+        taskStatus: TaskStatus? = null,
+        size: Int,
+        offset: Long
+    ): PagedResult<Task>
 
     suspend fun getTasksByAssigneeId(
         houseId: Long,
         assigneeId: Long,
-        taskStatus: TaskStatus? = null
-    ): List<Task>
+        taskStatus: TaskStatus? = null,
+        size: Int,
+        offset: Long
+    ): PagedResult<Task>
 
     suspend fun isAssignee(assigneeId: Long, taskId: Long): Boolean
 
@@ -82,44 +88,45 @@ internal class DefaultTaskRepository: TaskRepository {
 
     override suspend fun getTasks(
         houseId: Long,
-        taskStatus: TaskStatus?
-    ): List<Task> = dbQuery{
+        taskStatus: TaskStatus?,
+        size: Int,
+        offset: Long
+    ): PagedResult<Task> = dbQuery {
         log.trace("start find tasks in houseId: {} taskStatus: {}", houseId, taskStatus)
         val query = Tasks.selectAll().where { (Tasks.houseId eq houseId) }
-        taskStatus?.let {
-            query.andWhere { Tasks.taskStatus eq it }
-        }
+        taskStatus?.let { query.andWhere { Tasks.taskStatus eq it } }
 
-        val resultRow = query.toList()
-        return@dbQuery resultRow.toTasks()
+        val pagedRows = query.toPagedRows(size, offset)
+        PagedResult(pagedRows.items.toTasks(), pagedRows.totalCount)
     }
 
     override suspend fun getTasksByOwnerId(
         houseId: Long,
         ownerId: Long,
-        taskStatus: TaskStatus?
-    ): List<Task> = dbQuery {
+        taskStatus: TaskStatus?,
+        size: Int,
+        offset: Long
+    ): PagedResult<Task> = dbQuery {
         log.trace(
             "start find tasks in houseId: {} ownerId: {}, taskStatus: {}",
             houseId,
             ownerId,
             taskStatus
         )
-        val query =
-            Tasks.selectAll().where { (Tasks.houseId eq houseId) and (Tasks.ownerId eq ownerId) }
-        taskStatus?.let {
-            query.andWhere { Tasks.taskStatus eq it }
-        }
+        val query = Tasks.selectAll().where { (Tasks.houseId eq houseId) and (Tasks.ownerId eq ownerId) }
+        taskStatus?.let { query.andWhere { Tasks.taskStatus eq it } }
 
-        val resultRow = query.toList()
-        return@dbQuery resultRow.toTasks()
+        val pagedRows = query.toPagedRows(size, offset)
+        PagedResult(pagedRows.items.toTasks(), pagedRows.totalCount)
     }
 
     override suspend fun getTasksByAssigneeId(
         houseId: Long,
         assigneeId: Long,
-        taskStatus: TaskStatus?
-    ): List<Task> = dbQuery {
+        taskStatus: TaskStatus?,
+        size: Int,
+        offset: Long
+    ): PagedResult<Task> = dbQuery {
         log.trace(
             "start find tasks in houseId: {} assigneeId: {}, taskStatus: {}",
             houseId,
@@ -128,18 +135,11 @@ internal class DefaultTaskRepository: TaskRepository {
         )
         val query = (Tasks leftJoin TasksAssignees)
             .selectAll()
-            .where {
-                (Tasks.houseId eq houseId) and (TasksAssignees.userId eq assigneeId)
-            }
+            .where { (Tasks.houseId eq houseId) and (TasksAssignees.userId eq assigneeId) }
+        taskStatus?.let { query.andWhere { Tasks.taskStatus eq taskStatus } }
 
-        taskStatus?.let {
-            query.andWhere { Tasks.taskStatus eq taskStatus }
-        }
-
-        val resultRow = query.toList()
-
-        return@dbQuery resultRow.toTasks()
-
+        val pagedRows = query.toPagedRows(size, offset)
+        PagedResult(pagedRows.items.toTasks(), pagedRows.totalCount)
     }
 
     override suspend fun isAssignee(assigneeId: Long, taskId: Long): Boolean = dbQuery{

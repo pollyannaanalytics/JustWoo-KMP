@@ -11,29 +11,34 @@ import com.pollyannawu.justwoo.core.AssignStatus
 import com.pollyannawu.justwoo.core.dto.CreateTaskRequest
 import com.pollyannawu.justwoo.core.Task
 import com.pollyannawu.justwoo.core.TaskAssignee
+import com.pollyannawu.justwoo.core.dto.PageResponse
 import com.pollyannawu.justwoo.core.dto.TaskResponse
 import com.pollyannawu.justwoo.core.TaskStatus
+import kotlin.math.ceil
 
 interface TaskService {
     suspend fun getTaskDetails(
         houseId: Long,
         userId: Long,
-        taskStatus: TaskStatus? = null
-    ): TaskDataResult<List<TaskResponse>>
+        taskStatus: TaskStatus? = null,
+        page: Int
+    ): TaskDataResult<PageResponse<TaskResponse>>
 
     suspend fun getTasksByOwnerId(
         houseId: Long,
         userId: Long,
         ownerId: Long,
-        taskStatus: TaskStatus? = null
-    ): TaskDataResult<List<TaskResponse>>
+        taskStatus: TaskStatus? = null,
+        page: Int
+    ): TaskDataResult<PageResponse<TaskResponse>>
 
     suspend fun getTasksByAssigneeId(
         houseId: Long,
         userId: Long,
         assigneeId: Long,
-        taskStatus: TaskStatus? = null
-    ): TaskDataResult<List<TaskResponse>>
+        taskStatus: TaskStatus? = null,
+        page: Int
+    ): TaskDataResult<PageResponse<TaskResponse>>
 
     suspend fun createTask(
         houseId: Long,
@@ -66,77 +71,84 @@ internal class DefaultTaskService(
     private val taskRepo: TaskRepository,
     private val profileRepo: ProfileRepository
 ) : TaskService {
-    private suspend fun getTaskDomains(
-        houseId: Long,
-        taskStatus: TaskStatus?
-    ): List<Task> {
-        return taskRepo.getTasks(houseId, taskStatus)
-    }
 
-    private suspend fun mergeTaskAssigneeResponses(tasks: List<Task>): List<TaskResponse> {
+    private suspend fun mergeToPageResponse(tasks: List<Task>, totalCount: Long, page: Int): PageResponse<TaskResponse> {
         val assigneesId = tasks.flatMap { it.assignees }.map { it.userId }.distinct()
         val profilesMap = profileRepo.getProfiles(assigneesId).associateBy { it.id }
 
-        return tasks.map {
-            val taskAssigneeResponses = it.assignees.map { assignee ->
-                val profile = profilesMap[assignee.userId]
-                profile?.let { assignee.toResponse(it) }
-            }.filterNotNull()
-
-            it.toResponse(taskAssigneeResponses)
+        val taskResponses = tasks.map { task ->
+            val taskAssigneeResponses = task.assignees.mapNotNull { assignee ->
+                profilesMap[assignee.userId]?.let { assignee.toResponse(it) }
+            }
+            task.toResponse(taskAssigneeResponses)
         }
+
+        val totalPages = ceil(totalCount.toDouble() / TASK_PAGE_SIZE).toInt()
+        val isLast = (page.toLong() * TASK_PAGE_SIZE) >= totalCount
+
+        return PageResponse(
+            content = taskResponses,
+            pageNumber = page,
+            pageSize = TASK_PAGE_SIZE,
+            totalElements = totalCount,
+            totalPages = totalPages,
+            isLast = isLast
+        )
     }
 
     private suspend fun mergeTaskAssigneeResponse(task: Task): TaskResponse {
-        return mergeTaskAssigneeResponses(listOf(task)).first()
+        val profilesMap = profileRepo.getProfiles(task.assignees.map { it.userId }).associateBy { it.id }
+        val assigneeResponses = task.assignees.mapNotNull { assignee ->
+            profilesMap[assignee.userId]?.let { assignee.toResponse(it) }
+        }
+        return task.toResponse(assigneeResponses)
     }
 
     override suspend fun getTaskDetails(
         houseId: Long,
         userId: Long,
-        taskStatus: TaskStatus?
-    ): TaskDataResult<List<TaskResponse>> {
+        taskStatus: TaskStatus?,
+        page: Int
+    ): TaskDataResult<PageResponse<TaskResponse>> {
         if (!houseRepo.isMember(userId, houseId)) return TaskDataResult.Error.UserNotAllowed(
             userId,
             TaskUserType.REQUEST
         )
-        val tasks = getTaskDomains(houseId, taskStatus)
-        val tasksResponse = mergeTaskAssigneeResponses(tasks)
-        return TaskDataResult.Success(tasksResponse)
+        val offset = (page - 1).toLong() * TASK_PAGE_SIZE
+        val pagedTasks = taskRepo.getTasks(houseId, taskStatus, TASK_PAGE_SIZE, offset)
+        return TaskDataResult.Success(mergeToPageResponse(pagedTasks.items, pagedTasks.totalCount, page))
     }
-
 
     override suspend fun getTasksByOwnerId(
         houseId: Long,
         userId: Long,
         ownerId: Long,
-        taskStatus: TaskStatus?
-    ): TaskDataResult<List<TaskResponse>> {
+        taskStatus: TaskStatus?,
+        page: Int
+    ): TaskDataResult<PageResponse<TaskResponse>> {
         if (!houseRepo.isMember(ownerId, houseId)) return TaskDataResult.Error.UserNotAllowed(
             ownerId,
             TaskUserType.OWNER
         )
-        val tasks = taskRepo.getTasksByOwnerId(houseId, ownerId, taskStatus)
-
-        val tasksResponse = mergeTaskAssigneeResponses(tasks)
-        return TaskDataResult.Success(tasksResponse)
+        val offset = (page - 1).toLong() * TASK_PAGE_SIZE
+        val pagedTasks = taskRepo.getTasksByOwnerId(houseId, ownerId, taskStatus, TASK_PAGE_SIZE, offset)
+        return TaskDataResult.Success(mergeToPageResponse(pagedTasks.items, pagedTasks.totalCount, page))
     }
 
     override suspend fun getTasksByAssigneeId(
         houseId: Long,
         userId: Long,
         assigneeId: Long,
-        taskStatus: TaskStatus?
-    ): TaskDataResult<List<TaskResponse>> {
+        taskStatus: TaskStatus?,
+        page: Int
+    ): TaskDataResult<PageResponse<TaskResponse>> {
         if (!houseRepo.isMember(assigneeId, houseId)) return TaskDataResult.Error.UserNotAllowed(
             assigneeId,
             TaskUserType.ASSIGNEE
         )
-
-        val tasks = taskRepo.getTasksByAssigneeId(houseId, assigneeId, taskStatus)
-
-        val tasksResponse = mergeTaskAssigneeResponses(tasks)
-        return TaskDataResult.Success(tasksResponse)
+        val offset = (page - 1).toLong() * TASK_PAGE_SIZE
+        val pagedTasks = taskRepo.getTasksByAssigneeId(houseId, assigneeId, taskStatus, TASK_PAGE_SIZE, offset)
+        return TaskDataResult.Success(mergeToPageResponse(pagedTasks.items, pagedTasks.totalCount, page))
     }
 
     override suspend fun createTask(
@@ -230,5 +242,7 @@ internal class DefaultTaskService(
         }
     }
 
-
+    companion object {
+        private const val TASK_PAGE_SIZE = 20
+    }
 }

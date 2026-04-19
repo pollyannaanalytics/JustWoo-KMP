@@ -1,8 +1,8 @@
 package com.pollyannawu.justwoo.backend.repositories.auth
 
-import com.pollyannawu.justwoo.backend.database.DatabaseFactory.dbQuery
+import com.pollyannawu.justwoo.backend.database.utils.dbQuery
 import com.pollyannawu.justwoo.backend.schema.Users
-import com.pollyannawu.justwoo.core.User
+import com.pollyannawu.justwoo.backend.utils.mapper.User
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import kotlinx.datetime.Clock

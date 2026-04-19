@@ -1,6 +1,8 @@
 package com.pollyannawu.justwoo.backend.repositories
 
-import com.pollyannawu.justwoo.backend.database.DatabaseFactory.dbQuery
+import com.pollyannawu.justwoo.backend.database.utils.PagedResult
+import com.pollyannawu.justwoo.backend.database.utils.dbQuery
+import com.pollyannawu.justwoo.backend.database.utils.toPagedRows
 import com.pollyannawu.justwoo.backend.schema.HouseMembers
 import com.pollyannawu.justwoo.backend.schema.Houses
 import com.pollyannawu.justwoo.core.House
@@ -9,19 +11,23 @@ import com.pollyannawu.justwoo.core.MemberRole
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.andWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.update
 import org.slf4j.LoggerFactory
+import kotlin.Int
 
 interface HouseRepository {
     suspend fun isMember(userId: Long, houseId: Long): Boolean
-    suspend fun getHouseDetails(userId: Long, houseId: Long? = null): List<House>
+    suspend fun getPagedHouses(userId: Long, houseId: Long? = null, size: Int,
+                               offset: Long,): PagedResult<House>
     suspend fun createHouse(house: House, userId: Long): House
     suspend fun addMember(userId: Long, memberRole: MemberRole, houseId: Long, joinedAt: Instant): House
     suspend fun removeMember(userId: Long, houseId: Long): House
@@ -41,29 +47,37 @@ internal class DefaultHouseRepository: HouseRepository{
         return@dbQuery resultRow.isNotEmpty()
     }
 
-    override suspend fun getHouseDetails(
+    override suspend fun getPagedHouses(
         userId: Long,
-        houseId: Long?
-    ): List<House> = dbQuery {
+        houseId: Long?,
+        size: Int,
+        offset: Long,
+    ): PagedResult<House> = dbQuery{
         log.trace("start getHouseDetails")
-        val query = (Houses leftJoin HouseMembers)
-            .selectAll()
-        
-        if (houseId != null) {
-            query.where { Houses.id eq houseId }.first()
-        } else {
-            val userHouseIds = HouseMembers.selectAll()
-                .where { HouseMembers.memberId eq userId }
-                .map { it[HouseMembers.houseId].value }
-            
-            if (userHouseIds.isEmpty()) return@dbQuery emptyList()
-            
-            query.where { Houses.id inList userHouseIds }
+        val idQuery = (Houses innerJoin HouseMembers)
+            .select(Houses.id)
+            .where { HouseMembers.memberId eq userId }
+
+        if (houseId != null) idQuery.andWhere { Houses.id eq houseId }
+
+        val pagedIdResult = idQuery
+            .orderBy(Houses.createTime to SortOrder.DESC)
+            .toPagedRows(size, offset)
+
+        if (pagedIdResult.items.isEmpty()) {
+            return@dbQuery PagedResult(emptyList(), pagedIdResult.totalCount)
         }
 
-        val rows = query.toList()
-        log.trace("house rows size: {}", rows.size)
-        return@dbQuery rows.toHouseDomain()
+        val targetIds = pagedIdResult.items.map { it[Houses.id].value }
+
+        val detailedRows = (Houses leftJoin HouseMembers).selectAll().where{
+            Houses.id inList targetIds
+        }.orderBy(Houses.createTime to SortOrder.DESC)
+            .toList()
+
+        val houses = detailedRows.toHouseDomain()
+
+        PagedResult(houses, pagedIdResult.totalCount)
     }
 
 

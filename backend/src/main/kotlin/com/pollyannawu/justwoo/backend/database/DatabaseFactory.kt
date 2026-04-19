@@ -9,10 +9,8 @@ import com.pollyannawu.justwoo.backend.schema.Tasks
 import com.pollyannawu.justwoo.backend.schema.TasksAssignees
 import com.pollyannawu.justwoo.backend.schema.Users
 import io.ktor.server.config.ApplicationConfig
-import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.LoggerFactory
 
@@ -56,6 +54,4 @@ object DatabaseFactory {
         }
     }
 
-    suspend fun <T> dbQuery(block: suspend () -> T): T =
-        newSuspendedTransaction(Dispatchers.IO) { block() }
 }
