@@ -1,11 +1,10 @@
 plugins {
     alias(libs.plugins.multiplatform)
     alias(libs.plugins.android.library)
-    alias(libs.plugins.maven.publish)
     alias(libs.plugins.compose)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlinx.serialization)
-    alias(libs.plugins.sqlDelight)
+    alias(libs.plugins.kotlin.parcelize)
 }
 
 kotlin {
@@ -19,19 +18,29 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            api(projects.core)
+            api(libs.koin.compose.viewmodel.navigation)
+
             implementation(compose.runtime)
             implementation(compose.ui)
             implementation(compose.foundation)
+
+
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.datetime)
+
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.client.serialization)
             implementation(libs.ktor.serialization.json)
             implementation(libs.ktor.client.logging)
-            implementation(libs.multiplatformSettings)
+
+            implementation(libs.settings)
+            implementation(libs.settings.coroutines)
+            implementation(libs.settings.serialization)
+            implementation(libs.settings.observable)
         }
 
         commonTest.dependencies {
@@ -77,33 +86,3 @@ android {
     }
 }
 
-//Publishing your Kotlin Multiplatform library to Maven Central
-//https://www.jetbrains.com/help/kotlin-multiplatform-dev/multiplatform-publish-libraries.html
-mavenPublishing {
-    publishToMavenCentral()
-    coordinates("com.pollyannawu.justwoo", "shared", "1.0.0")
-
-    pom {
-        name = "Justwoo KMP"
-        description = "Kotlin Multiplatform library"
-        url = "github url" //todo
-
-        licenses {
-            license {
-                name = "MIT"
-                url = "https://opensource.org/licenses/MIT"
-            }
-        }
-    }
-    if (project.hasProperty("signing.keyId")) signAllPublications()
-}
-
-sqldelight {
-    databases {
-        create("MyDatabase") {
-            // Database configuration here.
-            // https://cashapp.github.io/sqldelight
-            packageName.set("com.pollyannawu.justwoo.db")
-        }
-    }
-}
