@@ -61,9 +61,9 @@ fun Route.profileRoute() {
     }
 }
 
-private suspend fun <T> ApplicationCall.respondProfileResult(result: ProfileDataResult<T>) {
+private suspend inline fun <reified T : Any> ApplicationCall.respondProfileResult(result: ProfileDataResult<T>) {
     when (result) {
-        is ProfileDataResult.Success -> respond(HttpStatusCode.OK, result.data as Any)
+        is ProfileDataResult.Success -> respond(HttpStatusCode.OK, result.data)
         is ProfileDataResult.Error -> {
             val (status, message) = when (result) {
                 is ProfileDataResult.Error.NotFound -> HttpStatusCode.NotFound to "Profile not found"

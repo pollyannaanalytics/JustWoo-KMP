@@ -25,6 +25,8 @@ kotlin {
             implementation(compose.ui)
             implementation(compose.foundation)
 
+            implementation(libs.decompose)
+            implementation(libs.decompose.extensions.compose)
 
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.coroutines.test)

@@ -98,7 +98,8 @@ class DefaultHouseService(
                 val profile = profiles[member.userId] ?: return@mapNotNull null
                 MemberProfileResponse(
                     profile = profile.toResponse(),
-                    role = member.role
+                    role = member.role,
+                    joinAt = member.joinedAt
                 )
             }
             house.toResponse(memberResponses)
@@ -141,7 +142,7 @@ class DefaultHouseService(
 
         val memberProfileResponses = members.mapNotNull { member ->
             val profileResponse = profiles[member.userId]?.toResponse() ?: return@mapNotNull null
-            MemberProfileResponse(profile = profileResponse, role = member.role)
+            MemberProfileResponse(profile = profileResponse, role = member.role, joinAt = member.joinedAt)
         }
         return house.toResponse(memberProfileResponses)
     }

@@ -13,6 +13,7 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.andWhere
 import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.insertAndGetId
+import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 import org.slf4j.LoggerFactory
@@ -43,7 +44,7 @@ interface TaskRepository {
 
     suspend fun updateTaskExecutor(userId: Long, taskId: Long): Task
 
-    suspend fun isTaskExecutor(userId: Long, taskId: Long): Boolean
+    suspend fun isTaskOwnerOrExecutor(ownerId: Long, executerId: Long, taskId: Long): Boolean
     suspend fun updateTaskContent(task: Task): Task
 
 }
@@ -187,9 +188,8 @@ internal class DefaultTaskRepository: TaskRepository {
         return@dbQuery getTaskById(taskId) ?: throw IllegalStateException("Unknown Exception: task has been updated but no task found $taskId")
     }
 
-    override suspend fun isTaskExecutor(userId: Long, taskId: Long): Boolean = dbQuery {
-        val resultRow = Tasks.selectAll().where { (Tasks.id eq taskId) and (Tasks.executorId eq userId) }.toList()
-
+    override suspend fun isTaskOwnerOrExecutor(ownerId: Long, executerId: Long, taskId: Long): Boolean = dbQuery {
+        val resultRow = Tasks.selectAll().where { (Tasks.id eq taskId) and ((Tasks.executorId eq executerId) or (Tasks.ownerId eq ownerId)) }.toList()
         return@dbQuery resultRow.isNotEmpty()
     }
 

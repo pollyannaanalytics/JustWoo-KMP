@@ -97,9 +97,9 @@ fun Route.houseRoute() {
     }
 }
 
-private suspend fun <T> ApplicationCall.respondResult(result: HouseDataResult<T>) {
+private suspend inline fun <reified T : Any> ApplicationCall.respondResult(result: HouseDataResult<T>) {
     when (result) {
-        is HouseDataResult.Success -> respond(HttpStatusCode.OK, result.data as Any)
+        is HouseDataResult.Success -> respond(HttpStatusCode.OK, result.data)
         is HouseDataResult.Error -> {
             val (status, message) = when (result) {
                 is HouseDataResult.Error.DatabaseError -> HttpStatusCode.InternalServerError to (result.message)

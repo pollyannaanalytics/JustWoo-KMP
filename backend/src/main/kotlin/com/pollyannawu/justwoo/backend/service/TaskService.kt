@@ -60,6 +60,7 @@ interface TaskService {
 
     suspend fun updateTaskStatus(
         houseId: Long,
+        ownerId: Long,
         assigneeId: Long,
         taskId: Long,
         taskStatus: TaskStatus
@@ -202,16 +203,16 @@ internal class DefaultTaskService(
             assignee.userId,
             TaskUserType.ASSIGNEE
         )
-        try {
+        return try {
+            val updatedTask = taskRepo.updateTaskAssignStatus(taskId, assignee.userId, assignee.status)
             if (assignee.status == AssignStatus.ACCEPTED) {
-                taskRepo.updateTaskAssignStatus(taskId, assignee.userId, assignee.status)
                 val result = taskRepo.updateTaskExecutor(assignee.userId, taskId)
-                return TaskDataResult.Success(mergeTaskAssigneeResponse(result))
+                TaskDataResult.Success(mergeTaskAssigneeResponse(result))
             } else {
-                return TaskDataResult.Error.AssigneeStatusError
+                TaskDataResult.Success(mergeTaskAssigneeResponse(updatedTask))
             }
         } catch (e: Exception) {
-            return TaskDataResult.Error.DatabaseError(
+            TaskDataResult.Error.DatabaseError(
                 e.message ?: "Unknown Exception when updateTaskAssignStatus"
             )
         }
@@ -219,11 +220,13 @@ internal class DefaultTaskService(
 
     override suspend fun updateTaskStatus(
         houseId: Long,
+        ownerId: Long,
         assigneeId: Long,
         taskId: Long,
         taskStatus: TaskStatus
     ): TaskDataResult<TaskResponse> {
-        if (!houseRepo.isMember(assigneeId, houseId) || !taskRepo.isTaskExecutor(
+        if (!houseRepo.isMember(assigneeId, houseId) || !taskRepo.isTaskOwnerOrExecutor(
+                ownerId,
                 assigneeId,
                 taskId
             )

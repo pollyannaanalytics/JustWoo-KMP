@@ -628,7 +628,7 @@ components:
     # ── House ──
     HouseRequest:
       type: object
-      required: [title, name, adminUserId, memberIds, description, createTime, updateTime]
+      required: [title, name, adminUserId, description, createTime, updateTime]
       properties:
         title:
           type: string
@@ -642,8 +642,12 @@ components:
           items:
             type: integer
             format: int64
+          default: []
         description:
           type: string
+        avatar:
+          type: string
+          nullable: true
         createTime:
           type: string
           format: date-time

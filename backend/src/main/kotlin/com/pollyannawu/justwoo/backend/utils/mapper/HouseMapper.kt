@@ -15,6 +15,7 @@ fun House.toResponse(members: List<MemberProfileResponse>): HouseResponse {
         title = this.name,
         name = this.name,
         members = members,
+        avatarUrl = this.avatar,
         description = this.description,
         createTime = this.createTime,
         updateTime = this.updateTime
@@ -29,8 +30,8 @@ fun HouseRequest.toDomain(id: Long = 0): House {
         id = id,
         name = this.name,
         description = this.description,
-        avatar = "",
-        members = this.memberIds.map { memberId ->
+        avatar = this.avatar ?: "",
+        members = this.memberIds.filter { it > 0 }.map { memberId ->
             HouseMember(
                 houseId = 0,
                 userId = memberId,

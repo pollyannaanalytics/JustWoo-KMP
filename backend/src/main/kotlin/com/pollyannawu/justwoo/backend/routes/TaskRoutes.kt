@@ -124,14 +124,15 @@ fun Route.taskRoute() {
     }
 }
 
-private suspend fun <T> ApplicationCall.respondResult(result: TaskDataResult<T>) {
+private suspend inline fun <reified T : Any> ApplicationCall.respondResult(result: TaskDataResult<T>) {
     when (result) {
-        is TaskDataResult.Success -> respond(HttpStatusCode.OK, result.data as Any)
+        is TaskDataResult.Success -> respond(HttpStatusCode.OK, result.data)
         is TaskDataResult.Error -> {
             val (status, message) = when (result) {
                 is TaskDataResult.Error.DatabaseError -> HttpStatusCode.InternalServerError to result.message
                 is TaskDataResult.Error.UserNotAllowed -> HttpStatusCode.Forbidden to "User ${result.id} is not a member"
                 is TaskDataResult.Error.NotFound, TaskDataResult.Error.HouseNotFound -> HttpStatusCode.NotFound to "Resource not found"
+                is TaskDataResult.Error.AssigneeStatusError -> HttpStatusCode.BadRequest to "AssigneeStatus error"
                 else -> HttpStatusCode.BadRequest to "Unknown error"
             }
             respond(status, mapOf("error" to message))
