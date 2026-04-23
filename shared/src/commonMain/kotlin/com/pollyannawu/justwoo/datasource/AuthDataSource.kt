@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface AuthDataSource {
     fun getToken(): String?
-    fun getUser(): Flow<User?>
+    fun getUser(): User?
     fun getDeviceId(): String
 
     suspend fun saveAccessToken(token: String)
