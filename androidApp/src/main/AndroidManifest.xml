@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:name=".JustWooApplication"
+        android:label="@string/app_name"
+        android:icon="@android:drawable/ic_menu_compass"
+        android:roundIcon="@android:drawable/ic_menu_compass"
+        android:theme="@style/Theme.JustWoo"
+        android:supportsRtl="true"
+        android:allowBackup="true">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|locale|layoutDirection|fontScale|uiMode"
+            android:theme="@style/Theme.JustWoo">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+    </application>
+
+</manifest>
