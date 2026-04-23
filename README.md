@@ -8,36 +8,53 @@ A **full-stack Kotlin Multiplatform** application for household task management,
 
 ## Architecture Overview
 
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                         Client Layer                                │
-│  ┌─────────────────────────┐      ┌─────────────────────────────┐   │
-│  │       Android           │      │           iOS               │   │
-│  │   Jetpack Compose       │      │         SwiftUI             │   │
-│  │   Room Database         │      │     Core Data / SQLite      │   │
-│  │  (DataSource impl)      │      │     (DataSource impl)       │   │
-│  └────────────┬────────────┘      └──────────────┬──────────────┘   │
-│               │                                  │                  │
-│  ┌────────────┴──────────────────────────────────┴──────────────┐   │
-│  │                   :shared (KMP)                              │   │
-│  │  Repository ← DataSource (interface) + ApiService (Ktor)    │   │
-│  │  UseCase ← Repository                                       │   │
-│  │  ApiResult / DataResult sealed classes                       │   │
-│  └──────────────────────────┬───────────────────────────────────┘   │
-│                             │                                       │
-│  ┌──────────────────────────┴───────────────────────────────────┐   │
-│  │                    :core (KMP)                               │   │
-│  │  DTOs (AuthDto, HouseDto, TaskDto, ProfileDto, PageDto)      │   │
-│  │  Domain Models (Task, House, Profile, HouseMember)           │   │
-│  │  Shared between server and clients — compile-time safety     │   │
-│  └──────────────────────────────────────────────────────────────┘   │
-└──────────────────────────────────────────────────────────────────────┘
-                              │  Ktor HTTP
-┌─────────────────────────────┴────────────────────────────────────────┐
-│                      :backend (Ktor / JVM)                          │
-│  Routes → Service → Repository → Exposed ORM → PostgreSQL          │
-│  JWT Authentication │ Redis (sessions & rate limiting) │ Bcrypt     │
-└──────────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph Clients[Client Layer]
+        subgraph Android
+            AUI[Jetpack Compose UI]
+            ADB[(Room Database)]
+        end
+        subgraph iOS
+            IUI[SwiftUI]
+            IDB[(Core Data / SQLite)]
+        end
+    end
+
+    subgraph SharedModule[shared - KMP Business Logic]
+        REPO[Repository]
+        DS[DataSource Interface]
+        NET[ApiService - Ktor Client]
+    end
+
+    subgraph CoreModule[core - Shared Contract / compiled for all targets]
+        DTO[DTOs + Domain Models / kotlinx.serialization]
+    end
+
+    subgraph BackendModule[backend - Ktor Server / JVM]
+        ROUTES[Routes + JWT Auth]
+        SVC[Service Layer]
+        REPOBE[Repository - Exposed ORM]
+    end
+
+    subgraph Infra[Infrastructure]
+        PG[(PostgreSQL)]
+        REDIS[(Redis)]
+    end
+
+    AUI --> REPO
+    IUI --> REPO
+    REPO --> DS
+    REPO --> NET
+    DS --> ADB
+    DS --> IDB
+    NET -->|HTTP / JSON| ROUTES
+    DTO -.->|compile-time contract| NET
+    DTO -.->|compile-time contract| ROUTES
+    ROUTES --> SVC
+    SVC --> REPOBE
+    SVC --> REDIS
+    REPOBE --> PG
 ```
 
 ### Module Breakdown
