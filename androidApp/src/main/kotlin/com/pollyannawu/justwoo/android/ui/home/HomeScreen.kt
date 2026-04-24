@@ -92,7 +92,7 @@ fun HomeScreen(
             } else {
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(vertical = 4.dp, bottom = 80.dp)
+                    contentPadding = PaddingValues(4.dp)
                 ) {
                     items(tasks, key = { it.id }) { task ->
                         TaskCard(task = task, onClick = onOpenTask)
