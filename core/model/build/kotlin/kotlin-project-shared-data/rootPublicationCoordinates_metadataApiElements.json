@@ -1,0 +1,8 @@
+{
+  "buildPath": ":",
+  "projectPath": ":core:model",
+  "moduleId": {
+    "groupId": "Justwoo-KMP.core",
+    "moduleId": "model"
+  }
+}

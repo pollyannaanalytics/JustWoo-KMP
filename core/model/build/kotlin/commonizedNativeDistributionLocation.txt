@@ -1,0 +1,1 @@
+/Users/pin-yunwu/.konan/kotlin-native-prebuilt-macos-aarch64-2.2.20/klib/commonized/2.2.20
