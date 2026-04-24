@@ -5,6 +5,7 @@ import io.ktor.client.plugins.DefaultRequest
 import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
@@ -21,13 +22,15 @@ class ApiClient(
 ): Closeable {
     companion object {
         private const val LOG_TAG = "APIClient"
+        private const val BASE_URL = "https://api.justwoo-tw.uk"
     }
 
     var userId: String? = null
 
     private val client = HttpClient {
-        install(ContentNegotiation) {
-            json()
+        install(ContentNegotiation) { json() }
+        defaultRequest {
+            url(BASE_URL)
         }
 
 
