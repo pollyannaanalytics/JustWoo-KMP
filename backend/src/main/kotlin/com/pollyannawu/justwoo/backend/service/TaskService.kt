@@ -60,8 +60,7 @@ interface TaskService {
 
     suspend fun updateTaskStatus(
         houseId: Long,
-        ownerId: Long,
-        assigneeId: Long,
+        userId: Long,
         taskId: Long,
         taskStatus: TaskStatus
     ): TaskDataResult<TaskResponse>
@@ -220,20 +219,12 @@ internal class DefaultTaskService(
 
     override suspend fun updateTaskStatus(
         houseId: Long,
-        ownerId: Long,
-        assigneeId: Long,
+        userId: Long,
         taskId: Long,
         taskStatus: TaskStatus
     ): TaskDataResult<TaskResponse> {
-        if (!houseRepo.isMember(assigneeId, houseId) || !taskRepo.isTaskOwnerOrExecutor(
-                ownerId,
-                assigneeId,
-                taskId
-            )
-        ) return TaskDataResult.Error.UserNotAllowed(
-            assigneeId,
-            TaskUserType.ASSIGNEE
-        )
+        if (!houseRepo.isMember(userId, houseId) || !taskRepo.isTaskOwnerOrExecutor(userId, taskId)
+        ) return TaskDataResult.Error.UserNotAllowed(userId, TaskUserType.REQUEST)
 
         try {
             val result = taskRepo.updateTaskStatus(taskId, taskStatus)

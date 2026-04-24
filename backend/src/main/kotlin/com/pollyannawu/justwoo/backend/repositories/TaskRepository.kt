@@ -44,7 +44,7 @@ interface TaskRepository {
 
     suspend fun updateTaskExecutor(userId: Long, taskId: Long): Task
 
-    suspend fun isTaskOwnerOrExecutor(ownerId: Long, executerId: Long, taskId: Long): Boolean
+    suspend fun isTaskOwnerOrExecutor(userId: Long, taskId: Long): Boolean
     suspend fun updateTaskContent(task: Task): Task
 
 }
@@ -188,8 +188,8 @@ internal class DefaultTaskRepository: TaskRepository {
         return@dbQuery getTaskById(taskId) ?: throw IllegalStateException("Unknown Exception: task has been updated but no task found $taskId")
     }
 
-    override suspend fun isTaskOwnerOrExecutor(ownerId: Long, executerId: Long, taskId: Long): Boolean = dbQuery {
-        val resultRow = Tasks.selectAll().where { (Tasks.id eq taskId) and ((Tasks.executorId eq executerId) or (Tasks.ownerId eq ownerId)) }.toList()
+    override suspend fun isTaskOwnerOrExecutor(userId: Long, taskId: Long): Boolean = dbQuery {
+        val resultRow = Tasks.selectAll().where { (Tasks.id eq taskId) and ((Tasks.executorId eq userId) or (Tasks.ownerId eq userId)) }.toList()
         return@dbQuery resultRow.isNotEmpty()
     }
 
