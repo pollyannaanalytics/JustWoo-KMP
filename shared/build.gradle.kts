@@ -1,8 +1,8 @@
+import org.gradle.kotlin.dsl.implementation
+
 plugins {
     alias(libs.plugins.multiplatform)
     alias(libs.plugins.android.library)
-    alias(libs.plugins.compose)
-    alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.kotlin.parcelize)
 }
@@ -22,11 +22,12 @@ kotlin {
         sourceSets {
             commonMain.dependencies {
                 api(libs.decompose)
+                implementation(projects.core.model)
                 implementation(libs.decompose.extensions.compose)
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.coroutines.test)
-                implementation(libs.kotlinx.serialization.json)
                 implementation(libs.kotlinx.datetime)
+                implementation(libs.koin.core)
 
                 implementation(libs.ktor.client.core)
                 implementation(libs.ktor.client.content.negotiation)
@@ -57,4 +58,22 @@ kotlin {
         }
     }
 
+    android {
+        namespace = "com.pollyannawu.justwoo.android"
+        compileSdk = 36
+
+        defaultConfig {
+            minSdk = 26
+            //noinspection EditedTargetSdkVersion
+            targetSdk = 36
+        }
+        compileOptions {
+            sourceCompatibility = JavaVersion.VERSION_17
+            targetCompatibility = JavaVersion.VERSION_17
+        }
+
+        packaging {
+            resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
 }
