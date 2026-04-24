@@ -7,20 +7,18 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
 
     androidTarget()
 
     sourceSets {
         androidMain.dependencies {
             implementation(projects.shared)
-            implementation(projects.core)
 
             implementation(libs.androidx.core.ktx)
             implementation(libs.androidx.activityCompose)
             implementation(libs.androidx.lifecycle.runtime.ktx)
             implementation(libs.androidx.lifecycle.viewmodel.compose)
-            implementation(libs.androidx.navigation.compose)
 
             implementation(libs.androidx.compose.ui)
             implementation(libs.androidx.compose.ui.tooling.preview)

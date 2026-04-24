@@ -21,7 +21,7 @@ jib {
 }
 
 dependencies {
-    implementation(projects.core)
+    implementation(projects.core.model)
     implementation(libs.ktor.server.netty)
     implementation(libs.ktor.server.auth)
     implementation(libs.ktor.server.auth.jwt)
