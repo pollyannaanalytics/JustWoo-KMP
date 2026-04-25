@@ -161,9 +161,40 @@ Key design choices:
 - PostgreSQL
 - Redis
 
-### Run the Backend
+### Option 1 — Docker Compose (recommended)
+
+1. **Build the fat JAR:**
+   ```bash
+   ./gradlew :backend:shadowJar
+   ```
+
+2. **Create a `.env` file** in the `backend/` directory:
+   ```env
+   KTOR_ENV=production
+   DB_HOST=db
+   DB_PORT=5432
+   DB_NAME=justwoo
+   DB_USER=your_db_user
+   DB_PASSWORD=your_db_password
+   JWT_SECRET=your_jwt_secret
+   JWT_AUDIENCE=justwoo-users
+   ```
+
+3. **Start all services:**
+   ```bash
+   cd backend
+   docker compose up --build
+   ```
+
+   The backend is available at `http://localhost:80` (mapped from container port `8000`). PostgreSQL data is persisted in a named Docker volume.
+
+### Option 2 — Run locally
+
+Ensure PostgreSQL and Redis are running, then set the required environment variables and start the server:
 
 ```bash
+export DB_HOST=localhost DB_PORT=5432 DB_NAME=justwoo DB_USER=... DB_PASSWORD=...
+export JWT_SECRET=...
 ./gradlew :backend:run
 ```
 
