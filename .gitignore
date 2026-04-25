@@ -32,3 +32,5 @@ build/
 **/build/
 **/.gradle/
 **/.idea/
+**/.env
+.DS_Store
