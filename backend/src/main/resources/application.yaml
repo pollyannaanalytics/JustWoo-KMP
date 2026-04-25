@@ -1,23 +1,23 @@
 ktor:
   deployment:
-    port: 8000
-    host: 0.0.0.0
+    port: ${PORT:8000}
+    host: ${HOST:0.0.0.0}
+    forwardedHeaderSupport: true
 
   application:
     modules:
       - com.pollyannawu.justwoo.backend.DiModuleKt.diModule
 
 database:
-  host: ${DB0_PORT:mem}
-  port: ${DB0_HOST:5432}
-  user: $DB0_USERNAME:sa}
-  password: ${DB0_PASSWORD:}
-  dbName: ${DB0_NAME:test}
+  host: ${DB_HOST}
+  port: ${DB_PORT:5432}
+  user: ${DB_USER}
+  password: ${DB_PASSWORD}
+  dbName: ${DB_NAME}
+  maximumPoolSize: ${DB_POOL_SIZE:5}
 
 jwt:
-  secret: "-my-super-secret-12345"
-  issuer: "https://justwoo.api.com"
-  audience: "justwoo-users"
-  realm: "access to justwoo"
-
-  poolSize: 5
+  secret: ${JWT_SECRET}
+  issuer: ${JWT_ISSUER:https://justwoo.api.com}
+  audience: ${JWT_AUDIENCE:justwoo-users}
+  realm: ${JWT_REALM:access to justwoo}

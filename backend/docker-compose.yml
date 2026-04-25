@@ -1,0 +1,27 @@
+services:
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  backend:
+    build: .
+    environment:
+      - KTOR_ENV=${KTOR_ENV}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_AUDIENCE=${JWT_AUDIENCE}
+    ports:
+      - "80:8000"
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
