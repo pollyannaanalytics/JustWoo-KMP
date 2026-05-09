@@ -7,6 +7,11 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+
   backend:
     build: .
     environment:
@@ -18,10 +23,12 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_AUDIENCE=${JWT_AUDIENCE}
+      - REDIS_HOST=redis
     ports:
       - "8080:8000"
     depends_on:
       - db
+      - redis
 
   portainer:
     image: portainer/portainer-ce:latest
@@ -34,4 +41,5 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
   portainer_data:

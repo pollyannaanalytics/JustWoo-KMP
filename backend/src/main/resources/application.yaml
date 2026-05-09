@@ -21,3 +21,7 @@ jwt:
   issuer: ${JWT_ISSUER:https://justwoo.api.com}
   audience: ${JWT_AUDIENCE:justwoo-users}
   realm: ${JWT_REALM:access to justwoo}
+
+redis:
+  host: ${REDIS_HOST:localhost}
+  port: ${REDIS_PORT:6379}
