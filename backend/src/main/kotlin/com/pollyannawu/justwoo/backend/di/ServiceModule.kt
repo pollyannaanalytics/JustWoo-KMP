@@ -19,7 +19,7 @@ import org.koin.dsl.module
 val servicesModule = module {
     single<HouseService>{ DefaultHouseService(get(), get()) }
     single<TaskService>{ DefaultTaskService(get(), get(), get()) }
-    single<AuthService> { DefaultAuthService(get(), get(), get(), get(), get()) }
+    single<AuthService> { DefaultAuthService(get(), get(), get(), get(), get(), get()) }
     single<ProfileService> { DefaultProfileService(get()) }
     singleOf<HashPasswordProvider>(::BcryptHashPasswordProvider)
     single<SettlementService> { DefaultSettlementService(get(), get(), get()) }

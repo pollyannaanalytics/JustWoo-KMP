@@ -1,5 +1,6 @@
 package com.pollyannawu.justwoo.backend.service
 
+import com.pollyannawu.justwoo.backend.repositories.ProfileRepository
 import com.pollyannawu.justwoo.backend.repositories.auth.AuthRepository
 import com.pollyannawu.justwoo.backend.repositories.auth.LoginAttemptRepository
 import com.pollyannawu.justwoo.backend.repositories.auth.RefreshTokenRepository
@@ -7,8 +8,10 @@ import com.pollyannawu.justwoo.backend.utils.dataresult.AuthDataResult
 import com.pollyannawu.justwoo.backend.utils.mapper.toResponse
 import com.pollyannawu.justwoo.backend.utils.security.AccessTokenProvider
 import com.pollyannawu.justwoo.backend.utils.security.HashPasswordProvider
+import com.pollyannawu.justwoo.core.Profile
 import com.pollyannawu.justwoo.core.dto.AuthResponse
 import com.pollyannawu.justwoo.core.dto.TokenResponse
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlin.time.Duration.Companion.days
 
@@ -32,8 +35,8 @@ class DefaultAuthService(
     private val loginAttemptRepository: LoginAttemptRepository,
     private val hashPasswordProvider: HashPasswordProvider,
     private val accessTokenProvider: AccessTokenProvider,
-
-    ) : AuthService {
+    private val profileRepository: ProfileRepository,
+) : AuthService {
 
     override suspend fun loginByEmailAndPassword(
         email: String,
@@ -104,6 +107,8 @@ class DefaultAuthService(
         }
         val hashPassword = hashPasswordProvider.hashPassword(plainPassword)
         val user = authRepository.create(email, hashPassword)
+        val now = Clock.System.now()
+        profileRepository.createProfile(Profile(id = user.id, name = "", avatar = "", bankAccount = "", createTime = now, updateTime = now))
         val accessToken = accessTokenProvider.createAccessToken(user.id)
         val refreshToken =
             refreshTokenRepository.saveToken(user.id, deviceId, REFRESH_TOKEN_EXPIRATION_IN_SECONDS)
