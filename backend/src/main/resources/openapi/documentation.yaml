@@ -7,8 +7,12 @@ info:
     name: Pin-Yun (Pollyanna) Wu
 
 servers:
+  - url: https://justwoo-tw.uk
+    description: Production server
+  - url: http://localhost:8080
+    description: Local development server (Docker)
   - url: http://localhost:8000
-    description: Local development server
+    description: Local development server (direct)
 
 tags:
   - name: Auth
