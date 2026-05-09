@@ -9,6 +9,7 @@ sealed class TaskDataResult<out T> {
         data class UserNotAllowed(val id: Long, val type: TaskUserType) : Error()
         data class DatabaseError(val message: String) : Error()
         object NotFound : Error()
+        data class InvalidCurrency(val code: String) : Error()
     }
 }
 

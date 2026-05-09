@@ -45,6 +45,9 @@ internal object Tasks : LongIdTable("tasks") {
         toDb = { it.ordinal }
     )
 
+    val price = double("price").nullable()
+    val currencyCode = varchar("currency_code", length = 10).nullable()
+
 
     fun from(it: UpdateBuilder<*>, task: Task) {
         it[title] = task.title
@@ -57,6 +60,8 @@ internal object Tasks : LongIdTable("tasks") {
         it[taskStatus] = task.taskStatus
         it[createTime] = task.createTime
         it[updateTime] = task.updateTime
+        it[price] = task.price
+        it[currencyCode] = task.currencyCode
     }
 
 
@@ -72,7 +77,9 @@ internal object Tasks : LongIdTable("tasks") {
         taskStatus = row[taskStatus],
         assignees = assignees,
         createTime = row[createTime],
-        updateTime = row[updateTime]
+        updateTime = row[updateTime],
+        price = row[price],
+        currencyCode = row[currencyCode]
     )
 }
 

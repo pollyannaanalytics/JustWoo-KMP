@@ -3,6 +3,8 @@ package com.pollyannawu.justwoo.backend.service
 import com.pollyannawu.justwoo.backend.repositories.HouseRepository
 import com.pollyannawu.justwoo.backend.repositories.ProfileRepository
 import com.pollyannawu.justwoo.backend.repositories.TaskRepository
+import com.pollyannawu.justwoo.backend.utils.CurrencyConverter
+import com.pollyannawu.justwoo.backend.utils.UnknownCurrencyException
 import com.pollyannawu.justwoo.backend.utils.dataresult.TaskDataResult
 import com.pollyannawu.justwoo.backend.utils.dataresult.TaskUserType
 import com.pollyannawu.justwoo.backend.utils.mapper.toDomain
@@ -160,6 +162,10 @@ internal class DefaultTaskService(
             userId,
             TaskUserType.REQUEST
         )
+        taskRequest.currencyCode?.let { code ->
+            try { CurrencyConverter.validate(code) }
+            catch (_: UnknownCurrencyException) { return TaskDataResult.Error.InvalidCurrency(code) }
+        }
         try {
             val newTask = taskRequest.toDomain()
             val result = taskRepo.createTask(newTask)
@@ -180,6 +186,10 @@ internal class DefaultTaskService(
             ownerId,
             TaskUserType.OWNER
         )
+        task.currencyCode?.let { code ->
+            try { CurrencyConverter.validate(code) }
+            catch (_: UnknownCurrencyException) { return TaskDataResult.Error.InvalidCurrency(code) }
+        }
         return try {
             TaskDataResult.Success(mergeTaskAssigneeResponse(task))
         } catch (e: Exception) {

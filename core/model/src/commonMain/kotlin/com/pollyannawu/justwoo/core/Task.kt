@@ -18,7 +18,10 @@ data class Task(
     val assignees: List<TaskAssignee>,
     val dueTime: Instant,
     val createTime: Instant,
-    val updateTime: Instant
+    val updateTime: Instant,
+    val price: Double? = null,
+    // ISO 4217 currency code, e.g. "TWD", "USD"
+    val currencyCode: String? = null
 )
 
 @Serializable
@@ -40,6 +43,8 @@ fun TaskResponse.toTask() = Task(
     dueTime = Instant.parse(this.dueTime),
     createTime = Instant.parse(this.createTime),
     updateTime = Instant.parse(this.createTime),
+    price = this.price,
+    currencyCode = this.currencyCode
 )
 
 fun List<TaskAssigneeResponse>.toTaskAssignees(): List<TaskAssignee> =

@@ -14,7 +14,10 @@ data class CreateTaskRequest(
     val houseId: Long,
     val accessLevel: AccessLevel,
     val assigneeIds: List<Long>,
-    val dueTime: Instant
+    val dueTime: Instant,
+    val price: Double? = null,
+    // ISO 4217 currency code, e.g. "TWD", "USD"
+    val currencyCode: String? = null
 )
 
 @Serializable
@@ -29,7 +32,9 @@ data class TaskResponse(
     val houseId: Long,
     val assignees: List<TaskAssigneeResponse>,
     val dueTime: String,
-    val createTime: String
+    val createTime: String,
+    val price: Double? = null,
+    val currencyCode: String? = null
 )
 
 @Serializable

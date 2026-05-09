@@ -9,8 +9,6 @@ import com.pollyannawu.justwoo.core.dto.TaskAssigneeResponse
 import com.pollyannawu.justwoo.core.dto.TaskResponse
 import com.pollyannawu.justwoo.core.TaskStatus
 import com.pollyannawu.justwoo.core.dto.ProfileResponse
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.Clock
 
 
@@ -34,11 +32,11 @@ fun CreateTaskRequest.toDomain(): Task {
             )
         },
         createTime = now,
-        updateTime = now
+        updateTime = now,
+        price = this.price,
+        currencyCode = this.currencyCode
     )
 }
-
-
 
 fun Task.toResponse(assigneeResponse: List<TaskAssigneeResponse>): TaskResponse {
     return TaskResponse(
@@ -53,6 +51,8 @@ fun Task.toResponse(assigneeResponse: List<TaskAssigneeResponse>): TaskResponse 
         assignees = assigneeResponse,
         dueTime = this.dueTime.toString(),
         createTime = this.createTime.toString(),
+        price = this.price,
+        currencyCode = this.currencyCode
     )
 }
 
@@ -65,7 +65,6 @@ fun TaskAssignee.toResponse(profile: Profile): TaskAssigneeResponse {
     )
 }
 
-
 fun Profile.toResponse(): ProfileResponse {
     return ProfileResponse(
         id = this.id,
@@ -76,4 +75,3 @@ fun Profile.toResponse(): ProfileResponse {
         updateTime = this.updateTime
     )
 }
-
