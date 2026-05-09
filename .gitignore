@@ -34,3 +34,6 @@ build/
 **/.idea/
 **/.env
 .DS_Store
+
+# AWS Lightsail CLI binary (download from AWS when needed)
+lightsailctl
