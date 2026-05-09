@@ -22,13 +22,6 @@ services:
       - "8080:8000"
     depends_on:
       - db
-    logging:
-      driver: awslogs
-      options:
-        awslogs-region: ap-northeast-1
-        awslogs-group: /justwoo/backend
-        awslogs-stream: backend
-        awslogs-create-group: "true"
 
 volumes:
   postgres_data:
