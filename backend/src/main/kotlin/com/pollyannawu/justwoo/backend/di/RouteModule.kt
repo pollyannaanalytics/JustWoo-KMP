@@ -3,6 +3,7 @@ package com.pollyannawu.justwoo.backend.di
 import com.pollyannawu.justwoo.backend.routes.authRoute
 import com.pollyannawu.justwoo.backend.routes.houseRoute
 import com.pollyannawu.justwoo.backend.routes.profileRoute
+import com.pollyannawu.justwoo.backend.routes.schemaRoute
 import com.pollyannawu.justwoo.backend.routes.settlementRoute
 import com.pollyannawu.justwoo.backend.routes.taskRoute
 import io.ktor.server.application.Application
@@ -19,6 +20,7 @@ fun Application.routeModule(){
         houseRoute()
         profileRoute()
         settlementRoute()
+        schemaRoute()
         get("/hello") {
             call.respondText("你好，JustWoo 後端已就緒！")
         }
