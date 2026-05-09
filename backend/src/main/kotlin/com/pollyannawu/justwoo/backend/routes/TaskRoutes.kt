@@ -134,7 +134,6 @@ private suspend inline fun <reified T : Any> ApplicationCall.respondResult(resul
                 is TaskDataResult.Error.NotFound, TaskDataResult.Error.HouseNotFound -> HttpStatusCode.NotFound to "Resource not found"
                 is TaskDataResult.Error.AssigneeStatusError -> HttpStatusCode.BadRequest to "AssigneeStatus error"
                 is TaskDataResult.Error.InvalidCurrency -> HttpStatusCode.BadRequest to "Unknown or unsupported currency code: \"${result.code}\""
-                else -> HttpStatusCode.BadRequest to "Unknown error"
             }
             respond(status, mapOf("error" to message))
         }
