@@ -132,26 +132,109 @@ Repositories in the shared module coordinate between `ApiService` (remote) and `
 | `/houses/{id}/settlements` | GET/POST | Record a payment between house members |
 | `/houses/{id}/settlements/balance` | GET | Outstanding balance per member (with currency conversion) |
 | `/profiles` | GET/PUT | Profile management |
+| `/schema` | GET | Interactive Mermaid ER diagram of the database |
 
 ---
 
 ## Database Schema
 
-```
-Users ──┬── Profiles
-        │
-        └── HouseMembers ── Houses
-                │
-                └── Tasks ── TasksAssignees
-                      │
-                      └── ChatsTasks ── Chats
+Interactive ER diagram: [`https://justwoo-tw.uk/schema`](https://justwoo-tw.uk/schema)
+
+```mermaid
+erDiagram
+    Users {
+        Long id PK
+        String email
+        String password
+        Instant createTime
+        Instant updateTime
+    }
+    Profiles {
+        Long id PK
+        Long userId FK
+        String name
+        String avatar
+        String bankAccount
+        Instant createTime
+        Instant updateTime
+    }
+    Houses {
+        Long id PK
+        String name
+        String description
+        String avatar
+        Instant createTime
+        Instant updateTime
+    }
+    HouseMembers {
+        Long id PK
+        Long houseId FK
+        Long memberId FK
+        Int role
+        Instant joinAt
+    }
+    Tasks {
+        Long id PK
+        String title
+        Long ownerId FK
+        Long houseId FK
+        Long executorId FK
+        String description
+        Int accessLevel
+        Int taskStatus
+        Double price
+        String currencyCode
+        Instant dueTime
+        Instant createTime
+        Instant updateTime
+    }
+    TasksAssignees {
+        Long id PK
+        Long taskId FK
+        Long userId FK
+        Int status
+    }
+    Settlements {
+        Long id PK
+        Long houseId FK
+        Long payerId FK
+        Long payeeId FK
+        Double amount
+        String currencyCode
+        String note
+        Instant createTime
+    }
+    Chats {
+        Long id PK
+        String content
+    }
+    ChatsTasks {
+        Long id PK
+        Long taskId FK
+        Long chatId FK
+    }
+
+    Users ||--o| Profiles : "has profile"
+    Users ||--o{ HouseMembers : "joins"
+    Houses ||--o{ HouseMembers : "has members"
+    Users ||--o{ Tasks : "owns"
+    Houses ||--o{ Tasks : "contains"
+    Users ||--o{ Tasks : "executes"
+    Tasks ||--o{ TasksAssignees : "assigned to"
+    Users ||--o{ TasksAssignees : "is assignee"
+    Houses ||--o{ Settlements : "tracks"
+    Users ||--o{ Settlements : "pays"
+    Users ||--o{ Settlements : "receives"
+    Tasks ||--o{ ChatsTasks : "linked to chat"
+    Chats ||--o{ ChatsTasks : "linked to task"
 ```
 
 Key design choices:
 - **Junction tables** (`HouseMembers`, `TasksAssignees`, `ChatsTasks`) for many-to-many relationships
 - **Role-based membership** — `HouseMembers` includes a `MemberRole` (ADMIN / MEMBER)
 - **Task lifecycle** — status tracking with `TaskStatus` and `AccessLevel` enums
-- **Audit timestamps** — `createdAt` / `updatedAt` on all entities
+- **Optional pricing** — tasks support an optional `price` with ISO 4217 `currencyCode`
+- **Settlement ledger** — `Settlements` tracks payments between members for cost reconciliation
 
 ---
 
