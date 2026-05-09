@@ -3,10 +3,6 @@ name: Backend CI/CD
 on:
   push:
     branches: [main, develop]
-    paths:
-      - 'backend/**'
-      - 'core/model/**'
-      - '.github/workflows/backend-ci.yml'
 
 jobs:
   # ─── 1. Test ───────────────────────────────────────────────────────────────
