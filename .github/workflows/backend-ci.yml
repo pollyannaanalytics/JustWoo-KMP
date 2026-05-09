@@ -5,11 +5,11 @@ on:
     branches: [main, develop]
 
 jobs:
-  # ─── 1. Test ───────────────────────────────────────────────────────────────
+  # ─── 1. Test（只在 develop 跑）────────────────────────────────────────────
   test:
     name: Run Unit Tests
     runs-on: ubuntu-latest
-
+    if: github.ref == 'refs/heads/develop'
     steps:
       - uses: actions/checkout@v4
 
@@ -19,7 +19,7 @@ jobs:
           java-version: '21'
           distribution: 'corretto'
 
-      - name: Cache Gradle packages
+      - name: Cache Gradle
         uses: actions/cache@v4
         with:
           path: |
@@ -42,13 +42,33 @@ jobs:
           path: backend/build/reports/tests/test/
           retention-days: 7
 
-  # ─── 2. Build + Deploy ─────────────────────────────────────────────────────
-  deploy:
-    name: Build & Deploy
+  # ─── 2. Merge develop → main（測試通過後自動合併）─────────────────────────
+  merge-to-main:
+    name: Merge develop → main
     needs: test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Merge develop into main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout main
+          git pull origin main
+          git merge --ff-only origin/develop
+          git push origin main
+
+  # ─── 3. Deploy（只在 main 跑，由 merge 觸發）──────────────────────────────
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
 
@@ -58,7 +78,7 @@ jobs:
           java-version: '21'
           distribution: 'corretto'
 
-      - name: Cache Gradle packages
+      - name: Cache Gradle
         uses: actions/cache@v4
         with:
           path: |
@@ -72,7 +92,6 @@ jobs:
 
       - name: Build fat JAR
         run: ./gradlew :backend:buildFatJar --no-daemon
-
 
       - name: Copy artifacts to server
         uses: appleboy/scp-action@v0.1.7
@@ -96,9 +115,9 @@ jobs:
             set -e
             cd ~/justwoo
             echo "🔨 Building new Docker image..."
-            docker compose build backend
+            docker-compose build backend
             echo "🚀 Restarting backend service..."
-            docker compose up -d backend
+            docker-compose up -d backend
             echo "🧹 Removing dangling images..."
             docker image prune -f
             echo "✅ Deploy complete"
