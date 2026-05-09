@@ -128,7 +128,9 @@ Repositories in the shared module coordinate between `ApiService` (remote) and `
 | `/auth/refresh` | POST | Rotate refresh token |
 | `/houses` | GET/POST | House CRUD with pagination |
 | `/houses/{id}/members` | POST | Member management with role-based access (ADMIN/MEMBER) |
-| `/tasks` | GET/POST | Task creation and assignment |
+| `/houses/{id}/tasks` | GET/POST | Task creation and assignment (optional price + ISO 4217 currency) |
+| `/houses/{id}/settlements` | GET/POST | Record a payment between house members |
+| `/houses/{id}/settlements/balance` | GET | Outstanding balance per member (with currency conversion) |
 | `/profiles` | GET/PUT | Profile management |
 
 ---
@@ -157,18 +159,12 @@ Key design choices:
 
 ### Prerequisites
 
-- JDK 17+
-- PostgreSQL
-- Redis
+- JDK 21+
+- Docker & Docker Compose v2
 
 ### Option 1 — Docker Compose (recommended)
 
-1. **Build the fat JAR:**
-   ```bash
-   ./gradlew :backend:shadowJar
-   ```
-
-2. **Create a `.env` file** in the `backend/` directory:
+1. **Create a `.env` file** in the `backend/` directory:
    ```env
    KTOR_ENV=production
    DB_HOST=db
@@ -178,35 +174,107 @@ Key design choices:
    DB_PASSWORD=your_db_password
    JWT_SECRET=your_jwt_secret
    JWT_AUDIENCE=justwoo-users
+   REDIS_HOST=redis
    ```
 
-3. **Start all services:**
+2. **Build the fat JAR and start all services:**
    ```bash
+   ./gradlew :backend:buildFatJar
    cd backend
-   docker compose up --build
+   docker compose up --build -d
    ```
 
-   The backend is available at `http://localhost:80` (mapped from container port `8000`). PostgreSQL data is persisted in a named Docker volume.
+   | Service | URL |
+   |:---|:---|
+   | Backend API | `http://localhost:8080` |
+   | Swagger UI | `http://localhost:8080/swagger` |
+   | Portainer (Docker UI) | `http://localhost:9000` |
+
+   PostgreSQL and Redis data are persisted in named Docker volumes.
 
 ### Option 2 — Run locally
 
-Ensure PostgreSQL and Redis are running, then set the required environment variables and start the server:
+Ensure PostgreSQL and Redis are running, then:
 
 ```bash
 export DB_HOST=localhost DB_PORT=5432 DB_NAME=justwoo DB_USER=... DB_PASSWORD=...
-export JWT_SECRET=...
+export JWT_SECRET=... REDIS_HOST=localhost
 ./gradlew :backend:run
 ```
 
-The server starts on port `8000` (configurable in `application.yaml`). Swagger UI is available at [http://localhost:8000/swagger](http://localhost:8000/swagger).
+The server starts on port `8000`. Swagger UI is available at `http://localhost:8000/swagger`.
+
+---
+
+## CI/CD
+
+Hosted on **AWS Lightsail** with a GitHub Actions pipeline.
+
+### Branch Strategy
+
+```
+feature/xxx  →  develop  →  main  →  production
+```
+
+- Every issue gets its own `feature/*` branch
+- Merge to `develop` triggers the CI pipeline
+- If all tests pass, `develop` is automatically merged into `main` and deployed
+
+### Pipeline
+
+```yaml
+push to develop
+  └─ Run Unit Tests
+       ├─ FAIL → upload test report artifact, stop
+       └─ PASS → Merge develop → main
+                   └─ Build fat JAR
+                   └─ SCP to server
+                   └─ docker-compose build + up
+```
+
+### Secrets required
+
+| Secret | Description |
+|:---|:---|
+| `SSH_HOST` | Server public IP |
+| `SSH_USER` | SSH login user (e.g. `ubuntu`) |
+| `SSH_PRIVATE_KEY` | PEM private key content |
+| `SSH_PORT` | SSH port (usually `22`) |
+
+---
+
+## Production Infrastructure
+
+| Component | Solution |
+|:---|:---|
+| Server | AWS Lightsail (Ubuntu) |
+| Reverse proxy | Nginx with Let's Encrypt SSL |
+| Container runtime | Docker Compose v2 |
+| Database | PostgreSQL 15 (Docker volume) |
+| Cache / Sessions | Redis 7 (Docker volume) |
+| Container UI | Portainer CE (SSH tunnel access only) |
+| Domain | `https://justwoo-tw.uk` |
+| API Docs | `https://justwoo-tw.uk/swagger` |
+
+### Viewing logs (Portainer)
+
+```bash
+# Open SSH tunnel on your local machine
+ssh -L 9000:localhost:9000 -i ~/.ssh/your-key.pem ubuntu@your-server-ip
+
+# Then open in browser
+http://localhost:9000
+```
 
 ---
 
 ## Project Status
 
-- [x] Backend: Auth, House, Task, Profile services with full CRUD
-- [x] Core: Shared DTOs and domain models across all targets
+- [x] Backend: Auth, House, Task, Profile, Settlement services with full CRUD
+- [x] Core: Shared DTOs and domain models across all targets (currency as ISO 4217 string)
 - [x] Shared: Repository pattern, API client, DataSource interfaces
+- [x] CI/CD: GitHub Actions — test → auto-merge → deploy
+- [x] Production: AWS Lightsail + Nginx SSL + Docker Compose
 - [ ] Android: Compose UI + Room DataSource implementation
 - [ ] iOS: SwiftUI + native DataSource implementation
 
