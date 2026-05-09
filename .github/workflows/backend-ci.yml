@@ -108,7 +108,9 @@ jobs:
             cd ~/justwoo
             echo "🔨 Building new Docker image..."
             docker-compose build backend
-            echo "🚀 Restarting backend service..."
+            echo "🛑 Removing old container..."
+            docker-compose rm -f -s backend
+            echo "🚀 Starting new container..."
             docker-compose up -d backend
             echo "🧹 Removing dangling images..."
             docker image prune -f
