@@ -113,3 +113,50 @@ jobs:
             echo "🧹 Removing dangling images..."
             docker image prune -f
             echo "✅ Deploy complete"
+
+  # ─── 3. Smoke Test（deploy 後驗證所有 API 有在回應）─────────────────────────
+  smoke-test:
+    name: Smoke Test
+    needs: merge-and-deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for server to be ready
+        run: sleep 15
+
+      - name: Run smoke tests
+        env:
+          BASE_URL: https://justwoo-tw.uk
+        run: |
+          fail=0
+
+          check() {
+            local desc=$1 url=$2 method=${3:-GET} body=${4:-}
+            local expected_min=$5 expected_max=$6
+
+            if [ -n "$body" ]; then
+              STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X "$method" "$url" \
+                -H "Content-Type: application/json" -d "$body" --max-time 10)
+            else
+              STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X "$method" "$url" --max-time 10)
+            fi
+
+            if [ "$STATUS" -ge "$expected_min" ] && [ "$STATUS" -le "$expected_max" ]; then
+              echo "✅ $desc → $STATUS"
+            else
+              echo "❌ $desc → $STATUS (expected $expected_min-$expected_max)"
+              fail=1
+            fi
+          }
+
+          # Health check
+          check "GET /hello"           "$BASE_URL/hello"            GET  "" 200 200
+          # Swagger docs
+          check "GET /swagger"         "$BASE_URL/swagger"          GET  "" 200 200
+          # Auth endpoints（空 body → 400 Bad Request，代表 endpoint 存在）
+          check "POST /auth/register"  "$BASE_URL/auth/register"    POST "{}" 400 400
+          check "POST /auth/login"     "$BASE_URL/auth/login"       POST "{}" 400 400
+          # Protected endpoint（無 token → 401，代表 JWT middleware 正常）
+          check "GET /houses (no auth)" "$BASE_URL/houses"          GET  "" 401 401
+
+          [ $fail -eq 0 ] || (echo "💥 Smoke tests failed" && exit 1)
+          echo "🎉 All smoke tests passed"
