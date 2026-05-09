@@ -18,7 +18,7 @@ import kotlin.collections.mapNotNull
 import kotlin.math.ceil
 
 interface HouseService {
-    suspend fun createHouse(request: HouseRequest): HouseDataResult<HouseResponse>
+    suspend fun createHouse(adminUserId: Long, request: HouseRequest): HouseDataResult<HouseResponse>
     suspend fun addMember(requesterId: Long, userId: Long, houseId: Long): HouseDataResult<HouseResponse>
     suspend fun removeMember(requesterId: Long, userId: Long, houseId: Long): HouseDataResult<HouseResponse>
     suspend fun updateHouseContent(
@@ -35,8 +35,8 @@ class DefaultHouseService(
     private val houseRepository: HouseRepository,
     private val profileRepository: ProfileRepository
 ) : HouseService {
-    override suspend fun createHouse(request: HouseRequest): HouseDataResult<HouseResponse> {
-        val newHouse = houseRepository.createHouse(request.toDomain(), request.adminUserId)
+    override suspend fun createHouse(adminUserId: Long, request: HouseRequest): HouseDataResult<HouseResponse> {
+        val newHouse = houseRepository.createHouse(request.toDomain(), adminUserId)
         return HouseDataResult.Success(
             mergeHouseAndProfileDetails(newHouse)
         )

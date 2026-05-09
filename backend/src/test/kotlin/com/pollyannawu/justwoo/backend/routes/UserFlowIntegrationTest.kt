@@ -76,8 +76,10 @@ class UserFlowIntegrationTest {
         return json.decodeFromString(response.bodyAsText())
     }
 
-    private suspend fun ApplicationTestBuilder.createHouse(token: String, adminId: Long): HouseResponse {
+    private suspend fun ApplicationTestBuilder.createHouse(token: String): HouseResponse {
         val now = Clock.System.now()
+        // adminUserId in body is intentionally omitted / set to 0 —
+        // the backend must use the JWT user as admin, not the request field.
         val response = client.post("/houses") {
             header(HttpHeaders.ContentType, ContentType.Application.Json)
             header(HttpHeaders.Authorization, "Bearer $token")
@@ -85,7 +87,7 @@ class UserFlowIntegrationTest {
                 {
                   "title": "Test House",
                   "name": "Test House",
-                  "adminUserId": $adminId,
+                  "adminUserId": 0,
                   "memberIds": [],
                   "description": "Integration test house",
                   "createTime": "$now",
@@ -145,7 +147,7 @@ class UserFlowIntegrationTest {
         val token = login("scenario1@test.com").accessToken
         val userId = auth.user.id
 
-        val house = createHouse(token, userId)
+        val house = createHouse(token)
         assertTrue(house.id > 0, "House should be created with valid ID")
 
         val task = createTask(token, house.id, userId, listOf(userId))
@@ -164,7 +166,7 @@ class UserFlowIntegrationTest {
         val adminAuth = register("admin-s2@test.com")
         val adminToken = login("admin-s2@test.com").accessToken
         val adminId = adminAuth.user.id
-        val house = createHouse(adminToken, adminId)
+        val house = createHouse(adminToken)
 
         // Member registers and is added to house
         val memberAuth = register("member-s2@test.com")
@@ -194,7 +196,7 @@ class UserFlowIntegrationTest {
         val adminAuth = register("admin-s3@test.com")
         val adminToken = login("admin-s3@test.com").accessToken
         val adminId = adminAuth.user.id
-        val house = createHouse(adminToken, adminId)
+        val house = createHouse(adminToken)
 
         val memberAuth = register("member-s3@test.com")
         val memberId = memberAuth.user.id

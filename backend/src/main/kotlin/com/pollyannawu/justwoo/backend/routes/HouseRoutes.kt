@@ -37,10 +37,10 @@ fun Route.houseRoute() {
             }
 
             post {
-                getUserId(call) ?: return@post call.respond(HttpStatusCode.Unauthorized)
+                val userId = getUserId(call) ?: return@post call.respond(HttpStatusCode.Unauthorized)
                 try {
                     val request = call.receive<HouseRequest>()
-                    val result = houseService.createHouse(request)
+                    val result = houseService.createHouse(userId, request)
                     call.respondResult(result)
                 } catch (e: ContentTransformationException) {
                     call.respond(HttpStatusCode.BadRequest, "Invalid JSON format $e")
