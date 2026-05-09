@@ -5,7 +5,7 @@ on:
     branches: [main, develop]
 
 jobs:
-  # ─── 1. Test（只在 develop 跑）────────────────────────────────────────────
+  # ─── 1. Test（develop push 時跑）─────────────────────────────────────────
   test:
     name: Run Unit Tests
     runs-on: ubuntu-latest
@@ -42,9 +42,9 @@ jobs:
           path: backend/build/reports/tests/test/
           retention-days: 7
 
-  # ─── 2. Merge develop → main（測試通過後自動合併）─────────────────────────
-  merge-to-main:
-    name: Merge develop → main
+  # ─── 2. Merge + Deploy（測試通過後，在同一個 workflow 裡完成）─────────────
+  merge-and-deploy:
+    name: Merge to main & Deploy
     needs: test
     runs-on: ubuntu-latest
     permissions:
@@ -54,23 +54,6 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Merge develop into main
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout main
-          git pull origin main
-          git merge --ff-only origin/develop
-          git push origin main
-
-  # ─── 3. Deploy（只在 main 跑，由 merge 觸發）──────────────────────────────
-  deploy:
-    name: Build & Deploy
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@v4
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -92,6 +75,15 @@ jobs:
 
       - name: Build fat JAR
         run: ./gradlew :backend:buildFatJar --no-daemon
+
+      - name: Merge develop into main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout main
+          git pull origin main
+          git merge --ff-only origin/develop
+          git push origin main
 
       - name: Copy artifacts to server
         uses: appleboy/scp-action@v0.1.7
