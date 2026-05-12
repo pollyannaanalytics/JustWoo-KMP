@@ -42,3 +42,9 @@ data class TokenResponse(
     val refreshToken: String,
     val expireAt: Instant
 )
+
+@Serializable
+data class RefreshResponse(
+    val accessToken: String,
+    val token: TokenResponse,
+)

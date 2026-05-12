@@ -16,24 +16,21 @@ kotlin {
     iosArm64()
     iosSimulatorArm64()
 
-    // shared/build.gradle.kts
+    sourceSets {
+        commonMain.dependencies {
+            api(libs.decompose)
+            implementation(projects.core.model)
+            implementation(libs.decompose.extensions.compose)
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.datetime)
+            implementation(libs.koin.core)
 
-    kotlin {
-        sourceSets {
-            commonMain.dependencies {
-                api(libs.decompose)
-                implementation(projects.core.model)
-                implementation(libs.decompose.extensions.compose)
-                implementation(libs.kotlinx.coroutines.core)
-                implementation(libs.kotlinx.coroutines.test)
-                implementation(libs.kotlinx.datetime)
-                implementation(libs.koin.core)
-
-                implementation(libs.ktor.client.core)
-                implementation(libs.ktor.client.content.negotiation)
-                implementation(libs.ktor.client.serialization)
-                implementation(libs.ktor.serialization.json)
-                implementation(libs.ktor.client.logging)
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.client.serialization)
+            implementation(libs.ktor.serialization.json)
+            implementation(libs.ktor.client.logging)
+            implementation(libs.ktor.client.auth)
 
             implementation(libs.settings)
             implementation(libs.settings.coroutines)
@@ -41,12 +38,17 @@ kotlin {
             implementation(libs.settings.observable)
         }
 
-            iosMain.dependencies {
-            }
-            commonTest.dependencies {
-                implementation(kotlin("test"))
-            }
+        androidMain.dependencies  { implementation(libs.ktor.client.okhttp) }
+        iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
         }
+        jvmMain.dependencies     { implementation(libs.ktor.client.cio) }
+        commonTest.dependencies {
+
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(kotlin("test"))
+        }
+
     }
 
     //https://kotlinlang.org/docs/native-objc-interop.html#export-of-kdoc-comments-to-generated-objective-c-headers
