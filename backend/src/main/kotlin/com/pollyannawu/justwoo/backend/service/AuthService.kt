@@ -10,6 +10,7 @@ import com.pollyannawu.justwoo.backend.utils.security.AccessTokenProvider
 import com.pollyannawu.justwoo.backend.utils.security.HashPasswordProvider
 import com.pollyannawu.justwoo.core.Profile
 import com.pollyannawu.justwoo.core.dto.AuthResponse
+import com.pollyannawu.justwoo.core.dto.RefreshResponse
 import com.pollyannawu.justwoo.core.dto.TokenResponse
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -23,7 +24,7 @@ interface AuthService {
         deviceId: String
     ): AuthDataResult<AuthResponse>
 
-    suspend fun refresh(deviceId: String, token: String): AuthDataResult<TokenResponse>
+    suspend fun refresh(deviceId: String, token: String): AuthDataResult<RefreshResponse>
     suspend fun register(email: String, plainPassword: String, deviceId: String): AuthDataResult<AuthResponse>
     suspend fun delete(userId: String, confirmPassword: String): AuthDataResult<Nothing>
 }
@@ -77,18 +78,21 @@ class DefaultAuthService(
     }
 
 
-    override suspend fun refresh(deviceId: String, token: String): AuthDataResult<TokenResponse> {
+    override suspend fun refresh(deviceId: String, token: String): AuthDataResult<RefreshResponse> {
         try {
             val originalToken = refreshTokenRepository.findToken(token)
             if (originalToken == null || originalToken.device != deviceId) {
                 return AuthDataResult.Failure.Unauthorized
             }
-            val refreshToken = refreshTokenRepository.saveToken(originalToken.userId, originalToken.device, expireDuration = REFRESH_TOKEN_EXPIRATION_IN_SECONDS)
-            
+            val newRefreshToken = refreshTokenRepository.saveToken(
+                originalToken.userId, originalToken.device,
+                expireDuration = REFRESH_TOKEN_EXPIRATION_IN_SECONDS,
+            )
+            val newAccessToken = accessTokenProvider.createAccessToken(originalToken.userId)
             return AuthDataResult.Success(
-                TokenResponse(
-                    refreshToken.token,
-                    refreshToken.expiresAt.toInstant()
+                RefreshResponse(
+                    accessToken = newAccessToken,
+                    token = TokenResponse(newRefreshToken.token, newRefreshToken.expiresAt.toInstant()),
                 )
             )
         } catch (e: Exception) {
