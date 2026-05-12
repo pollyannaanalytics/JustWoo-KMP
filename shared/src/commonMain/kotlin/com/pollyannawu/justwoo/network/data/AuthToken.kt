@@ -1,3 +1,6 @@
 package com.pollyannawu.justwoo.network.data
 
-data class AuthToken()
+data class AuthToken(
+    val accessToken: String,
+    val refreshToken: String,
+)

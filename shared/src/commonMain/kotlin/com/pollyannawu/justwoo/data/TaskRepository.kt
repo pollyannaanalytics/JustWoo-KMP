@@ -1,6 +1,8 @@
 package com.pollyannawu.justwoo.data
 
 import com.pollyannawu.justwoo.core.Task
+import com.pollyannawu.justwoo.core.TaskAssignee
+import com.pollyannawu.justwoo.core.TaskStatus
 import com.pollyannawu.justwoo.core.dto.CreateTaskRequest
 import com.pollyannawu.justwoo.core.toTask
 import com.pollyannawu.justwoo.datasource.AuthDataSource
@@ -11,12 +13,12 @@ import kotlinx.coroutines.flow.Flow
 
 interface TaskRepository {
     fun observeTasks(): Flow<List<Task>>
-    suspend fun refreshTasks(houseId: Long, page: Int)
+    suspend fun refreshTasks(houseId: Long, page: Int = 1)
     suspend fun getTaskById(taskId: Long): Task?
-    suspend fun getTasksByDateRange(startDate: String, endDate: String): Flow<List<Task>>
     suspend fun createTask(request: CreateTaskRequest)
-    suspend fun updateTask(taskId: Long, request: CreateTaskRequest)
-    suspend fun deleteTask(taskId: Long)
+    suspend fun updateTask(houseId: Long, task: Task)
+    suspend fun updateTaskAssignStatus(houseId: Long, taskId: Long, assignee: TaskAssignee)
+    suspend fun updateTaskStatus(houseId: Long, taskId: Long, status: TaskStatus)
 }
 
 class DefaultTaskRepository(
@@ -38,32 +40,9 @@ class DefaultTaskRepository(
         }
     }
 
-    override suspend fun getTaskById(taskId: Long): Task? {
-        authDataSource.getUser() ?: return null
-        val cached = taskDataSource.getTaskById(taskId)
-        if (cached != null) return cached
-        val result = taskApiService.getTaskById(taskId)
-        if (result is ApiResult.Success) {
-            val task = result.data.toTask()
-            taskDataSource.saveTask(task)
-            return task
-        } else if (result is ApiResult.Error) {
-            throw Exception(result.exception)
-        }
-        return null
-    }
-
-    override suspend fun getTasksByDateRange(startDate: String, endDate: String): Flow<List<Task>> {
-        authDataSource.getUser() ?: return taskDataSource.getTasks()
-        val result = taskApiService.getTasksByDateRange(startDate, endDate)
-        if (result is ApiResult.Success) {
-            val tasks = result.data.map { it.toTask() }
-            taskDataSource.updateTasks(tasks)
-        } else if (result is ApiResult.Error) {
-            throw Exception(result.exception)
-        }
-        return taskDataSource.getTasks()
-    }
+    // Cache-only — no backend GET /tasks/{id} route yet
+    override suspend fun getTaskById(taskId: Long): Task? =
+        taskDataSource.getTaskById(taskId)
 
     override suspend fun createTask(request: CreateTaskRequest) {
         authDataSource.getUser() ?: return
@@ -75,9 +54,9 @@ class DefaultTaskRepository(
         }
     }
 
-    override suspend fun updateTask(taskId: Long, request: CreateTaskRequest) {
+    override suspend fun updateTask(houseId: Long, task: Task) {
         authDataSource.getUser() ?: return
-        val result = taskApiService.updateTask(taskId, request)
+        val result = taskApiService.updateTask(houseId, task)
         if (result is ApiResult.Success) {
             taskDataSource.updateTask(result.data.toTask())
         } else if (result is ApiResult.Error) {
@@ -85,11 +64,21 @@ class DefaultTaskRepository(
         }
     }
 
-    override suspend fun deleteTask(taskId: Long) {
+    override suspend fun updateTaskAssignStatus(houseId: Long, taskId: Long, assignee: TaskAssignee) {
         authDataSource.getUser() ?: return
-        val result = taskApiService.deleteTask(taskId)
+        val result = taskApiService.updateTaskAssignStatus(houseId, taskId, assignee)
         if (result is ApiResult.Success) {
-            taskDataSource.deleteTask(taskId)
+            taskDataSource.updateTask(result.data.toTask())
+        } else if (result is ApiResult.Error) {
+            throw Exception(result.exception)
+        }
+    }
+
+    override suspend fun updateTaskStatus(houseId: Long, taskId: Long, status: TaskStatus) {
+        authDataSource.getUser() ?: return
+        val result = taskApiService.updateTaskStatus(houseId, taskId, status)
+        if (result is ApiResult.Success) {
+            taskDataSource.updateTask(result.data.toTask())
         } else if (result is ApiResult.Error) {
             throw Exception(result.exception)
         }

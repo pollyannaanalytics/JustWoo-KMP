@@ -1,4 +1,35 @@
 package com.pollyannawu.justwoo.network
 
+import com.pollyannawu.justwoo.core.dto.RefreshRequest
+import com.pollyannawu.justwoo.core.dto.RefreshResponse
+import com.pollyannawu.justwoo.datasource.AuthDataSource
+import com.pollyannawu.justwoo.network.data.AuthToken
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import kotlinx.coroutines.CancellationException
+
 interface TokenRefresher {
+    suspend fun refresh(refreshToken: String): AuthToken?
+}
+
+class DefaultTokenRefresher(
+    private val client: HttpClient,
+    private val authDataSource: AuthDataSource,
+) : TokenRefresher {
+
+    override suspend fun refresh(refreshToken: String): AuthToken? =
+        try {
+            val deviceId = authDataSource.getDeviceId()
+            val response: RefreshResponse = client.post("/auth/refresh") {
+                setBody(RefreshRequest(deviceId = deviceId, token = refreshToken))
+            }.body()
+            AuthToken(
+                accessToken = response.accessToken,
+                refreshToken = response.token.refreshToken,
+            )
+        } catch (e: CancellationException) {
+            throw e
+        }
 }

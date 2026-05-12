@@ -6,7 +6,6 @@ import com.pollyannawu.justwoo.core.dto.CreateTaskRequest
 import com.pollyannawu.justwoo.core.dto.HouseResponse
 import com.pollyannawu.justwoo.core.dto.PageResponse
 import com.pollyannawu.justwoo.core.dto.TaskResponse
-import com.pollyannawu.justwoo.core.dto.TokenResponse
 import com.pollyannawu.justwoo.model.ApiResult
 import com.pollyannawu.justwoo.network.AuthApiService
 import com.pollyannawu.justwoo.network.HouseApiService
@@ -23,8 +22,6 @@ import com.pollyannawu.justwoo.network.TaskApiService
 class StubAuthApiService : AuthApiService {
     override suspend fun loginByEmailAndPassword(email: String, plainPassword: String, deviceId: String): ApiResult<AuthResponse?> =
         ApiResult.Error(Throwable("StubAuthApiService.loginByEmailAndPassword not implemented"))
-    override suspend fun refresh(deviceId: String, token: String): ApiResult<TokenResponse?> =
-        ApiResult.Error(Throwable("StubAuthApiService.refresh not implemented"))
     override suspend fun register(email: String, plainPassword: String, deviceId: String): ApiResult<AuthResponse?> =
         ApiResult.Error(Throwable("StubAuthApiService.register not implemented"))
     override suspend fun delete(userId: String, confirmPassword: String): ApiResult<Nothing> =
