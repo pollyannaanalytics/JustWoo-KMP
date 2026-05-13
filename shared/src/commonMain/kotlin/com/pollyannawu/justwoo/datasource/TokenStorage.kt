@@ -1,4 +1,4 @@
-package com.pollyannawu.justwoo.network
+package com.pollyannawu.justwoo.datasource
 
 import com.pollyannawu.justwoo.network.data.AuthToken
 import com.russhwolf.settings.ExperimentalSettingsApi
