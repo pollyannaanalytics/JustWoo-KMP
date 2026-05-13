@@ -1,8 +1,57 @@
 # JustWoo — Household Task Distribution App
 
-A **full-stack Kotlin Multiplatform** application for household task management, built with a clean layered architecture spanning backend, shared business logic, and native mobile clients for both Android and iOS.
+Think of it as **Jira for your household** — assign chores to roommates, track who owes what, and settle up when it's payday.
+
+A **full-stack Kotlin Multiplatform** application for household task management — covering the full engineering stack from backend to native mobile clients.
+
+| 🖥️ Backend | 📱 Native Clients |
+|:---|:---|
+| 🔐 JWT auth + Bcrypt password hashing | 🤖 Android — Jetpack Compose + SQLDelight |
+| 🗄️ PostgreSQL via Exposed ORM + HikariCP | 🍎 iOS — SwiftUI + SQLDelight |
+| ⚡ Redis for session tokens & rate limiting | 🔗 Shared KMP business logic across both |
+| ☁️ Deployed on AWS Lightsail + Nginx SSL | 📦 Compile-time API contracts via `:core` module |
+| 🔄 GitHub Actions CI/CD — test → merge → deploy | |
 
 > **Status:** Actively under development. Backend and shared module are functional; mobile clients are in progress.
+
+---
+
+## Table of Contents
+
+- [Tech Stack](#tech-stack)
+- [Architecture Overview](#architecture-overview)
+- [Technical Decisions](#technical-decisions)
+- [Backend API](#backend-api)
+- [Database Schema](#database-schema)
+- [Getting Started](#getting-started)
+- [CI/CD](#cicd)
+- [Production Infrastructure](#production-infrastructure)
+- [Project Status](#project-status)
+
+---
+
+## Tech Stack
+
+| Layer | Technology | Purpose |
+|:---|:---|:---|
+| **Language** | Kotlin 2.2 | Single language across backend, shared logic, and Android |
+| **Backend Framework** | Ktor 3.3 + Netty | Async HTTP server with coroutine-native request handling |
+| **Server ORM** | Exposed 0.61 | Type-safe SQL DSL for PostgreSQL |
+| **Server Database** | PostgreSQL + HikariCP | Production persistence with connection pooling |
+| **Caching / Sessions** | Redis (Jedis 5.1) | Refresh tokens, login attempt tracking |
+| **Authentication** | Auth0 JWT + Bcrypt | Stateless auth with secure password hashing |
+| **Shared Logic** | Kotlin Multiplatform | Business logic shared across Android, iOS, and JVM |
+| **Serialization** | kotlinx.serialization 1.9 | Compile-time safe JSON for API contracts |
+| **Networking (Client)** | Ktor Client | Platform-specific engines (OkHttp / Darwin) |
+| **Android UI** | Jetpack Compose | Declarative UI |
+| **Local DB (KMP)** | SQLDelight | Type-safe SQL with shared schema across Android and iOS |
+| **iOS UI** | SwiftUI | Native Apple UI framework |
+| **Dependency Injection** | Koin 4.1 | Multiplatform DI across server and client |
+| **Concurrency** | Kotlin Coroutines 1.10 | Structured concurrency across all layers |
+| **Containerization** | Jib 3.4 | Dockerized backend deployment |
+| **CI/CD** | GitHub Actions | Automated test → merge → deploy pipeline |
+| **Cloud Infra** | AWS Lightsail + Nginx | Ubuntu server with SSL reverse proxy |
+| **Testing** | JUnit + TestContainers + MockK | Integration tests with real PostgreSQL containers |
 
 ---
 
@@ -92,30 +141,6 @@ Repositories in the shared module coordinate between `ApiService` (remote) and `
 - **Bcrypt password hashing** — passwords never stored in plaintext
 - **Login attempt rate limiting** via Redis with 24-hour sliding window (max 10 attempts)
 - **Layered authorization** — routes delegate auth checks to services, not embedded in HTTP handlers
-
----
-
-## Tech Stack
-
-| Layer | Technology | Purpose |
-|:---|:---|:---|
-| **Language** | Kotlin 2.2 | Single language across backend, shared logic, and Android |
-| **Backend Framework** | Ktor 3.3 + Netty | Async HTTP server with coroutine-native request handling |
-| **Server ORM** | Exposed 0.61 | Type-safe SQL DSL for PostgreSQL |
-| **Server Database** | PostgreSQL + HikariCP | Production persistence with connection pooling |
-| **Caching / Sessions** | Redis (Jedis 5.1) | Refresh tokens, login attempt tracking |
-| **Authentication** | Auth0 JWT + Bcrypt | Stateless auth with secure password hashing |
-| **Shared Logic** | Kotlin Multiplatform | Business logic shared across Android, iOS, and JVM |
-| **Serialization** | kotlinx.serialization 1.9 | Compile-time safe JSON for API contracts |
-| **Networking (Client)** | Ktor Client | Platform-specific engines (OkHttp / Darwin) |
-| **Android UI** | Jetpack Compose | Declarative UI |
-| **Android Local DB** | Room | Lifecycle-aware local persistence |
-| **iOS UI** | SwiftUI | Native Apple UI framework |
-| **iOS Local DB** | Core Data / SQLite | Native Apple persistence |
-| **Dependency Injection** | Koin 4.1 | Multiplatform DI across server and client |
-| **Concurrency** | Kotlin Coroutines 1.10 | Structured concurrency across all layers |
-| **Containerization** | Jib 3.4 | Dockerized backend deployment |
-| **Testing** | JUnit + TestContainers + MockK | Integration tests with real PostgreSQL containers |
 
 ---
 
