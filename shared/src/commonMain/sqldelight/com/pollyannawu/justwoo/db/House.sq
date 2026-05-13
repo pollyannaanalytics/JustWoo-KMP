@@ -1,0 +1,29 @@
+import kotlinx.datetime.Instant;
+
+CREATE TABLE HouseEntity (
+    id          INTEGER NOT NULL PRIMARY KEY,
+    name        TEXT    NOT NULL,
+    avatar      TEXT    NOT NULL,
+    description TEXT    NOT NULL,
+    createTime  INTEGER AS Instant NOT NULL,
+    updateTime  INTEGER AS Instant NOT NULL
+);
+
+CREATE INDEX HouseEntity_name ON HouseEntity(name);
+
+selectAll:
+SELECT * FROM HouseEntity ORDER BY name ASC;
+
+selectById:
+SELECT * FROM HouseEntity WHERE id = :id;
+
+upsert:
+INSERT OR REPLACE INTO HouseEntity (
+    id, name, avatar, description, createTime, updateTime
+) VALUES ?;
+
+deleteById:
+DELETE FROM HouseEntity WHERE id = :id;
+
+deleteAll:
+DELETE FROM HouseEntity;

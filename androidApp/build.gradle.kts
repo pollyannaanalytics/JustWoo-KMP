@@ -16,12 +16,6 @@ android {
     namespace = "com.pollyannawu.justwoo.android"
     compileSdk = 36
 
-    sourceSets {
-        getByName("main") {
-            manifest.srcFile("src/main/AndroidManifest.xml")
-        }
-    }
-
     defaultConfig {
         applicationId = "com.pollyannawu.justwoo.android"
         minSdk = 26

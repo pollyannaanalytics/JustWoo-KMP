@@ -1,0 +1,32 @@
+import com.pollyannawu.justwoo.core.MemberRole;
+import kotlinx.datetime.Instant;
+
+CREATE TABLE HouseMemberEntity (
+    houseId  INTEGER NOT NULL,
+    userId   INTEGER NOT NULL,
+    role     TEXT    AS MemberRole NOT NULL,
+    joinedAt INTEGER AS Instant NOT NULL,
+    PRIMARY KEY (houseId, userId),
+    FOREIGN KEY (houseId) REFERENCES HouseEntity(id) ON DELETE CASCADE
+);
+
+CREATE INDEX HouseMemberEntity_houseId ON HouseMemberEntity(houseId);
+CREATE INDEX HouseMemberEntity_userId ON HouseMemberEntity(userId);
+
+selectAll:
+SELECT * FROM HouseMemberEntity;
+
+selectByHouseId:
+SELECT * FROM HouseMemberEntity WHERE houseId = :houseId;
+
+selectByUserId:
+SELECT * FROM HouseMemberEntity WHERE userId = :userId;
+
+upsert:
+INSERT OR REPLACE INTO HouseMemberEntity (houseId, userId, role, joinedAt) VALUES ?;
+
+deleteByHouseId:
+DELETE FROM HouseMemberEntity WHERE houseId = :houseId;
+
+deleteOne:
+DELETE FROM HouseMemberEntity WHERE houseId = :houseId AND userId = :userId;

@@ -5,13 +5,21 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.kotlin.parcelize)
+    alias(libs.plugins.sqlDelight)
+}
+
+sqldelight {
+    databases {
+        create("JustWooDatabase") {
+            packageName.set("com.pollyannawu.justwoo.db")
+        }
+    }
 }
 
 kotlin {
     jvmToolchain(21)
 
     androidTarget { publishLibraryVariants("release") }
-    jvm()
     iosX64()
     iosArm64()
     iosSimulatorArm64()
@@ -36,13 +44,20 @@ kotlin {
             implementation(libs.settings.coroutines)
             implementation(libs.settings.serialization)
             implementation(libs.settings.observable)
+
+            implementation(libs.sqlDelight.runtime)
+            implementation(libs.sqlDelight.coroutines.extensions)
         }
 
-        androidMain.dependencies  { implementation(libs.ktor.client.okhttp) }
+        androidMain.dependencies {
+            implementation(libs.ktor.client.okhttp)
+            implementation(libs.sqlDelight.driver.android)
+            implementation(libs.koin.android)
+        }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
+            implementation(libs.sqlDelight.driver.native)
         }
-        jvmMain.dependencies     { implementation(libs.ktor.client.cio) }
         commonTest.dependencies {
 
             implementation(libs.kotlinx.coroutines.test)
@@ -59,23 +74,23 @@ kotlin {
             }
         }
     }
+}
 
-    android {
-        namespace = "com.pollyannawu.justwoo.android"
-        compileSdk = 36
+android {
+    namespace = "com.pollyannawu.justwoo.android"
+    compileSdk = 36
 
-        defaultConfig {
-            minSdk = 26
-            //noinspection EditedTargetSdkVersion
-            targetSdk = 36
-        }
-        compileOptions {
-            sourceCompatibility = JavaVersion.VERSION_17
-            targetCompatibility = JavaVersion.VERSION_17
-        }
+    defaultConfig {
+        minSdk = 26
+        //noinspection EditedTargetSdkVersion
+        targetSdk = 36
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
 
-        packaging {
-            resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
+    packaging {
+        resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
 }

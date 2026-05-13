@@ -1,0 +1,45 @@
+import com.pollyannawu.justwoo.core.AccessLevel;
+import com.pollyannawu.justwoo.core.TaskStatus;
+import kotlinx.datetime.Instant;
+
+CREATE TABLE TaskEntity (
+    id              INTEGER NOT NULL PRIMARY KEY,
+    title           TEXT    NOT NULL,
+    description     TEXT    NOT NULL,
+    accessLevel     TEXT    AS AccessLevel NOT NULL,
+    taskStatus      TEXT    AS TaskStatus  NOT NULL,
+    ownerId         INTEGER NOT NULL,
+    executorId      INTEGER NOT NULL,
+    houseId         INTEGER NOT NULL,
+    dueTime         INTEGER AS Instant NOT NULL,
+    createTime      INTEGER AS Instant NOT NULL,
+    updateTime      INTEGER AS Instant NOT NULL,
+    price           REAL,
+    currencyCode    TEXT
+);
+
+CREATE INDEX TaskEntity_houseId ON TaskEntity(houseId);
+CREATE INDEX TaskEntity_dueTime ON TaskEntity(dueTime);
+
+selectAll:
+SELECT * FROM TaskEntity ORDER BY dueTime ASC;
+
+selectById:
+SELECT * FROM TaskEntity WHERE id = :id;
+
+selectByHouseId:
+SELECT * FROM TaskEntity WHERE houseId = :houseId ORDER BY dueTime ASC;
+
+upsert:
+INSERT OR REPLACE INTO TaskEntity (
+    id, title, description, accessLevel, taskStatus,
+    ownerId, executorId, houseId,
+    dueTime, createTime, updateTime,
+    price, currencyCode
+) VALUES ?;
+
+deleteById:
+DELETE FROM TaskEntity WHERE id = :id;
+
+deleteAll:
+DELETE FROM TaskEntity;

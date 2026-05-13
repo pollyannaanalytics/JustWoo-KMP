@@ -1,0 +1,37 @@
+import kotlinx.datetime.Instant;
+
+CREATE TABLE SettlementEntity (
+    id           INTEGER NOT NULL PRIMARY KEY,
+    houseId      INTEGER NOT NULL,
+    payerId      INTEGER NOT NULL,
+    payeeId      INTEGER NOT NULL,
+    amount       REAL    NOT NULL,
+    currencyCode TEXT    NOT NULL,
+    note         TEXT    NOT NULL,
+    createTime   INTEGER AS Instant NOT NULL,
+    FOREIGN KEY (houseId) REFERENCES HouseEntity(id) ON DELETE CASCADE
+);
+
+CREATE INDEX SettlementEntity_houseId ON SettlementEntity(houseId);
+CREATE INDEX SettlementEntity_payerId ON SettlementEntity(payerId);
+CREATE INDEX SettlementEntity_payeeId ON SettlementEntity(payeeId);
+
+selectAll:
+SELECT * FROM SettlementEntity ORDER BY createTime DESC;
+
+selectById:
+SELECT * FROM SettlementEntity WHERE id = :id;
+
+selectByHouseId:
+SELECT * FROM SettlementEntity WHERE houseId = :houseId ORDER BY createTime DESC;
+
+selectByPayerId:
+SELECT * FROM SettlementEntity WHERE payerId = :payerId ORDER BY createTime DESC;
+
+upsert:
+INSERT OR REPLACE INTO SettlementEntity (
+    id, houseId, payerId, payeeId, amount, currencyCode, note, createTime
+) VALUES ?;
+
+deleteById:
+DELETE FROM SettlementEntity WHERE id = :id;
