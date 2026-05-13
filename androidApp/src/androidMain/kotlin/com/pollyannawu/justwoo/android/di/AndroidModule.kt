@@ -4,9 +4,7 @@ import com.pollyannawu.justwoo.android.session.SessionState
 import com.pollyannawu.justwoo.android.stub.StubAuthApiService
 import com.pollyannawu.justwoo.android.stub.StubAuthDataSource
 import com.pollyannawu.justwoo.android.stub.StubHouseApiService
-import com.pollyannawu.justwoo.android.stub.StubHouseDataSource
 import com.pollyannawu.justwoo.android.stub.StubTaskApiService
-import com.pollyannawu.justwoo.android.stub.StubTaskDataSource
 import com.pollyannawu.justwoo.android.ui.auth.RegisterViewModel
 import com.pollyannawu.justwoo.android.ui.auth.SignInViewModel
 import com.pollyannawu.justwoo.android.ui.calendar.CalendarViewModel
@@ -20,8 +18,6 @@ import com.pollyannawu.justwoo.data.DefaultTaskRepository
 import com.pollyannawu.justwoo.data.HouseRepository
 import com.pollyannawu.justwoo.data.TaskRepository
 import com.pollyannawu.justwoo.datasource.AuthDataSource
-import com.pollyannawu.justwoo.datasource.HouseDataSource
-import com.pollyannawu.justwoo.datasource.TaskDataSource
 import com.pollyannawu.justwoo.network.AuthApiService
 import com.pollyannawu.justwoo.network.HouseApiService
 import com.pollyannawu.justwoo.network.TaskApiService
@@ -45,10 +41,8 @@ val androidModule = module {
     // ---- Session ------------------------------------------------------------
     single { SessionState() }
 
-    // ---- Data sources (stubs) ----------------------------------------------
+    // ---- Data sources (stubs, real KMP impls come from :shared databaseModule) -
     single<AuthDataSource> { StubAuthDataSource() }
-    single<HouseDataSource> { StubHouseDataSource() }
-    single<TaskDataSource> { StubTaskDataSource() }
 
     // ---- API services (stubs) ----------------------------------------------
     single<AuthApiService> { StubAuthApiService() }

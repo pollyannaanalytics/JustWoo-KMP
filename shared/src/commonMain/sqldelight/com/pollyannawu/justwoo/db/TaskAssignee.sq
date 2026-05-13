@@ -1,0 +1,33 @@
+import com.pollyannawu.justwoo.core.AssignStatus;
+
+CREATE TABLE TaskAssigneeEntity (
+    taskId  INTEGER NOT NULL,
+    userId  INTEGER NOT NULL,
+    status  TEXT    AS AssignStatus NOT NULL,
+    PRIMARY KEY (taskId, userId),
+    FOREIGN KEY (taskId) REFERENCES TaskEntity(id) ON DELETE CASCADE
+);
+
+CREATE INDEX TaskAssigneeEntity_taskId ON TaskAssigneeEntity(taskId);
+CREATE INDEX TaskAssigneeEntity_userId ON TaskAssigneeEntity(userId);
+
+selectAll:
+SELECT * FROM TaskAssigneeEntity;
+
+selectByTaskId:
+SELECT * FROM TaskAssigneeEntity WHERE taskId = :taskId;
+
+selectByTaskIds:
+SELECT * FROM TaskAssigneeEntity WHERE taskId IN :taskIds;
+
+selectByUserId:
+SELECT * FROM TaskAssigneeEntity WHERE userId = :userId;
+
+upsert:
+INSERT OR REPLACE INTO TaskAssigneeEntity (taskId, userId, status) VALUES ?;
+
+deleteByTaskId:
+DELETE FROM TaskAssigneeEntity WHERE taskId = :taskId;
+
+deleteOne:
+DELETE FROM TaskAssigneeEntity WHERE taskId = :taskId AND userId = :userId;

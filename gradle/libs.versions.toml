@@ -94,6 +94,8 @@ koin-slf4j = { module = "io.insert-koin:koin-logger-slf4j", version.ref = "koin"
 ktor-utils = { module = "io.ktor:ktor-utils", version.ref = "ktor" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logbackClassic" }
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+sqlDelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqlDelight" }
+sqlDelight-coroutines-extensions = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqlDelight" }
 sqlDelight-driver-sqlite = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqlDelight" }
 sqlDelight-driver-android = { module = "app.cash.sqldelight:android-driver", version.ref = "sqlDelight" }
 sqlDelight-driver-native = { module = "app.cash.sqldelight:native-driver", version.ref = "sqlDelight" }
@@ -143,3 +145,4 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "jetbrainsKotlinJvm" }
 ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
 jib = {id = "com.google.cloud.tools.jib", version.ref = "jib"}
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

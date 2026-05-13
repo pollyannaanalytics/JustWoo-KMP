@@ -8,13 +8,13 @@ import com.pollyannawu.justwoo.network.DefaultProfileApiService
 import com.pollyannawu.justwoo.network.DefaultSettlementApiService
 import com.pollyannawu.justwoo.network.DefaultTaskApiService
 import com.pollyannawu.justwoo.network.DefaultTokenRefresher
-import com.pollyannawu.justwoo.network.DefaultTokenStorage
+import com.pollyannawu.justwoo.datasource.DefaultTokenStorage
 import com.pollyannawu.justwoo.network.HouseApiService
 import com.pollyannawu.justwoo.network.ProfileApiService
 import com.pollyannawu.justwoo.network.SettlementApiService
 import com.pollyannawu.justwoo.network.TaskApiService
 import com.pollyannawu.justwoo.network.TokenRefresher
-import com.pollyannawu.justwoo.network.TokenStorage
+import com.pollyannawu.justwoo.datasource.TokenStorage
 import com.pollyannawu.justwoo.network.createHttpClient
 import com.russhwolf.settings.ExperimentalSettingsApi
 import kotlinx.serialization.json.Json

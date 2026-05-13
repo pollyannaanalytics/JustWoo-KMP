@@ -1,0 +1,24 @@
+import kotlinx.datetime.Instant;
+
+CREATE TABLE ProfileEntity (
+    id          INTEGER NOT NULL PRIMARY KEY,
+    name        TEXT    NOT NULL,
+    avatar      TEXT    NOT NULL,
+    bankAccount TEXT    NOT NULL,
+    createTime  INTEGER AS Instant NOT NULL,
+    updateTime  INTEGER AS Instant NOT NULL
+);
+
+selectAll:
+SELECT * FROM ProfileEntity;
+
+selectById:
+SELECT * FROM ProfileEntity WHERE id = :id;
+
+upsert:
+INSERT OR REPLACE INTO ProfileEntity (
+    id, name, avatar, bankAccount, createTime, updateTime
+) VALUES ?;
+
+deleteById:
+DELETE FROM ProfileEntity WHERE id = :id;

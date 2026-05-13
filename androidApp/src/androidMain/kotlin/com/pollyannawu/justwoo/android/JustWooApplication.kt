@@ -2,6 +2,8 @@ package com.pollyannawu.justwoo.android
 
 import android.app.Application
 import com.pollyannawu.justwoo.android.di.androidModule
+import com.pollyannawu.justwoo.di.platformModule
+import com.pollyannawu.justwoo.sharedModules
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
@@ -14,7 +16,7 @@ class JustWooApplication : Application() {
         startKoin {
             androidLogger(Level.INFO)
             androidContext(this@JustWooApplication)
-            modules(androidModule)
+            modules(sharedModules(platformModule) + androidModule)
         }
     }
 }
