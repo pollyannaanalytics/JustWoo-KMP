@@ -31,5 +31,7 @@ class DefaultTokenRefresher(
             )
         } catch (e: CancellationException) {
             throw e
+        } catch (e: Exception) {
+            null
         }
 }

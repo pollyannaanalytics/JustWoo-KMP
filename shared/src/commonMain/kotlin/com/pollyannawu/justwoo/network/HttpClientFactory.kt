@@ -74,3 +74,24 @@ fun createHttpClient(
         contentType(ContentType.Application.Json)
     }
 }
+
+fun createRefreshClient(
+    engine: HttpClientEngine,
+    config: AppConfig,
+    json: Json
+): HttpClient = HttpClient(engine) {
+    expectSuccess = true
+    install(ContentNegotiation) { json(json) }
+    install(HttpTimeout) {
+        requestTimeoutMillis = 15_000
+        connectTimeoutMillis = 10_000
+    }
+    install(Logging) {
+        level = if (config.isDebug) LogLevel.ALL else LogLevel.INFO
+        logger = Logger.DEFAULT
+    }
+    defaultRequest {
+        url(config.baseUrl)
+        contentType(ContentType.Application.Json)
+    }
+}

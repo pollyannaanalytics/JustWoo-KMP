@@ -16,7 +16,8 @@ import com.pollyannawu.justwoo.network.TaskApiService
 import com.pollyannawu.justwoo.network.TokenRefresher
 import com.pollyannawu.justwoo.datasource.TokenStorage
 import com.pollyannawu.justwoo.network.createHttpClient
-import com.russhwolf.settings.ExperimentalSettingsApi
+import com.pollyannawu.justwoo.network.createRefreshClient
+import io.ktor.client.HttpClient
 import kotlinx.serialization.json.Json
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -25,7 +26,8 @@ private const val BASE_URL = "https://api.justwoo-tw.uk"
 val SECURE_SETTINGS = named("secure")
 val PREFS_SETTINGS  = named("prefs")
 
-@OptIn(ExperimentalSettingsApi::class)
+val REFRESH_CLIENT = named("refresh")
+
 val networkModule = module {
 
     single {
@@ -42,9 +44,14 @@ val networkModule = module {
         }
     }
 
+    single<HttpClient>(REFRESH_CLIENT) {
+        createRefreshClient(engine = get(), config = get(), json = get())
+    }
+
+
     single<TokenStorage> { DefaultTokenStorage(get(SECURE_SETTINGS)) }
 
-    single<TokenRefresher> { DefaultTokenRefresher(get(), get()) }
+    single<TokenRefresher> { DefaultTokenRefresher(get(REFRESH_CLIENT), get()) }
 
     single {
         createHttpClient(
