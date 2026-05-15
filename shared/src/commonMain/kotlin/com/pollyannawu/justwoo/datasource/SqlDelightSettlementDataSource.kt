@@ -33,7 +33,7 @@ class SqlDelightSettlementDataSource(
         queries.selectById(id).executeAsOneOrNull()?.toDomain()
     }
 
-    override suspend fun saveSettlement(settlement: Settlement) = withContext(dispatcher) {
+    override suspend fun saveSettlement(settlement: Settlement): Unit = withContext(dispatcher) {
         queries.upsert(settlement.toEntity())
     }
 

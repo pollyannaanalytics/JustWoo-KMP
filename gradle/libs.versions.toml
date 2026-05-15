@@ -38,6 +38,7 @@ jib = "3.4.0"
 bcrypt = "0.10.2"
 redis = "5.1.0"
 decompose = "3.1.0"
+androidx-security = "1.1.0-alpha06"
 
 [libraries]
 
@@ -119,6 +120,7 @@ bcrypt = {module = "at.favre.lib:bcrypt", version.ref = "bcrypt"}
 jedis = {module = "redis.clients:jedis", version.ref = "redis"}
 decompose = { module = "com.arkivanov.decompose:decompose", version.ref = "decompose" }
 decompose-extensions-compose = { module = "com.arkivanov.decompose:extensions-compose", version.ref = "decompose" }
+androidx-security-crypto = { module = "androidx.security:security-crypto", version.ref = "androidx-security" }
 
 
 junit = { group = "junit", name = "junit", version.ref = "junit" }

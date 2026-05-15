@@ -1,8 +1,9 @@
-package com.pollyannawu.justwoo.network
+package com.pollyannawu.justwoo.network.service
 
 import com.pollyannawu.justwoo.core.dto.ProfileRequest
 import com.pollyannawu.justwoo.core.dto.ProfileResponse
 import com.pollyannawu.justwoo.model.ApiResult
+import com.pollyannawu.justwoo.network.safeApiCall
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get

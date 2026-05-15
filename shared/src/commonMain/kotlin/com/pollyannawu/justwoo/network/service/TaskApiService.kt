@@ -1,4 +1,4 @@
-package com.pollyannawu.justwoo.network
+package com.pollyannawu.justwoo.network.service
 
 import com.pollyannawu.justwoo.core.Task
 import com.pollyannawu.justwoo.core.TaskAssignee
@@ -7,6 +7,7 @@ import com.pollyannawu.justwoo.core.dto.CreateTaskRequest
 import com.pollyannawu.justwoo.core.dto.PageResponse
 import com.pollyannawu.justwoo.core.dto.TaskResponse
 import com.pollyannawu.justwoo.model.ApiResult
+import com.pollyannawu.justwoo.network.safeApiCall
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get

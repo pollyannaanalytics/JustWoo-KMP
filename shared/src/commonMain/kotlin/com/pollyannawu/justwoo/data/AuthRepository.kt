@@ -1,10 +1,13 @@
 package com.pollyannawu.justwoo.data
 
 import com.pollyannawu.justwoo.core.dto.AuthResponse
-import com.pollyannawu.justwoo.datasource.AuthDataSource
+import com.pollyannawu.justwoo.datasource.auth.DeviceIdProvider
+import com.pollyannawu.justwoo.datasource.auth.TokenStorage
+import com.pollyannawu.justwoo.datasource.auth.UserStorage
 import com.pollyannawu.justwoo.model.ApiResult
 import com.pollyannawu.justwoo.model.AuthDataResult
-import com.pollyannawu.justwoo.network.AuthApiService
+import com.pollyannawu.justwoo.network.data.AuthToken
+import com.pollyannawu.justwoo.network.service.AuthApiService
 
 
 interface AuthRepository {
@@ -15,16 +18,18 @@ interface AuthRepository {
 
 class DefaultAuthRepository(
     private val apiService: AuthApiService,
-    private val localDataSource: AuthDataSource
+    private val tokenStorage: TokenStorage,
+    private val userStorage: UserStorage,
+    private val deviceIdProvider: DeviceIdProvider,
 ) : AuthRepository {
 
     override suspend fun register(email: String, password: String): AuthDataResult {
-        val deviceId = localDataSource.getDeviceId()
+        val deviceId = deviceIdProvider.get()
 
         return when (val result = apiService.register(email, password, deviceId)) {
             is ApiResult.Success -> {
                 result.data?.let { data ->
-                    saveUserInLocal(data)
+                    persistAuth(data)
                     AuthDataResult.Success(data.user)
                 } ?: AuthDataResult.Failure.NetworkFailure
             }
@@ -35,11 +40,11 @@ class DefaultAuthRepository(
     }
 
     override suspend fun login(email: String, password: String): AuthDataResult {
-        val deviceId = localDataSource.getDeviceId()
+        val deviceId = deviceIdProvider.get()
         return when (val result = apiService.loginByEmailAndPassword(email, password, deviceId)) {
             is ApiResult.Success -> {
                 result.data?.let { data ->
-                    saveUserInLocal(data)
+                    persistAuth(data)
                     AuthDataResult.Success(data.user)
                 } ?: AuthDataResult.Failure.NetworkFailure
             }
@@ -50,12 +55,17 @@ class DefaultAuthRepository(
     }
 
     override suspend fun logout() {
-        localDataSource.clearAll()
+        tokenStorage.clear()
+        userStorage.clear()
     }
 
-    private suspend fun saveUserInLocal(data: AuthResponse) {
-        localDataSource.saveAccessToken(data.accessToken)
-        localDataSource.saveRefreshToken(data.token.refreshToken)
-        localDataSource.saveUser(data.user)
+    private fun persistAuth(data: AuthResponse) {
+        tokenStorage.saveTokens(
+            AuthToken(
+                accessToken = data.accessToken,
+                refreshToken = data.token.refreshToken,
+            )
+        )
+        userStorage.saveUser(data.user)
     }
 }
