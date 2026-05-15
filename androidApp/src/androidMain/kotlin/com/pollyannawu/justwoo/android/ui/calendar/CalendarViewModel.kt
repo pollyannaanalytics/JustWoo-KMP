@@ -47,15 +47,7 @@ class CalendarViewModel(
     }
 
     fun loadRange(startIso: String, endIso: String) {
-        _uiState.update { it.copy(loading = true, error = null) }
-        viewModelScope.launch {
-            try {
-                taskRepository.getTasksByDateRange(startIso, endIso)
-            } catch (t: Throwable) {
-                _uiState.update { it.copy(error = t.message ?: "Couldn't load calendar.") }
-            } finally {
-                _uiState.update { it.copy(loading = false) }
-            }
-        }
+        // TODO: wire to TaskRepository once a date-range query exists.
+        _uiState.update { it.copy(loading = false, error = null) }
     }
 }

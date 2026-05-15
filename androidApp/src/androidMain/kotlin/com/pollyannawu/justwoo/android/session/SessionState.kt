@@ -7,8 +7,8 @@ import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Minimal in-memory session holder. Real token/user persistence lives in
- * [com.pollyannawu.justwoo.datasource.AuthDataSource] in the shared module;
- * this just tracks what the Android UI layer needs to route on.
+ * TokenStorage / UserStorage in the shared module; this just tracks what the
+ * Android UI layer needs to route on.
  */
 class SessionState {
     private val _user = MutableStateFlow<User?>(null)
