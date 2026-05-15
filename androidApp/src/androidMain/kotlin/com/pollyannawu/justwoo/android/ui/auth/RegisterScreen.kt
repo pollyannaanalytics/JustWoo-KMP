@@ -21,7 +21,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pollyannawu.justwoo.android.ui.common.JustWooLogo
@@ -29,6 +28,9 @@ import com.pollyannawu.justwoo.android.ui.common.JustWooPasswordField
 import com.pollyannawu.justwoo.android.ui.common.JustWooPrimaryButton
 import com.pollyannawu.justwoo.android.ui.common.JustWooTextField
 import com.pollyannawu.justwoo.android.ui.theme.JustWooColors
+import com.pollyannawu.justwoo.android.ui.theme.JustWooFontWeight
+import com.pollyannawu.justwoo.android.ui.theme.JustWooSpacing
+import com.pollyannawu.justwoo.design.DesignTokens
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -50,17 +52,17 @@ fun RegisterScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(JustWooColors.Cream)
-            .padding(horizontal = 32.dp),
+            .padding(horizontal = JustWooSpacing.XXLarge),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(Modifier.height(72.dp))
         JustWooLogo()
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(JustWooSpacing.Default))
         Text(
             text = "Create account",
             color = JustWooColors.Primary,
-            fontSize = 32.sp,
-            fontWeight = FontWeight.Bold
+            fontSize = DesignTokens.FontSize.Display.sp,
+            fontWeight = JustWooFontWeight.Bold,
         )
 
         Spacer(Modifier.height(40.dp))
@@ -73,7 +75,7 @@ fun RegisterScreen(
             errorMessage = state.emailError,
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(JustWooSpacing.Large))
         JustWooPasswordField(
             value = state.password,
             onValueChange = viewModel::onPasswordChange,
@@ -83,7 +85,7 @@ fun RegisterScreen(
             errorMessage = state.passwordError,
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(JustWooSpacing.Large))
         JustWooPasswordField(
             value = state.confirmPassword,
             onValueChange = viewModel::onConfirmChange,
@@ -94,7 +96,7 @@ fun RegisterScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(JustWooSpacing.Small))
 
         Row(
             modifier = Modifier
@@ -118,7 +120,7 @@ fun RegisterScreen(
             )
         }
 
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(JustWooSpacing.XXLarge))
 
         JustWooPrimaryButton(
             text = "Create account",
@@ -128,7 +130,7 @@ fun RegisterScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(JustWooSpacing.Large))
 
         Row(
             horizontalArrangement = Arrangement.Center,
@@ -139,12 +141,12 @@ fun RegisterScreen(
                 color = JustWooColors.TextSecondary,
                 style = MaterialTheme.typography.bodyLarge,
             )
-            Spacer(Modifier.width(6.dp))
+            Spacer(Modifier.width(JustWooSpacing.Small))
             Text(
                 text = "Sign in",
                 color = JustWooColors.PrimaryDeep,
                 style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold,
+                fontWeight = JustWooFontWeight.Bold,
                 modifier = Modifier.clickable { onNavigateToSignIn() }
             )
         }

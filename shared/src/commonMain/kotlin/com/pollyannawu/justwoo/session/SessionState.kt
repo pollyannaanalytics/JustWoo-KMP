@@ -1,4 +1,4 @@
-package com.pollyannawu.justwoo.android.session
+package com.pollyannawu.justwoo.session
 
 import com.pollyannawu.justwoo.core.dto.User
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -6,9 +6,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Minimal in-memory session holder. Real token/user persistence lives in
- * TokenStorage / UserStorage in the shared module; this just tracks what the
- * Android UI layer needs to route on.
+ * In-memory session holder used by the shared navigation root. The persistent
+ * counterparts (TokenStorage / UserStorage) live alongside the data layer — this
+ * is just the slice the navigation graph routes on.
  */
 class SessionState {
     private val _user = MutableStateFlow<User?>(null)

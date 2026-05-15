@@ -2,34 +2,31 @@ package com.pollyannawu.justwoo.android.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.pollyannawu.justwoo.core.AssignStatus
 import com.pollyannawu.justwoo.core.Task
+import com.pollyannawu.justwoo.core.TaskStatus
 import com.pollyannawu.justwoo.data.HouseRepository
 import com.pollyannawu.justwoo.data.TaskRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 /**
- * Feeds the Home screen's task list with the "received" / "sent" / "done"
- * tabs implied by the Figma note:
- *   我接收&我發出的Task頁面 >> task overview page?
- *   完成task的呈現方式 (在首頁)
+ * Drives the Home screen — the cards on the Figma "Homepage v4_re_Today" page.
  */
 class HomeViewModel(
     private val taskRepository: TaskRepository,
     private val houseRepository: HouseRepository,
 ) : ViewModel() {
 
-    enum class Filter { Received, Sent, Done }
-
     data class UiState(
-        val filter: Filter = Filter.Received,
         val refreshing: Boolean = false,
         val error: String? = null,
     )
@@ -37,20 +34,32 @@ class HomeViewModel(
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
-    val tasks: StateFlow<List<Task>> = taskRepository
-        .observeTasks()
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
-
-    fun setFilter(filter: Filter) = _uiState.update { it.copy(filter = filter) }
-
-    fun filteredTasks(currentUserId: Long): Flow<List<Task>> =
-        taskRepository.observeTasks().map { list ->
-            when (_uiState.value.filter) {
-                Filter.Received -> list.filter { t ->
-                    t.assignees.any { it.userId == currentUserId }
+    /** Tasks assigned to (and accepted by) the current user that are due today. */
+    fun todayTasks(currentUserId: Long): Flow<List<Task>> =
+        taskRepository.observeTasks().map { tasks ->
+            val zone = TimeZone.currentSystemDefault()
+            val today = Clock.System.now().toLocalDateTime(zone).date
+            tasks
+                .filter { t ->
+                    t.taskStatus != TaskStatus.DONE &&
+                        t.assignees.any { a ->
+                            a.userId == currentUserId && a.status == AssignStatus.ACCEPTED
+                        } &&
+                        t.dueTime.toLocalDateTime(zone).date == today
                 }
-                Filter.Sent -> list.filter { it.ownerId == currentUserId }
-                Filter.Done -> list.filter { it.taskStatus == com.pollyannawu.justwoo.core.TaskStatus.DONE }
+                .sortedBy { it.dueTime }
+        }
+
+    /** Count of tasks involving the user within the current calendar month. */
+    fun monthlyCount(currentUserId: Long): Flow<Int> =
+        taskRepository.observeTasks().map { tasks ->
+            val zone = TimeZone.currentSystemDefault()
+            val now = Clock.System.now().toLocalDateTime(zone)
+            tasks.count { t ->
+                val due = t.dueTime.toLocalDateTime(zone)
+                val involves = t.ownerId == currentUserId ||
+                    t.assignees.any { it.userId == currentUserId }
+                involves && due.year == now.year && due.monthNumber == now.monthNumber
             }
         }
 

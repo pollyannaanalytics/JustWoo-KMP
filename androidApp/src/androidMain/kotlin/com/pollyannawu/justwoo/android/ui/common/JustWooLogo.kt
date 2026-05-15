@@ -2,16 +2,16 @@ package com.pollyannawu.justwoo.android.ui.common
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pollyannawu.justwoo.android.ui.theme.JustWooColors
+import com.pollyannawu.justwoo.android.ui.theme.JustWooFontWeight
+import com.pollyannawu.justwoo.android.ui.theme.JustWooSpacing
+import com.pollyannawu.justwoo.design.DesignTokens
 
 /**
  * Minimal text-based recreation of the "JUST WOO" wordmark that appears
@@ -22,22 +22,22 @@ import com.pollyannawu.justwoo.android.ui.theme.JustWooColors
 fun JustWooLogo(modifier: Modifier = Modifier) {
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
+        horizontalArrangement = Arrangement.spacedBy(JustWooSpacing.XSmall, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = "JUST",
             color = JustWooColors.TextPrimary,
-            fontSize = 40.sp,
-            fontWeight = FontWeight.Black,
-            textAlign = TextAlign.Center
+            fontSize = DesignTokens.FontSize.Hero.sp,
+            fontWeight = JustWooFontWeight.Black,
+            textAlign = TextAlign.Center,
         )
         Text(
             text = "WOO",
             color = JustWooColors.TextPrimary,
-            fontSize = 40.sp,
-            fontWeight = FontWeight.Black,
-            textAlign = TextAlign.Center
+            fontSize = DesignTokens.FontSize.Hero.sp,
+            fontWeight = JustWooFontWeight.Black,
+            textAlign = TextAlign.Center,
         )
     }
 }

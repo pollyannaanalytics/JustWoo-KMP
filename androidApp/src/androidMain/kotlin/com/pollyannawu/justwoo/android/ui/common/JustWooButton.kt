@@ -1,17 +1,18 @@
 package com.pollyannawu.justwoo.android.ui.common
 
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pollyannawu.justwoo.android.ui.theme.JustWooColors
+import com.pollyannawu.justwoo.android.ui.theme.JustWooFontWeight
+import com.pollyannawu.justwoo.android.ui.theme.JustWooShapes
+import com.pollyannawu.justwoo.design.DesignTokens
 
 /**
  * Yellow pill primary button matching the "Sign in" CTA in Figma.
@@ -28,7 +29,7 @@ fun JustWooPrimaryButton(
         onClick = onClick,
         enabled = enabled && !loading,
         modifier = modifier.height(56.dp),
-        shape = RoundedCornerShape(28.dp),
+        shape = JustWooShapes.Pill,
         colors = ButtonDefaults.buttonColors(
             containerColor = JustWooColors.Primary,
             contentColor = JustWooColors.OnPrimary,
@@ -45,8 +46,8 @@ fun JustWooPrimaryButton(
         } else {
             Text(
                 text = text,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.ExtraBold,
+                fontSize = DesignTokens.FontSize.TitleLarge.sp,
+                fontWeight = JustWooFontWeight.ExtraBold,
             )
         }
     }

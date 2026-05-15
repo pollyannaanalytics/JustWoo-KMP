@@ -31,6 +31,7 @@ kotlin {
             implementation(libs.decompose.extensions.compose)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.datetime)
+            implementation(libs.kotlinx.serialization.core)
             implementation(libs.koin.core)
 
             implementation(libs.ktor.client.core)

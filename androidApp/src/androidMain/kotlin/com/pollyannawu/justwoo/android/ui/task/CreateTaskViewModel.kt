@@ -4,10 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pollyannawu.justwoo.core.AccessLevel
 import com.pollyannawu.justwoo.core.dto.CreateTaskRequest
+import com.pollyannawu.justwoo.data.HouseRepository
 import com.pollyannawu.justwoo.data.TaskRepository
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
@@ -17,22 +21,31 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 
 /**
- * Drives the "Create task" screen. Error states mirror the sticky notes
- * from the Figma file:
- *   - 無填寫task title               (title missing)
- *   - 沒有指定對象 (default)            (no assignee -> default to self)
- *   - 日曆選擇過去日期 (給予提醒)     (past date -> warn)
+ * Drives the "Create a task" form. Mirrors the Figma fields:
+ *   - task title
+ *   - Assign to (Everyone | individual member)
+ *   - Public toggle
+ *   - Select due time (calendar)
+ *
+ * Validation rules from the Figma sticky notes:
+ *   - 無填寫task title             → block with inline error
+ *   - 沒有指定對象 (default)         → default to "everyone"
+ *   - 日曆選擇過去日期 (給予提醒)   → soft warning, still allowed
  */
 class CreateTaskViewModel(
     private val taskRepository: TaskRepository,
+    private val houseRepository: HouseRepository,
 ) : ViewModel() {
+
+    data class Assignee(val id: Long, val label: String)
 
     data class UiState(
         val title: String = "",
         val description: String = "",
         val dueTime: Instant = Clock.System.now().plus(1, DateTimeUnit.DAY, TimeZone.currentSystemDefault()),
-        val assigneeIds: List<Long> = emptyList(),
         val accessLevel: AccessLevel = AccessLevel.PUBLIC,
+        val assigneeId: Long? = null, // null == "Everyone"
+        val availableAssignees: List<Assignee> = emptyList(),
         val titleError: String? = null,
         val dueDateWarning: String? = null,
         val loading: Boolean = false,
@@ -42,13 +55,29 @@ class CreateTaskViewModel(
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
+    fun bind(houseId: Long) {
+        viewModelScope.launch {
+            houseRepository.observeHouses()
+                .map { houses -> houses.firstOrNull { it.id == houseId }?.members.orEmpty() }
+                .collect { members ->
+                    _uiState.update { state ->
+                        state.copy(
+                            availableAssignees = members.map {
+                                Assignee(id = it.userId, label = "Member #${it.userId}")
+                            }
+                        )
+                    }
+                }
+        }
+    }
+
     fun onTitleChange(v: String) = _uiState.update { it.copy(title = v, titleError = null) }
     fun onDescriptionChange(v: String) = _uiState.update { it.copy(description = v) }
     fun onDueTimeChange(v: Instant) {
         val warning = if (v < Clock.System.now()) "You picked a past date." else null
         _uiState.update { it.copy(dueTime = v, dueDateWarning = warning) }
     }
-    fun onAssigneesChange(ids: List<Long>) = _uiState.update { it.copy(assigneeIds = ids) }
+    fun onAssigneeChange(id: Long?) = _uiState.update { it.copy(assigneeId = id) }
     fun onAccessLevelChange(level: AccessLevel) = _uiState.update { it.copy(accessLevel = level) }
 
     fun submit(currentUserId: Long, houseId: Long) {
@@ -57,8 +86,12 @@ class CreateTaskViewModel(
             _uiState.update { it.copy(titleError = "Please enter a task title.") }
             return
         }
-        // Default to the current user if no assignee picked — matches Figma note.
-        val assignees = s.assigneeIds.ifEmpty { listOf(currentUserId) }
+        // "Everyone" → all house members; otherwise just the picked one.
+        val assigneeIds = if (s.assigneeId == null) {
+            s.availableAssignees.map { it.id }.ifEmpty { listOf(currentUserId) }
+        } else {
+            listOf(s.assigneeId)
+        }
 
         _uiState.update { it.copy(loading = true) }
         viewModelScope.launch {
@@ -70,7 +103,7 @@ class CreateTaskViewModel(
                         description = s.description.takeIf { it.isNotBlank() },
                         houseId = houseId,
                         accessLevel = s.accessLevel,
-                        assigneeIds = assignees,
+                        assigneeIds = assigneeIds,
                         dueTime = s.dueTime,
                     )
                 )
