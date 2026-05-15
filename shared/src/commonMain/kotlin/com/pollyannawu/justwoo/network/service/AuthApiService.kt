@@ -1,9 +1,10 @@
-package com.pollyannawu.justwoo.network
+package com.pollyannawu.justwoo.network.service
 
 import com.pollyannawu.justwoo.core.dto.AuthResponse
 import com.pollyannawu.justwoo.core.dto.LoginRequest
 import com.pollyannawu.justwoo.core.dto.RegisterRequest
 import com.pollyannawu.justwoo.model.ApiResult
+import com.pollyannawu.justwoo.network.safeApiCall
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.delete

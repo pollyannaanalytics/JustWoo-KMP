@@ -1,7 +1,7 @@
 package com.pollyannawu.justwoo.network
 
 import com.pollyannawu.justwoo.config.AppConfig
-import com.pollyannawu.justwoo.datasource.TokenStorage
+import com.pollyannawu.justwoo.datasource.auth.TokenStorage
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.HttpRequestRetry

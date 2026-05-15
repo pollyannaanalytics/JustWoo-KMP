@@ -1,30 +1,30 @@
-package com.pollyannawu.justwoo.datasource
+package com.pollyannawu.justwoo.datasource.auth
 
 import com.pollyannawu.justwoo.network.data.AuthToken
 import com.russhwolf.settings.Settings
 
 interface TokenStorage {
-    suspend fun getTokens(): AuthToken?
-    suspend fun saveTokens(tokens: AuthToken)
-    suspend fun clear()
+    fun getTokens(): AuthToken?
+    fun saveTokens(tokens: AuthToken)
+    fun clear()
 }
 
 class DefaultTokenStorage(
     private val settings: Settings,
 ) : TokenStorage {
 
-    override suspend fun getTokens(): AuthToken? {
+    override fun getTokens(): AuthToken? {
         val access = settings.getStringOrNull(KEY_ACCESS) ?: return null
         val refresh = settings.getStringOrNull(KEY_REFRESH) ?: return null
         return AuthToken(access, refresh)
     }
 
-    override suspend fun saveTokens(tokens: AuthToken) {
-        settings.putString(KEY_REFRESH, tokens.refreshToken)
+    override fun saveTokens(tokens: AuthToken) {
         settings.putString(KEY_ACCESS, tokens.accessToken)
+        settings.putString(KEY_REFRESH, tokens.refreshToken)
     }
 
-    override suspend fun clear() {
+    override fun clear() {
         settings.remove(KEY_ACCESS)
         settings.remove(KEY_REFRESH)
     }

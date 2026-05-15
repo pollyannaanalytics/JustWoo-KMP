@@ -2,7 +2,7 @@ package com.pollyannawu.justwoo.network
 
 import com.pollyannawu.justwoo.core.dto.RefreshRequest
 import com.pollyannawu.justwoo.core.dto.RefreshResponse
-import com.pollyannawu.justwoo.datasource.AuthDataSource
+import com.pollyannawu.justwoo.datasource.auth.DeviceIdProvider
 import com.pollyannawu.justwoo.network.data.AuthToken
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -16,14 +16,13 @@ interface TokenRefresher {
 
 class DefaultTokenRefresher(
     private val client: HttpClient,
-    private val authDataSource: AuthDataSource,
+    private val deviceIdProvider: DeviceIdProvider,
 ) : TokenRefresher {
 
     override suspend fun refresh(refreshToken: String): AuthToken? =
         try {
-            val deviceId = authDataSource.getDeviceId()
             val response: RefreshResponse = client.post("/auth/refresh") {
-                setBody(RefreshRequest(deviceId = deviceId, token = refreshToken))
+                setBody(RefreshRequest(deviceId = deviceIdProvider.get(), token = refreshToken))
             }.body()
             AuthToken(
                 accessToken = response.accessToken,

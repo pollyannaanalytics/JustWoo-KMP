@@ -1,20 +1,24 @@
 package com.pollyannawu.justwoo.di
 
 import com.pollyannawu.justwoo.config.AppConfig
-import com.pollyannawu.justwoo.network.AuthApiService
-import com.pollyannawu.justwoo.network.DefaultAuthApiService
-import com.pollyannawu.justwoo.network.DefaultHouseApiService
-import com.pollyannawu.justwoo.network.DefaultProfileApiService
-import com.pollyannawu.justwoo.network.DefaultSettlementApiService
-import com.pollyannawu.justwoo.network.DefaultTaskApiService
+import com.pollyannawu.justwoo.network.service.AuthApiService
+import com.pollyannawu.justwoo.network.service.DefaultAuthApiService
+import com.pollyannawu.justwoo.network.service.DefaultHouseApiService
+import com.pollyannawu.justwoo.network.service.DefaultProfileApiService
+import com.pollyannawu.justwoo.network.service.DefaultSettlementApiService
+import com.pollyannawu.justwoo.network.service.DefaultTaskApiService
+import com.pollyannawu.justwoo.datasource.auth.DefaultDeviceIdProvider
+import com.pollyannawu.justwoo.datasource.auth.DefaultTokenStorage
+import com.pollyannawu.justwoo.datasource.auth.DefaultUserStorage
+import com.pollyannawu.justwoo.datasource.auth.DeviceIdProvider
+import com.pollyannawu.justwoo.datasource.auth.TokenStorage
+import com.pollyannawu.justwoo.datasource.auth.UserStorage
 import com.pollyannawu.justwoo.network.DefaultTokenRefresher
-import com.pollyannawu.justwoo.datasource.DefaultTokenStorage
-import com.pollyannawu.justwoo.network.HouseApiService
-import com.pollyannawu.justwoo.network.ProfileApiService
-import com.pollyannawu.justwoo.network.SettlementApiService
-import com.pollyannawu.justwoo.network.TaskApiService
 import com.pollyannawu.justwoo.network.TokenRefresher
-import com.pollyannawu.justwoo.datasource.TokenStorage
+import com.pollyannawu.justwoo.network.service.HouseApiService
+import com.pollyannawu.justwoo.network.service.ProfileApiService
+import com.pollyannawu.justwoo.network.service.SettlementApiService
+import com.pollyannawu.justwoo.network.service.TaskApiService
 import com.pollyannawu.justwoo.network.createHttpClient
 import com.pollyannawu.justwoo.network.createRefreshClient
 import io.ktor.client.HttpClient
@@ -50,8 +54,15 @@ val networkModule = module {
 
 
     single<TokenStorage> { DefaultTokenStorage(get(SECURE_SETTINGS)) }
+    single<UserStorage> { DefaultUserStorage(get(PREFS_SETTINGS), get()) }
+    single<DeviceIdProvider> { DefaultDeviceIdProvider(get(SECURE_SETTINGS)) }
 
-    single<TokenRefresher> { DefaultTokenRefresher(get(REFRESH_CLIENT), get()) }
+    single<TokenRefresher> {
+        DefaultTokenRefresher(
+            client = get(REFRESH_CLIENT),
+            deviceIdProvider = get(),
+        )
+    }
 
     single {
         createHttpClient(

@@ -3,10 +3,10 @@ package com.pollyannawu.justwoo.data
 import com.pollyannawu.justwoo.core.House
 import com.pollyannawu.justwoo.core.dto.HouseRequest
 import com.pollyannawu.justwoo.core.toHouse
-import com.pollyannawu.justwoo.datasource.AuthDataSource
+import com.pollyannawu.justwoo.datasource.auth.UserStorage
 import com.pollyannawu.justwoo.datasource.HouseDataSource
 import com.pollyannawu.justwoo.model.ApiResult
-import com.pollyannawu.justwoo.network.HouseApiService
+import com.pollyannawu.justwoo.network.service.HouseApiService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Clock
 
@@ -20,7 +20,7 @@ interface HouseRepository {
 }
 
 class DefaultHouseRepository(
-    private val authDataSource: AuthDataSource,
+    private val userStorage: UserStorage,
     private val houseApiService: HouseApiService,
     private val houseDataSource: HouseDataSource,
 ) : HouseRepository {
@@ -38,7 +38,7 @@ class DefaultHouseRepository(
     }
 
     override suspend fun createHouse(house: House) {
-        val user = authDataSource.getUser() ?: return
+        val user = userStorage.getUser() ?: return
         val now = Clock.System.now()
         val result = houseApiService.createHouse(
             HouseRequest(
@@ -60,7 +60,7 @@ class DefaultHouseRepository(
     }
 
     override suspend fun updateHouse(house: House) {
-        val user = authDataSource.getUser() ?: return
+        val user = userStorage.getUser() ?: return
         val now = Clock.System.now()
         val result = houseApiService.updateHouse(
             houseId = house.id,

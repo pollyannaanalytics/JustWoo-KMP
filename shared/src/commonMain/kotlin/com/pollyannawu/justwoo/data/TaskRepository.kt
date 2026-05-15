@@ -5,10 +5,10 @@ import com.pollyannawu.justwoo.core.TaskAssignee
 import com.pollyannawu.justwoo.core.TaskStatus
 import com.pollyannawu.justwoo.core.dto.CreateTaskRequest
 import com.pollyannawu.justwoo.core.toTask
-import com.pollyannawu.justwoo.datasource.AuthDataSource
+import com.pollyannawu.justwoo.datasource.auth.UserStorage
 import com.pollyannawu.justwoo.datasource.TaskDataSource
 import com.pollyannawu.justwoo.model.ApiResult
-import com.pollyannawu.justwoo.network.TaskApiService
+import com.pollyannawu.justwoo.network.service.TaskApiService
 import kotlinx.coroutines.flow.Flow
 
 interface TaskRepository {
@@ -22,7 +22,7 @@ interface TaskRepository {
 }
 
 class DefaultTaskRepository(
-    private val authDataSource: AuthDataSource,
+    private val userStorage: UserStorage,
     private val taskApiService: TaskApiService,
     private val taskDataSource: TaskDataSource,
 ) : TaskRepository {
@@ -30,7 +30,7 @@ class DefaultTaskRepository(
     override fun observeTasks(): Flow<List<Task>> = taskDataSource.getTasks()
 
     override suspend fun refreshTasks(houseId: Long, page: Int) {
-        authDataSource.getUser() ?: return
+        userStorage.getUser() ?: return
         val result = taskApiService.getTasks(houseId, page)
         if (result is ApiResult.Success) {
             val tasks = result.data.content.map { it.toTask() }
@@ -45,7 +45,7 @@ class DefaultTaskRepository(
         taskDataSource.getTaskById(taskId)
 
     override suspend fun createTask(request: CreateTaskRequest) {
-        authDataSource.getUser() ?: return
+        userStorage.getUser() ?: return
         val result = taskApiService.createTask(request)
         if (result is ApiResult.Success) {
             taskDataSource.saveTask(result.data.toTask())
@@ -55,7 +55,7 @@ class DefaultTaskRepository(
     }
 
     override suspend fun updateTask(houseId: Long, task: Task) {
-        authDataSource.getUser() ?: return
+        userStorage.getUser() ?: return
         val result = taskApiService.updateTask(houseId, task)
         if (result is ApiResult.Success) {
             taskDataSource.updateTask(result.data.toTask())
@@ -65,7 +65,7 @@ class DefaultTaskRepository(
     }
 
     override suspend fun updateTaskAssignStatus(houseId: Long, taskId: Long, assignee: TaskAssignee) {
-        authDataSource.getUser() ?: return
+        userStorage.getUser() ?: return
         val result = taskApiService.updateTaskAssignStatus(houseId, taskId, assignee)
         if (result is ApiResult.Success) {
             taskDataSource.updateTask(result.data.toTask())
@@ -75,7 +75,7 @@ class DefaultTaskRepository(
     }
 
     override suspend fun updateTaskStatus(houseId: Long, taskId: Long, status: TaskStatus) {
-        authDataSource.getUser() ?: return
+        userStorage.getUser() ?: return
         val result = taskApiService.updateTaskStatus(houseId, taskId, status)
         if (result is ApiResult.Success) {
             taskDataSource.updateTask(result.data.toTask())

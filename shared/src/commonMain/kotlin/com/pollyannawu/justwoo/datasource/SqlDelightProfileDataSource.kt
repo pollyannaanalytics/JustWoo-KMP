@@ -34,7 +34,7 @@ class SqlDelightProfileDataSource(
         queries.selectById(id).executeAsOneOrNull()?.toDomain()
     }
 
-    override suspend fun saveProfile(profile: Profile) = withContext(dispatcher) {
+    override suspend fun saveProfile(profile: Profile): Unit = withContext(dispatcher) {
         queries.upsert(profile.toEntity())
     }
 
