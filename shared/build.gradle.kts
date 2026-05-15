@@ -53,9 +53,12 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.sqlDelight.driver.android)
             implementation(libs.koin.android)
+            implementation(libs.androidx.security.crypto)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
+
+            implementation(libs.settings.coroutines)
             implementation(libs.sqlDelight.driver.native)
         }
         commonTest.dependencies {

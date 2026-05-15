@@ -18,9 +18,12 @@ import com.pollyannawu.justwoo.datasource.TokenStorage
 import com.pollyannawu.justwoo.network.createHttpClient
 import com.russhwolf.settings.ExperimentalSettingsApi
 import kotlinx.serialization.json.Json
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 private const val BASE_URL = "https://api.justwoo-tw.uk"
+val SECURE_SETTINGS = named("secure")
+val PREFS_SETTINGS  = named("prefs")
 
 @OptIn(ExperimentalSettingsApi::class)
 val networkModule = module {
@@ -39,15 +42,13 @@ val networkModule = module {
         }
     }
 
-    // FlowSettings provided by platformModule (EncryptedSharedPreferences / KeychainSettings)
-    single<TokenStorage> { DefaultTokenStorage(get()) }
+    single<TokenStorage> { DefaultTokenStorage(get(SECURE_SETTINGS)) }
 
-    // AuthDataSource provided by androidModule / iosModule (needed for deviceId)
     single<TokenRefresher> { DefaultTokenRefresher(get(), get()) }
 
     single {
         createHttpClient(
-            engine = get(),       // provided by platformModule
+            engine = get(),
             config = get(),
             json = get(),
             tokenStorage = get(),
