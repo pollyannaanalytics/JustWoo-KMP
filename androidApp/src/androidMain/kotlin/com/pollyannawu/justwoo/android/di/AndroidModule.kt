@@ -1,12 +1,13 @@
 package com.pollyannawu.justwoo.android.di
 
-import com.pollyannawu.justwoo.android.session.SessionState
+import com.pollyannawu.justwoo.session.SessionState
 import com.pollyannawu.justwoo.android.ui.auth.RegisterViewModel
 import com.pollyannawu.justwoo.android.ui.auth.SignInViewModel
 import com.pollyannawu.justwoo.android.ui.calendar.CalendarViewModel
 import com.pollyannawu.justwoo.android.ui.home.HomeViewModel
 import com.pollyannawu.justwoo.android.ui.profile.ProfileEditViewModel
 import com.pollyannawu.justwoo.android.ui.task.CreateTaskViewModel
+import com.pollyannawu.justwoo.android.ui.task.TaskExplorationViewModel
 import com.pollyannawu.justwoo.data.AuthRepository
 import com.pollyannawu.justwoo.data.DefaultAuthRepository
 import com.pollyannawu.justwoo.data.DefaultHouseRepository
@@ -46,7 +47,8 @@ val androidModule = module {
     viewModel { SignInViewModel(get()) }
     viewModel { RegisterViewModel(get()) }
     viewModel { HomeViewModel(get(), get()) }
-    viewModel { CreateTaskViewModel(get()) }
+    viewModel { CreateTaskViewModel(get(), get()) }
+    viewModel { TaskExplorationViewModel(get()) }
     viewModel { ProfileEditViewModel() }
     viewModel { CalendarViewModel(get()) }
 }

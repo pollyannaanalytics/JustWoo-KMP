@@ -34,17 +34,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.pollyannawu.justwoo.android.ui.home.TaskCard
 import com.pollyannawu.justwoo.android.ui.home.urgency
 import com.pollyannawu.justwoo.android.ui.home.palette
 import com.pollyannawu.justwoo.android.ui.theme.JustWooColors
+import com.pollyannawu.justwoo.android.ui.theme.JustWooFontWeight
+import com.pollyannawu.justwoo.android.ui.theme.JustWooSpacing
 import com.pollyannawu.justwoo.core.Task
-import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.Month
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
@@ -59,7 +58,9 @@ fun CalendarScreen(
     val state by viewModel.uiState.collectAsState()
     val tasks by viewModel.tasks.collectAsState()
 
-    var viewMonth by remember { mutableStateOf(LocalDate(state.selectedDate.year, state.selectedDate.monthNumber, 1)) }
+    var viewMonth by remember {
+        mutableStateOf(LocalDate(state.selectedDate.year, state.selectedDate.monthNumber, 1))
+    }
 
     Column(
         modifier = Modifier
@@ -67,7 +68,9 @@ fun CalendarScreen(
             .background(JustWooColors.Cream)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = JustWooSpacing.XSmall, vertical = JustWooSpacing.Small),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onClose) {
@@ -75,7 +78,7 @@ fun CalendarScreen(
             Text(
                 text = "Calendar",
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+                fontWeight = JustWooFontWeight.Bold,
             )
         }
 
@@ -92,14 +95,14 @@ fun CalendarScreen(
             tasks = tasks,
         )
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(JustWooSpacing.Medium))
         Text(
             text = "${state.selectedDate}",
             style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 24.dp)
+            fontWeight = JustWooFontWeight.Bold,
+            modifier = Modifier.padding(horizontal = JustWooSpacing.XLarge),
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(JustWooSpacing.Small))
 
         val tasksOnDate = viewModel.tasksOnSelectedDate(tasks)
         if (tasksOnDate.isEmpty()) {
@@ -112,8 +115,11 @@ fun CalendarScreen(
             }
         } else {
             LazyColumn(
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                contentPadding = PaddingValues(
+                    horizontal = JustWooSpacing.Default,
+                    vertical = JustWooSpacing.XSmall,
+                ),
+                verticalArrangement = Arrangement.spacedBy(JustWooSpacing.Medium),
             ) {
                 items(tasksOnDate, key = { it.id }) { TaskCard(task = it, onClick = onOpenTask) }
             }
@@ -124,14 +130,16 @@ fun CalendarScreen(
 @Composable
 private fun MonthHeader(month: LocalDate, onPrev: () -> Unit, onNext: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = JustWooSpacing.XLarge, vertical = JustWooSpacing.Small),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = onPrev) { Icon(Icons.Default.ChevronLeft, contentDescription = "Previous month") }
         Text(
             text = "${month.month.name.lowercase().replaceFirstChar { it.titlecase() }} ${month.year}",
             style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
+            fontWeight = JustWooFontWeight.Bold,
             modifier = Modifier.weight(1f),
         )
         IconButton(onClick = onNext) { Icon(Icons.Default.ChevronRight, contentDescription = "Next month") }
@@ -160,18 +168,20 @@ private fun MonthGrid(
     val tz = TimeZone.currentSystemDefault()
     val dotsByDate = tasks.groupBy { it.dueTime.toLocalDateTime(tz).date }
 
-    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+    Column(modifier = Modifier.padding(horizontal = JustWooSpacing.Default)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
             listOf("M", "T", "W", "T", "F", "S", "S").forEach {
-                Text(it, color = JustWooColors.TextSecondary, fontWeight = FontWeight.Bold)
+                Text(it, color = JustWooColors.TextSecondary, fontWeight = JustWooFontWeight.Bold)
             }
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(JustWooSpacing.Small))
         LazyVerticalGrid(
             columns = GridCells.Fixed(7),
-            modifier = Modifier.fillMaxWidth().height(260.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(260.dp),
+            verticalArrangement = Arrangement.spacedBy(JustWooSpacing.XSmall),
+            horizontalArrangement = Arrangement.spacedBy(JustWooSpacing.XSmall),
         ) {
             items(cells.size) { idx ->
                 val date = cells[idx]
@@ -193,12 +203,12 @@ private fun MonthGrid(
                             Text(
                                 text = date.dayOfMonth.toString(),
                                 color = if (isSelected) JustWooColors.OnPrimary else JustWooColors.TextPrimary,
-                                fontWeight = FontWeight.SemiBold,
+                                fontWeight = JustWooFontWeight.SemiBold,
                             )
                             if (accent != null) {
                                 Box(
                                     modifier = Modifier
-                                        .size(4.dp)
+                                        .size(JustWooSpacing.XSmall)
                                         .clip(CircleShape)
                                         .background(accent)
                                 )

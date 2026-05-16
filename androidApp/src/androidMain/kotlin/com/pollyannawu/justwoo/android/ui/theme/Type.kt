@@ -4,35 +4,35 @@ import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.pollyannawu.justwoo.design.DesignTokens.FontSize
 
 /**
- * Type scale transcribed from the Figma file's numbered styles:
- *   No.1: 24 SemiBold
- *   No.2: 32 Bold
- *   No.3: 20 Bold
- *   No.4: 20 Regular
- *   No.5: 15 SemiBold
- *   No.6: 16 ExtraBold
- *   No.7: 40 Black
- *   No.8: 32 ExtraBold
+ * Compose `Typography` built from shared [com.pollyannawu.justwoo.design.DesignTokens].
+ * Semantic mapping onto Material slots stays on Android — iOS builds its own
+ * SwiftUI `Font` hierarchy on top of the same tokens.
+ *
+ * Figma sticky-note styles mapped as:
+ *   No.7 Hero  (40 Black)     → displayLarge
+ *   No.8       (32 ExtraBold) → displayMedium
+ *   No.2       (32 Bold)      → headlineLarge
+ *   No.1       (24 SemiBold)  → headlineMedium
+ *   No.3       (20 Bold)      → titleLarge
+ *   No.4       (20 Regular)   → titleMedium
+ *   No.6       (16 ExtraBold) → labelLarge
+ *   No.5       (15 SemiBold)  → bodyLarge
  */
 val JustWooTypography = Typography(
-    // No.7 - 40 Black: hero / brand headline
-    displayLarge = TextStyle(fontSize = 40.sp, fontWeight = FontWeight.Black),
-    // No.8 - 32 ExtraBold
-    displayMedium = TextStyle(fontSize = 32.sp, fontWeight = FontWeight.ExtraBold),
-    // No.2 - 32 Bold
-    headlineLarge = TextStyle(fontSize = 32.sp, fontWeight = FontWeight.Bold),
-    // No.1 - 24 SemiBold
-    headlineMedium = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.SemiBold),
-    // No.3 - 20 Bold
-    titleLarge = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold),
-    // No.4 - 20 Regular
-    titleMedium = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Normal),
-    // No.6 - 16 ExtraBold
-    labelLarge = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.ExtraBold),
-    // No.5 - 15 SemiBold
-    bodyLarge = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
-    bodyMedium = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Normal),
-    bodySmall = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Normal),
+    displayLarge = textStyle(FontSize.Hero, JustWooFontWeight.Black),
+    displayMedium = textStyle(FontSize.Display, JustWooFontWeight.ExtraBold),
+    headlineLarge = textStyle(FontSize.Display, JustWooFontWeight.Bold),
+    headlineMedium = textStyle(FontSize.Heading, JustWooFontWeight.SemiBold),
+    titleLarge = textStyle(FontSize.TitleLarge, JustWooFontWeight.Bold),
+    titleMedium = textStyle(FontSize.TitleLarge, JustWooFontWeight.Regular),
+    labelLarge = textStyle(FontSize.Label, JustWooFontWeight.ExtraBold),
+    bodyLarge = textStyle(FontSize.BodyLarge, JustWooFontWeight.SemiBold),
+    bodyMedium = textStyle(FontSize.Body, JustWooFontWeight.Regular),
+    bodySmall = textStyle(FontSize.Caption, JustWooFontWeight.Regular),
 )
+
+private fun textStyle(size: Float, weight: FontWeight): TextStyle =
+    TextStyle(fontSize = size.sp, fontWeight = weight)
