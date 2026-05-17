@@ -11,7 +11,7 @@ plugins {
 sqldelight {
     databases {
         create("JustWooDatabase") {
-            packageName.set("com.pollyannawu.justwoo.data.db")
+            packageName.set("com.pollyannawu.justwoo.db")
         }
     }
 }

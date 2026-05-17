@@ -5,8 +5,8 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 
-actual class DriverFactory(private val context: Context) {
-    actual fun create(): SqlDriver =
+class DriverFactory(private val context: Context) {
+    fun create(): SqlDriver =
         AndroidSqliteDriver(
             schema = JustWooDatabase.Schema,
             context = context,
