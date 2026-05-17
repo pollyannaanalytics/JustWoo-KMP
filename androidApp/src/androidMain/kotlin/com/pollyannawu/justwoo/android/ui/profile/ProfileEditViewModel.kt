@@ -1,10 +1,19 @@
 package com.pollyannawu.justwoo.android.ui.profile
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.pollyannawu.justwoo.core.Task
+import com.pollyannawu.justwoo.data.TaskRepository
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 /**
  * Profile edit — matches the Figma variants: edit 姓名 / bio / hashtags
@@ -14,7 +23,9 @@ import kotlinx.coroutines.flow.update
  * when it does, inject it here and wire submit() to it. For now this screen
  * is pure form state.
  */
-class ProfileEditViewModel : ViewModel() {
+class ProfileEditViewModel(
+    private val taskRepository: TaskRepository,
+) : ViewModel() {
 
     companion object {
         const val NAME_LIMIT = 20
@@ -31,10 +42,15 @@ class ProfileEditViewModel : ViewModel() {
         val bioError: String? = null,
         val hashtagError: String? = null,
         val saved: Boolean = false,
+        val selectedDate: LocalDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date,
     )
 
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
+
+    val tasks: StateFlow<List<Task>> = taskRepository
+        .observeTasks()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     fun onNameChange(v: String) = _uiState.update {
         it.copy(
@@ -66,6 +82,14 @@ class ProfileEditViewModel : ViewModel() {
 
     fun removeHashtag(tag: String) = _uiState.update {
         it.copy(hashtags = it.hashtags - tag)
+    }
+
+    fun selectDate(date: LocalDate) = _uiState.update { it.copy(selectedDate = date) }
+
+    fun tasksOnSelectedDate(all: List<Task>): List<Task> {
+        val date = _uiState.value.selectedDate
+        val tz = TimeZone.currentSystemDefault()
+        return all.filter { it.dueTime.toLocalDateTime(tz).date == date }
     }
 
     fun save() {

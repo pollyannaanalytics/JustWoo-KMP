@@ -48,6 +48,25 @@ fun SignInScreen(
         }
     }
 
+    SignInContent(
+        state = state,
+        onEmailChange = viewModel::onEmailChange,
+        onPasswordChange = viewModel::onPasswordChange,
+        onToggleShowPassword = viewModel::toggleShowPassword,
+        onSignInClick = viewModel::submit,
+        onNavigateToRegister = onNavigateToRegister
+    )
+}
+
+@Composable
+private fun SignInContent(
+    state: SignInViewModel.UiState,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onToggleShowPassword: () -> Unit,
+    onSignInClick: () -> Unit,
+    onNavigateToRegister: () -> Unit,
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -69,7 +88,7 @@ fun SignInScreen(
 
         JustWooTextField(
             value = state.email,
-            onValueChange = viewModel::onEmailChange,
+            onValueChange = onEmailChange,
             placeholder = "E-mail",
             isError = state.emailError != null,
             errorMessage = state.emailError,
@@ -80,7 +99,7 @@ fun SignInScreen(
 
         JustWooPasswordField(
             value = state.password,
-            onValueChange = viewModel::onPasswordChange,
+            onValueChange = onPasswordChange,
             placeholder = "Password",
             showPassword = state.showPassword,
             isError = state.passwordError != null,
@@ -93,12 +112,12 @@ fun SignInScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { viewModel.toggleShowPassword() },
+                .clickable { onToggleShowPassword() },
             verticalAlignment = Alignment.CenterVertically
         ) {
             Checkbox(
                 checked = state.showPassword,
-                onCheckedChange = { viewModel.toggleShowPassword() },
+                onCheckedChange = { onToggleShowPassword() },
                 colors = CheckboxDefaults.colors(
                     checkedColor = JustWooColors.Primary,
                     uncheckedColor = JustWooColors.Outline,
@@ -116,7 +135,7 @@ fun SignInScreen(
 
         JustWooPrimaryButton(
             text = "Sign in",
-            onClick = viewModel::submit,
+            onClick = onSignInClick,
             enabled = state.canSubmit,
             loading = state.loading,
             modifier = Modifier.fillMaxWidth()

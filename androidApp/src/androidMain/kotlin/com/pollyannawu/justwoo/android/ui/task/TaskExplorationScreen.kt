@@ -56,10 +56,7 @@ import kotlinx.datetime.daysUntil
 import kotlinx.datetime.toLocalDateTime
 import org.koin.androidx.compose.koinViewModel
 
-/**
- * Swipeable "Task Exploration" deck. Right swipe = accept, left swipe = decline.
- * The card tilts as it moves and animates off-screen on release past threshold.
- */
+
 @Composable
 fun TaskExplorationScreen(
     currentUserId: Long,
@@ -71,6 +68,23 @@ fun TaskExplorationScreen(
     LaunchedEffect(currentUserId) { viewModel.bind(currentUserId) }
     val state by viewModel.uiState.collectAsState()
 
+    TaskExplorationContent(
+        state = state,
+        onClose = onClose,
+        onOpenProfile = onOpenProfile,
+        onAccept = { taskId -> viewModel.accept(currentHouseId, currentUserId, taskId) },
+        onDecline = { taskId -> viewModel.decline(currentHouseId, currentUserId, taskId) }
+    )
+}
+
+@Composable
+private fun TaskExplorationContent(
+    state: TaskExplorationViewModel.UiState,
+    onClose: () -> Unit,
+    onOpenProfile: () -> Unit,
+    onAccept: (Long) -> Unit,
+    onDecline: (Long) -> Unit,
+) {
     Scaffold(
         containerColor = JustWooColors.Cream,
         topBar = {
@@ -121,8 +135,8 @@ fun TaskExplorationScreen(
                     task = current,
                     indexLabel = "${state.currentIndex + 1}/${state.total}",
                     submitting = state.submitting,
-                    onAccept = { viewModel.accept(currentHouseId, currentUserId, current.id) },
-                    onDecline = { viewModel.decline(currentHouseId, currentUserId, current.id) },
+                    onAccept = { onAccept(current.id) },
+                    onDecline = { onDecline(current.id) },
                 )
             }
             state.error?.let { err ->

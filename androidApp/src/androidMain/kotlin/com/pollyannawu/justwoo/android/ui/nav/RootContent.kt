@@ -1,68 +1,82 @@
 package com.pollyannawu.justwoo.android.ui.nav
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.stack.animation.fade
 import com.arkivanov.decompose.extensions.compose.stack.animation.plus
 import com.arkivanov.decompose.extensions.compose.stack.animation.slide
 import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
-import com.pollyannawu.justwoo.android.ui.auth.RegisterScreen
-import com.pollyannawu.justwoo.android.ui.auth.SignInScreen
-import com.pollyannawu.justwoo.android.ui.calendar.CalendarScreen
+import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.pollyannawu.justwoo.android.ui.home.HomeScreen
+import com.pollyannawu.justwoo.android.ui.nav.tasks.TaskContent
+import com.pollyannawu.justwoo.android.ui.nav.tasks.TaskQuickStatusOverlay
 import com.pollyannawu.justwoo.android.ui.profile.ProfileEditScreen
-import com.pollyannawu.justwoo.android.ui.task.CreateTaskScreen
-import com.pollyannawu.justwoo.android.ui.task.TaskExplorationScreen
-import com.pollyannawu.justwoo.nav.RootComponent
+import com.pollyannawu.justwoo.ui.nav.RootComponent
 
-/**
- * Renders the Decompose [RootComponent]'s stack as native Compose screens.
- * Each child's navigation callbacks come from shared/commonMain; the screens
- * themselves stay platform-native.
- */
 @Composable
-fun RootContent(component: RootComponent) {
-    Children(
-        stack = component.stack,
-        animation = stackAnimation(fade() + slide()),
-    ) { created ->
-        when (val child = created.instance) {
-            is RootComponent.Child.SignIn -> SignInScreen(
-                onSignInSuccess = child.component::onSignInSuccess,
-                onNavigateToRegister = child.component::onNavigateToRegister,
-            )
-            is RootComponent.Child.Register -> RegisterScreen(
-                onRegisterSuccess = child.component::onRegisterSuccess,
-                onNavigateToSignIn = child.component::onNavigateToSignIn,
-            )
-            is RootComponent.Child.Home -> HomeScreen(
-                currentUserId = child.component.userId,
-                currentHouseId = child.component.houseId,
-                onCreateTask = child.component::onCreateTask,
-                onOpenTaskSpace = child.component::onOpenTaskSpace,
-                onOpenCalendar = child.component::onOpenCalendar,
-                onOpenProfile = child.component::onOpenProfile,
-                onOpenMenu = child.component::onOpenMenu,
-            )
-            is RootComponent.Child.CreateTask -> CreateTaskScreen(
-                currentUserId = child.component.userId,
-                currentHouseId = child.component.houseId,
-                onClose = child.component::onClose,
-                onOpenProfile = child.component::onOpenProfile,
-            )
-            is RootComponent.Child.TaskExploration -> TaskExplorationScreen(
-                currentUserId = child.component.userId,
-                currentHouseId = child.component.houseId,
-                onClose = child.component::onClose,
-                onOpenProfile = child.component::onOpenProfile,
-            )
-            is RootComponent.Child.Calendar -> CalendarScreen(
-                onClose = child.component::onClose,
-                onOpenTask = { /* TODO: child.component.onOpenTask(it.id) */ },
-            )
-            is RootComponent.Child.ProfileEdit -> ProfileEditScreen(
-                onClose = child.component::onClose,
-            )
+fun RootContent(
+    component: RootComponent,
+    currentUserId: Long,
+    currentHouseId: Long,
+) {
+    CompositionLocalProvider(
+        LocalAppActions provides AppActions(
+            onProfileClick = component::onProfileClick,
+            onCreateTaskClick = component::onCreateTaskClick,
+            onTaskListClick = component::onTaskListClick,
+            onTaskQuickClick = component::onTaskQuickClick,
+        )
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // 底層：stack 頁面
+            Children(
+                stack = component.stack,
+                animation = stackAnimation(fade() + slide()),
+            ) { created ->
+                when (val child = created.instance) {
+                    is RootComponent.Child.Home -> HomeRoute(
+                        currentUserId = currentUserId,
+                        currentHouseId = currentHouseId,
+                    )
+                    is RootComponent.Child.Tasks -> TaskContent(
+                        component = child.component,
+                        currentUserId = currentUserId,
+                        currentHouseId = currentHouseId,
+                    )
+                    is RootComponent.Child.Profile -> ProfileEditScreen(
+                        onClose = child.component::onClose,
+                    )
+                }
+            }
+
+            // 上層：ChildSlot 顯示 quick status overlay（slot 為空時不畫）
+            val slot by component.taskQuickSlot.subscribeAsState()
+            slot.child?.instance?.let { quickStatus ->
+                TaskQuickStatusOverlay(component = quickStatus)
+            }
         }
     }
+}
+
+/**
+ * 把 HomeScreen 的 callback 從 LocalAppActions 拉出來填，
+ * 這樣 HomeScreen 本身的 signature 不需要動。
+ */
+@Composable
+private fun HomeRoute(currentUserId: Long, currentHouseId: Long) {
+    val actions = LocalAppActions.current
+    HomeScreen(
+        currentUserId = currentUserId,
+        currentHouseId = currentHouseId,
+        onCreateTask = actions.onCreateTaskClick,
+        onOpenTaskSpace = actions.onTaskListClick,
+        onOpenCalendar = { /* TODO: calendar 還沒建 */ },
+        onOpenProfile = actions.onProfileClick,
+        onOpenMenu = { /* TODO: drawer 還沒建 */ },
+    )
 }

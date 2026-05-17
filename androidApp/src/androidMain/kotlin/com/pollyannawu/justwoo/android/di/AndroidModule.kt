@@ -1,9 +1,8 @@
 package com.pollyannawu.justwoo.android.di
 
-import com.pollyannawu.justwoo.session.SessionState
+import com.pollyannawu.justwoo.android.ui.MainViewModel
 import com.pollyannawu.justwoo.android.ui.auth.RegisterViewModel
 import com.pollyannawu.justwoo.android.ui.auth.SignInViewModel
-import com.pollyannawu.justwoo.android.ui.calendar.CalendarViewModel
 import com.pollyannawu.justwoo.android.ui.home.HomeViewModel
 import com.pollyannawu.justwoo.android.ui.profile.ProfileEditViewModel
 import com.pollyannawu.justwoo.android.ui.task.CreateTaskViewModel
@@ -18,8 +17,6 @@ import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
 val androidModule = module {
-
-    single { SessionState() }
 
     single<AuthRepository> {
         DefaultAuthRepository(
@@ -44,11 +41,11 @@ val androidModule = module {
         )
     }
 
+    viewModel { MainViewModel(get()) }
     viewModel { SignInViewModel(get()) }
     viewModel { RegisterViewModel(get()) }
     viewModel { HomeViewModel(get(), get()) }
     viewModel { CreateTaskViewModel(get(), get()) }
     viewModel { TaskExplorationViewModel(get()) }
-    viewModel { ProfileEditViewModel() }
-    viewModel { CalendarViewModel(get()) }
+    viewModel { ProfileEditViewModel(get()) }
 }

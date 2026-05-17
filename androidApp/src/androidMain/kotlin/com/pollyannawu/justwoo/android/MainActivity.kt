@@ -6,28 +6,32 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.defaultComponentContext
+import com.pollyannawu.justwoo.android.ui.MainViewModel
 import com.pollyannawu.justwoo.android.ui.nav.RootContent
+import com.pollyannawu.justwoo.ui.nav.DefaultRootComponent
 import com.pollyannawu.justwoo.android.ui.theme.JustWooColors
 import com.pollyannawu.justwoo.android.ui.theme.JustWooTheme
-import com.pollyannawu.justwoo.nav.DefaultRootComponent
-import com.pollyannawu.justwoo.session.SessionState
-import org.koin.android.ext.android.inject
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity : ComponentActivity() {
 
-    private val session: SessionState by inject()
+    private val mainViewModel: MainViewModel by viewModel()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val root = DefaultRootComponent(
             componentContext = defaultComponentContext(),
-            session = session,
         )
 
         setContent {
+            val userId by mainViewModel.currentUserId.collectAsState()
+            val houseId by mainViewModel.currentHouseId.collectAsState()
+
             JustWooTheme {
                 Surface(
                     modifier = Modifier
@@ -35,7 +39,11 @@ class MainActivity : ComponentActivity() {
                         .background(JustWooColors.Cream),
                     color = JustWooColors.Cream,
                 ) {
-                    RootContent(root)
+                    RootContent(
+                        component = root,
+                        currentUserId = userId ?: 0L,
+                        currentHouseId = houseId ?: 0L,
+                    )
                 }
             }
         }
