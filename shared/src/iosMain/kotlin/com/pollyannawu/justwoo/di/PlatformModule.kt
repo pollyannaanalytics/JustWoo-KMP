@@ -1,7 +1,7 @@
 package com.pollyannawu.justwoo.di
 
 import app.cash.sqldelight.db.SqlDriver
-import com.pollyannawu.justwoo.db.DriverFactory
+import com.pollyannawu.justwoo.data.db.DriverFactory
 import com.russhwolf.settings.ExperimentalSettingsImplementation
 import com.russhwolf.settings.KeychainSettings
 import com.russhwolf.settings.NSUserDefaultsSettings

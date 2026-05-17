@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import app.cash.sqldelight.db.SqlDriver
-import com.pollyannawu.justwoo.db.DriverFactory
+import com.pollyannawu.justwoo.data.db.DriverFactory
 import com.russhwolf.settings.ObservableSettings
 import com.russhwolf.settings.Settings
 import com.russhwolf.settings.SharedPreferencesSettings
