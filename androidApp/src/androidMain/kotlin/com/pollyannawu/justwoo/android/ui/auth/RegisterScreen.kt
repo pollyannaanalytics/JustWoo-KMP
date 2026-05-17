@@ -48,6 +48,27 @@ fun RegisterScreen(
         }
     }
 
+    RegisterContent(
+        state = state,
+        onEmailChange = viewModel::onEmailChange,
+        onPasswordChange = viewModel::onPasswordChange,
+        onConfirmChange = viewModel::onConfirmChange,
+        onToggleShowPassword = viewModel::toggleShowPassword,
+        onRegisterClick = viewModel::submit,
+        onNavigateToSignIn = onNavigateToSignIn
+    )
+}
+
+@Composable
+private fun RegisterContent(
+    state: RegisterViewModel.UiState,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onConfirmChange: (String) -> Unit,
+    onToggleShowPassword: () -> Unit,
+    onRegisterClick: () -> Unit,
+    onNavigateToSignIn: () -> Unit,
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -69,7 +90,7 @@ fun RegisterScreen(
 
         JustWooTextField(
             value = state.email,
-            onValueChange = viewModel::onEmailChange,
+            onValueChange = onEmailChange,
             placeholder = "E-mail",
             isError = state.emailError != null,
             errorMessage = state.emailError,
@@ -78,7 +99,7 @@ fun RegisterScreen(
         Spacer(Modifier.height(JustWooSpacing.Large))
         JustWooPasswordField(
             value = state.password,
-            onValueChange = viewModel::onPasswordChange,
+            onValueChange = onPasswordChange,
             placeholder = "Password",
             showPassword = state.showPassword,
             isError = state.passwordError != null,
@@ -88,7 +109,7 @@ fun RegisterScreen(
         Spacer(Modifier.height(JustWooSpacing.Large))
         JustWooPasswordField(
             value = state.confirmPassword,
-            onValueChange = viewModel::onConfirmChange,
+            onValueChange = onConfirmChange,
             placeholder = "Confirm password",
             showPassword = state.showPassword,
             isError = state.confirmError != null,
@@ -101,12 +122,12 @@ fun RegisterScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { viewModel.toggleShowPassword() },
+                .clickable { onToggleShowPassword() },
             verticalAlignment = Alignment.CenterVertically
         ) {
             Checkbox(
                 checked = state.showPassword,
-                onCheckedChange = { viewModel.toggleShowPassword() },
+                onCheckedChange = { onToggleShowPassword() },
                 colors = CheckboxDefaults.colors(
                     checkedColor = JustWooColors.Primary,
                     uncheckedColor = JustWooColors.Outline,
@@ -124,7 +145,7 @@ fun RegisterScreen(
 
         JustWooPrimaryButton(
             text = "Create account",
-            onClick = viewModel::submit,
+            onClick = onRegisterClick,
             enabled = state.canSubmit,
             loading = state.loading,
             modifier = Modifier.fillMaxWidth()

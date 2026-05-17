@@ -20,18 +20,6 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 
-/**
- * Drives the "Create a task" form. Mirrors the Figma fields:
- *   - task title
- *   - Assign to (Everyone | individual member)
- *   - Public toggle
- *   - Select due time (calendar)
- *
- * Validation rules from the Figma sticky notes:
- *   - 無填寫task title             → block with inline error
- *   - 沒有指定對象 (default)         → default to "everyone"
- *   - 日曆選擇過去日期 (給予提醒)   → soft warning, still allowed
- */
 class CreateTaskViewModel(
     private val taskRepository: TaskRepository,
     private val houseRepository: HouseRepository,

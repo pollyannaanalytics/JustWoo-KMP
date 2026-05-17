@@ -47,7 +47,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pollyannawu.justwoo.android.ui.common.JustWooTextField
+import com.pollyannawu.justwoo.android.ui.nav.LocalAppActions
 import com.pollyannawu.justwoo.android.ui.theme.JustWooColors
+import com.pollyannawu.justwoo.ui.nav.tasks.TaskEditComponent
 import com.pollyannawu.justwoo.android.ui.theme.JustWooFontWeight
 import com.pollyannawu.justwoo.android.ui.theme.JustWooShapes
 import com.pollyannawu.justwoo.android.ui.theme.JustWooSpacing
@@ -58,34 +60,51 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.koin.androidx.compose.koinViewModel
 
-/**
- * "Create a task" screen — Figma "Create a task" page:
- *  - task title input
- *  - Assign to dropdown (Everyone | member)
- *  - Public toggle (white = private, yellow = public)
- *  - Calendar (Material3 DatePicker)
- *  - Cancel / Done bottom row
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateTaskScreen(
     currentUserId: Long,
     currentHouseId: Long,
-    onClose: () -> Unit,
-    onOpenProfile: () -> Unit = {},
+    component: TaskEditComponent,
     viewModel: CreateTaskViewModel = koinViewModel(),
 ) {
     LaunchedEffect(currentHouseId) { viewModel.bind(currentHouseId) }
     val state by viewModel.uiState.collectAsState()
+    val appActions = LocalAppActions.current
 
     LaunchedEffect(state.saved) {
         if (state.saved) {
             viewModel.consumeSaved()
-            onClose()
+            component.onSave()
         }
     }
 
+    CreateTaskContent(
+        state = state,
+        onClose = component::onCancel,
+        onOpenProfile = appActions.onProfileClick,
+        onTitleChange = viewModel::onTitleChange,
+        onAssigneeChange = viewModel::onAssigneeChange,
+        onAccessLevelChange = viewModel::onAccessLevelChange,
+        onDueTimeChange = viewModel::onDueTimeChange,
+        onSubmit = { viewModel.submit(currentUserId, currentHouseId) }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CreateTaskContent(
+    state: CreateTaskViewModel.UiState,
+    onClose: () -> Unit,
+    onOpenProfile: () -> Unit,
+    onTitleChange: (String) -> Unit,
+    onAssigneeChange: (Long?) -> Unit,
+    onAccessLevelChange: (AccessLevel) -> Unit,
+    onDueTimeChange: (Instant) -> Unit,
+    onSubmit: () -> Unit,
+) {
     var datePickerOpen by remember { mutableStateOf(false) }
+
     if (datePickerOpen) {
         val pickerState = rememberDatePickerState(
             initialSelectedDateMillis = state.dueTime.toEpochMilliseconds()
@@ -95,7 +114,7 @@ fun CreateTaskScreen(
             confirmButton = {
                 TextButton(onClick = {
                     pickerState.selectedDateMillis?.let { millis ->
-                        viewModel.onDueTimeChange(Instant.fromEpochMilliseconds(millis))
+                        onDueTimeChange(Instant.fromEpochMilliseconds(millis))
                     }
                     datePickerOpen = false
                 }) { Text("OK") }
@@ -114,11 +133,14 @@ fun CreateTaskScreen(
                 .padding(horizontal = JustWooSpacing.XLarge),
             verticalArrangement = Arrangement.spacedBy(JustWooSpacing.Large),
         ) {
-            CreateTaskTopBar(onClose = onClose, onOpenProfile = onOpenProfile)
+            CreateTaskTopBar(
+                onClose = onClose,
+                onOpenProfile = onOpenProfile,
+            )
 
             JustWooTextField(
                 value = state.title,
-                onValueChange = viewModel::onTitleChange,
+                onValueChange = onTitleChange,
                 placeholder = "task title",
                 isError = state.titleError != null,
                 errorMessage = state.titleError,
@@ -128,12 +150,12 @@ fun CreateTaskScreen(
             AssignToRow(
                 assignees = state.availableAssignees,
                 selectedId = state.assigneeId,
-                onSelect = viewModel::onAssigneeChange,
+                onSelect = onAssigneeChange,
             )
 
             PublicToggleRow(
                 accessLevel = state.accessLevel,
-                onToggle = viewModel::onAccessLevelChange,
+                onToggle = onAccessLevelChange,
             )
 
             Text(
@@ -169,7 +191,7 @@ fun CreateTaskScreen(
                     background = JustWooColors.Primary,
                     contentColor = JustWooColors.OnPrimary,
                     enabled = !state.loading,
-                    onClick = { viewModel.submit(currentUserId, currentHouseId) },
+                    onClick = onSubmit,
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -321,8 +343,6 @@ private fun TogglePill(
     selectedColor: Color,
     onClick: () -> Unit,
 ) {
-    // Toggle dimensions are component-specific (a 56×28 pill with a 24dp knob)
-    // and don't map onto the design system's semantic scale, so left raw.
     Box(
         modifier = Modifier
             .size(width = 56.dp, height = 28.dp)
