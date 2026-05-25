@@ -13,6 +13,8 @@ import com.pollyannawu.justwoo.data.DefaultHouseRepository
 import com.pollyannawu.justwoo.data.DefaultTaskRepository
 import com.pollyannawu.justwoo.data.HouseRepository
 import com.pollyannawu.justwoo.data.TaskRepository
+import com.pollyannawu.justwoo.domain.usecase.auth.LoginUseCase
+import com.pollyannawu.justwoo.domain.usecase.auth.RegisterUseCase
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
@@ -40,6 +42,9 @@ val androidModule = module {
             taskDataSource = get(),
         )
     }
+
+    factory { LoginUseCase(get()) }
+    factory { RegisterUseCase(get()) }
 
     viewModel { MainViewModel(get()) }
     viewModel { SignInViewModel(get()) }

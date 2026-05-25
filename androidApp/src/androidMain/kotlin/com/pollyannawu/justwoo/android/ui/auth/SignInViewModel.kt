@@ -2,22 +2,17 @@ package com.pollyannawu.justwoo.android.ui.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.pollyannawu.justwoo.data.AuthRepository
-import com.pollyannawu.justwoo.model.AuthDataResult
+import com.pollyannawu.justwoo.domain.usecase.auth.LoginOutcome
+import com.pollyannawu.justwoo.domain.usecase.auth.LoginUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * Collects email / password, delegates sign-in to [AuthRepository],
- * maps results to UI error states matching the Figma variants:
- *   - "e-mail not found"
- *   - "wrong password"
- */
+
 class SignInViewModel(
-    private val authRepository: AuthRepository,
+    private val loginUseCase: LoginUseCase,
 ) : ViewModel() {
 
     data class UiState(
@@ -55,22 +50,35 @@ class SignInViewModel(
         _uiState.update { it.copy(loading = true, emailError = null, passwordError = null) }
 
         viewModelScope.launch {
-            val result = authRepository.login(state.email.trim(), state.password)
-            when (result) {
-                is AuthDataResult.Success -> {
+            when (val outcome = loginUseCase(state.email, state.password)) {
+                is LoginOutcome.Success ->
                     _uiState.update { it.copy(loading = false, success = true) }
-                }
-                // The shared layer currently only exposes NetworkFailure. Until it
-                // differentiates error cases, we surface the generic "wrong password"
-                // copy that the Figma variant shows — an obvious TODO for later.
-                is AuthDataResult.Failure.NetworkFailure -> {
+
+                LoginOutcome.Failure.InvalidEmail ->
+                    _uiState.update {
+                        it.copy(loading = false, emailError = "Please enter a valid e-mail.")
+                    }
+
+                LoginOutcome.Failure.InvalidCredentials ->
+                    _uiState.update {
+                        it.copy(loading = false, passwordError = "Password incorrect.")
+                    }
+
+                LoginOutcome.Failure.TooManyAttempts ->
                     _uiState.update {
                         it.copy(
                             loading = false,
-                            passwordError = "Password incorrect.",
+                            passwordError = "Too many attempts — try again later.",
                         )
                     }
-                }
+
+                LoginOutcome.Failure.Network ->
+                    _uiState.update {
+                        it.copy(
+                            loading = false,
+                            passwordError = "Couldn't sign in — please try again.",
+                        )
+                    }
             }
         }
     }

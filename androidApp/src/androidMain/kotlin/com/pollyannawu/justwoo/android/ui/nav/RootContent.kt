@@ -39,6 +39,9 @@ fun RootContent(
                 animation = stackAnimation(fade() + slide()),
             ) { created ->
                 when (val child = created.instance) {
+                    is RootComponent.Child.Auth -> AuthContent(
+                        component = child.component,
+                    )
                     is RootComponent.Child.Home -> HomeRoute(
                         currentUserId = currentUserId,
                         currentHouseId = currentHouseId,
@@ -63,10 +66,7 @@ fun RootContent(
     }
 }
 
-/**
- * 把 HomeScreen 的 callback 從 LocalAppActions 拉出來填，
- * 這樣 HomeScreen 本身的 signature 不需要動。
- */
+
 @Composable
 private fun HomeRoute(currentUserId: Long, currentHouseId: Long) {
     val actions = LocalAppActions.current

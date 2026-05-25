@@ -21,6 +21,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pollyannawu.justwoo.android.ui.common.JustWooLogo
@@ -162,4 +163,34 @@ private fun SignInContent(
             )
         }
     }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFF5F1E7, heightDp = 880)
+@Composable
+private fun SignInContentPreview() {
+    SignInContent(
+        state = SignInViewModel.UiState(),
+        onEmailChange = {},
+        onPasswordChange = {},
+        onToggleShowPassword = {},
+        onSignInClick = {},
+        onNavigateToRegister = {},
+    )
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFF5F1E7, heightDp = 880)
+@Composable
+private fun SignInContentErrorPreview() {
+    SignInContent(
+        state = SignInViewModel.UiState(
+            email = "user@example.com",
+            password = "wrong",
+            passwordError = "Password incorrect.",
+        ),
+        onEmailChange = {},
+        onPasswordChange = {},
+        onToggleShowPassword = {},
+        onSignInClick = {},
+        onNavigateToRegister = {},
+    )
 }

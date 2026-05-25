@@ -18,6 +18,14 @@ interface UserStorage {
     fun getHouseId(): Long?
     fun saveHouseId(houseId: Long)
 
+    /**
+     * Sticky "user has had at least one successful sign-in / sign-up on
+     * this install" flag. Survives [clear] so logging out doesn't put a
+     * returning user back into the onboarding flow.
+     */
+    fun hasOnboarded(): Boolean
+    fun markOnboarded()
+
     fun clear()
 }
 
@@ -46,13 +54,23 @@ class DefaultUserStorage(
         settings.putLong(KEY_HOUSE_ID, houseId)
     }
 
+    override fun hasOnboarded(): Boolean = settings.getBoolean(KEY_HAS_ONBOARDED, false)
+
+    override fun markOnboarded() {
+        settings.putBoolean(KEY_HAS_ONBOARDED, true)
+    }
+
     override fun clear() {
         settings.remove(KEY_USER)
         settings.remove(KEY_HOUSE_ID)
+        // Intentionally NOT removing KEY_HAS_ONBOARDED — a returning user
+        // who logs out should still land on Sign in, not the Register
+        // onboarding screen.
     }
 
     private companion object {
         const val KEY_USER = "auth.user"
         const val KEY_HOUSE_ID = "auth.houseId"
+        const val KEY_HAS_ONBOARDED = "auth.has_onboarded"
     }
 }
