@@ -11,7 +11,11 @@ import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.bringToFront
 import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.router.stack.pop
+import com.arkivanov.decompose.router.stack.replaceAll
 import com.arkivanov.decompose.value.Value
+import com.pollyannawu.justwoo.ui.nav.auth.AuthComponent
+import com.pollyannawu.justwoo.ui.nav.auth.AuthStart
+import com.pollyannawu.justwoo.ui.nav.auth.DefaultAuthComponent
 import com.pollyannawu.justwoo.ui.nav.home.DefaultHomeComponent
 import com.pollyannawu.justwoo.ui.nav.home.HomeComponent
 import com.pollyannawu.justwoo.ui.nav.profile.DefaultProfileComponent
@@ -31,15 +35,38 @@ interface RootComponent {
     fun onCreateTaskClick()
     fun onTaskQuickClick(taskId: Long)
 
+    /**
+     * Called by the host (Activity/ViewModel boundary) whenever the
+     * session predicate flips — fresh sign-in, logout, or bearer refresh
+     * failure clearing the token pair. The component itself stays
+     * decoupled from any auth/data type.
+     */
+    fun onSessionChanged(isAuthenticated: Boolean)
+
     sealed interface Child {
+        class Auth(val component: AuthComponent) : Child
         class Home(val component: HomeComponent) : Child
         class Tasks(val component: TaskComponent) : Child
         class Profile(val component: ProfileComponent) : Child
     }
 }
 
+/**
+ * Root container that owns the visible stack. It is intentionally
+ * unaware of `AuthRepository` — the host activity/ViewModel reads
+ * session state and feeds it in via the constructor's
+ * [initiallyAuthenticated] flag and the [onSessionChanged] hook.
+ */
 class DefaultRootComponent(
     componentContext: ComponentContext,
+    initiallyAuthenticated: Boolean,
+    /**
+     * Resolved lazily each time the Auth sub-stack is built so the
+     * decision is re-evaluated when the user logs out after onboarding
+     * (return path → Sign in, not Register again). Default keeps prior
+     * behaviour for any caller that doesn't care.
+     */
+    private val authStartProvider: () -> AuthStart = { AuthStart.SignIn },
 ) : RootComponent, ComponentContext by componentContext {
 
     private val navigation = StackNavigation<Config>()
@@ -49,7 +76,7 @@ class DefaultRootComponent(
         childStack(
             source = navigation,
             serializer = Config.serializer(),
-            initialConfiguration = Config.Home,
+            initialConfiguration = if (initiallyAuthenticated) Config.Home else Config.Auth,
             handleBackButton = true,
             childFactory = ::createChild,
         )
@@ -61,6 +88,16 @@ class DefaultRootComponent(
             handleBackButton = true,
             childFactory = ::createSlotChild,
         )
+
+    override fun onSessionChanged(isAuthenticated: Boolean) {
+        val current = stack.value.active.configuration
+        when {
+            isAuthenticated && current is Config.Auth ->
+                navigation.replaceAll(Config.Home)
+            !isAuthenticated && current !is Config.Auth ->
+                navigation.replaceAll(Config.Auth)
+        }
+    }
 
     override fun onProfileClick() {
         navigation.bringToFront(Config.Profile)
@@ -83,6 +120,12 @@ class DefaultRootComponent(
         config: Config,
         childContext: ComponentContext,
     ): RootComponent.Child = when (config) {
+        Config.Auth -> RootComponent.Child.Auth(
+            DefaultAuthComponent(
+                componentContext = childContext,
+                initialScreen = authStartProvider(),
+            ),
+        )
         Config.Home -> RootComponent.Child.Home(
             DefaultHomeComponent(componentContext = childContext),
         )
@@ -113,6 +156,7 @@ class DefaultRootComponent(
 
     @Serializable
     private sealed interface Config {
+        @Serializable data object Auth : Config
         @Serializable data object Home : Config
         @Serializable data object Tasks : Config
         @Serializable data object Profile : Config

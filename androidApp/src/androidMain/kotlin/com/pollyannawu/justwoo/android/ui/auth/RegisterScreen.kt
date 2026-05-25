@@ -21,6 +21,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pollyannawu.justwoo.android.ui.common.JustWooLogo
@@ -80,10 +81,18 @@ private fun RegisterContent(
         JustWooLogo()
         Spacer(Modifier.height(JustWooSpacing.Default))
         Text(
-            text = "Create account",
+            text = "Sign up",
             color = JustWooColors.Primary,
             fontSize = DesignTokens.FontSize.Display.sp,
             fontWeight = JustWooFontWeight.Bold,
+        )
+
+        Spacer(Modifier.height(JustWooSpacing.Default))
+
+        Text(
+            text = "Please set your password.",
+            color = JustWooColors.TextPrimary,
+            style = MaterialTheme.typography.bodyLarge,
         )
 
         Spacer(Modifier.height(40.dp))
@@ -106,6 +115,16 @@ private fun RegisterContent(
             errorMessage = state.passwordError,
             modifier = Modifier.fillMaxWidth()
         )
+        if (state.passwordError == null) {
+            Text(
+                text = "*Required at least ${RegisterViewModel.MIN_PASSWORD_LENGTH} characters",
+                color = JustWooColors.TextPrimary,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = JustWooSpacing.Default, top = JustWooSpacing.XSmall)
+            )
+        }
         Spacer(Modifier.height(JustWooSpacing.Large))
         JustWooPasswordField(
             value = state.confirmPassword,
@@ -144,7 +163,7 @@ private fun RegisterContent(
         Spacer(Modifier.height(JustWooSpacing.XXLarge))
 
         JustWooPrimaryButton(
-            text = "Create account",
+            text = "Join !",
             onClick = onRegisterClick,
             enabled = state.canSubmit,
             loading = state.loading,
@@ -172,4 +191,38 @@ private fun RegisterContent(
             )
         }
     }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFF5F1E7, heightDp = 880)
+@Composable
+private fun RegisterContentPreview() {
+    RegisterContent(
+        state = RegisterViewModel.UiState(),
+        onEmailChange = {},
+        onPasswordChange = {},
+        onConfirmChange = {},
+        onToggleShowPassword = {},
+        onRegisterClick = {},
+        onNavigateToSignIn = {},
+    )
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFF5F1E7, heightDp = 880)
+@Composable
+private fun RegisterContentErrorPreview() {
+    RegisterContent(
+        state = RegisterViewModel.UiState(
+            email = "abc@",
+            password = "short",
+            confirmPassword = "no-match",
+            passwordError = "Required at least 10 characters",
+            confirmError = "Passwords do not match.",
+        ),
+        onEmailChange = {},
+        onPasswordChange = {},
+        onConfirmChange = {},
+        onToggleShowPassword = {},
+        onRegisterClick = {},
+        onNavigateToSignIn = {},
+    )
 }

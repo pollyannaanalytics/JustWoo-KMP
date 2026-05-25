@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -26,11 +27,18 @@ class MainActivity : ComponentActivity() {
 
         val root = DefaultRootComponent(
             componentContext = defaultComponentContext(),
+            initiallyAuthenticated = mainViewModel.isAuthenticated.value,
+            authStartProvider = mainViewModel::resolveAuthStart,
         )
 
         setContent {
             val userId by mainViewModel.currentUserId.collectAsState()
             val houseId by mainViewModel.currentHouseId.collectAsState()
+            val isAuthenticated by mainViewModel.isAuthenticated.collectAsState()
+
+            LaunchedEffect(isAuthenticated) {
+                root.onSessionChanged(isAuthenticated)
+            }
 
             JustWooTheme {
                 Surface(
