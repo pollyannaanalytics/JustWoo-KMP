@@ -22,23 +22,23 @@ class DefaultProfileApiService(
     private val client: HttpClient,
 ) : ProfileApiService {
 
-    override suspend fun createProfile(request: ProfileRequest): ApiResult<ProfileResponse> = safeApiCall {
+    override suspend fun createProfile(request: ProfileRequest): ApiResult<ProfileResponse> = safeApiCall(tag = "ProfileApi.createProfile") {
         client.post("/profiles") {
             setBody(request)
         }.body()
     }
 
-    override suspend fun getMyProfile(): ApiResult<ProfileResponse> = safeApiCall {
+    override suspend fun getMyProfile(): ApiResult<ProfileResponse> = safeApiCall(tag = "ProfileApi.getMyProfile") {
         client.get("/profiles/me").body()
     }
 
-    override suspend fun updateMyProfile(request: ProfileRequest): ApiResult<ProfileResponse> = safeApiCall {
+    override suspend fun updateMyProfile(request: ProfileRequest): ApiResult<ProfileResponse> = safeApiCall(tag = "ProfileApi.updateMyProfile") {
         client.patch("/profiles/me") {
             setBody(request)
         }.body()
     }
 
-    override suspend fun getProfileById(userId: Long): ApiResult<ProfileResponse> = safeApiCall {
+    override suspend fun getProfileById(userId: Long): ApiResult<ProfileResponse> = safeApiCall(tag = "ProfileApi.getProfileById") {
         client.get("/profiles/$userId").body()
     }
 }

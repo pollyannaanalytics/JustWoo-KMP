@@ -22,20 +22,20 @@ class DefaultSettlementApiService(
     private val client: HttpClient,
 ) : SettlementApiService {
 
-    override suspend fun getSettlements(houseId: Long): ApiResult<List<SettlementResponse>> = safeApiCall {
+    override suspend fun getSettlements(houseId: Long): ApiResult<List<SettlementResponse>> = safeApiCall(tag = "SettlementApi.getSettlements") {
         client.get("/houses/$houseId/settlements").body()
     }
 
     override suspend fun createSettlement(
         houseId: Long,
         request: CreateSettlementRequest,
-    ): ApiResult<SettlementResponse> = safeApiCall {
+    ): ApiResult<SettlementResponse> = safeApiCall(tag = "SettlementApi.createSettlement") {
         client.post("/houses/$houseId/settlements") {
             setBody(request)
         }.body()
     }
 
-    override suspend fun getBalance(houseId: Long, currency: String): ApiResult<HouseBalanceResponse> = safeApiCall {
+    override suspend fun getBalance(houseId: Long, currency: String): ApiResult<HouseBalanceResponse> = safeApiCall(tag = "SettlementApi.getBalance") {
         client.get("/houses/$houseId/settlements/balance") {
             parameter("currency", currency)
         }.body()

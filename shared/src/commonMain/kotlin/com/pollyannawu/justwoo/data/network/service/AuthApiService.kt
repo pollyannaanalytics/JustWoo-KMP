@@ -25,7 +25,7 @@ class DefaultAuthApiService(
         email: String,
         plainPassword: String,
         deviceId: String,
-    ): ApiResult<AuthResponse?> = safeApiCall {
+    ): ApiResult<AuthResponse?> = safeApiCall(tag = "AuthApi.login") {
         client.post("/auth/login") {
             setBody(LoginRequest(email = email, password = plainPassword, deviceId = deviceId))
         }.body()
@@ -35,7 +35,7 @@ class DefaultAuthApiService(
         email: String,
         plainPassword: String,
         deviceId: String,
-    ): ApiResult<AuthResponse?> = safeApiCall {
+    ): ApiResult<AuthResponse?> = safeApiCall(tag = "AuthApi.register") {
         client.post("/auth/register") {
             setBody(RegisterRequest(email = email, plainPassword = plainPassword, deviceId = deviceId))
         }.body()
@@ -44,7 +44,7 @@ class DefaultAuthApiService(
     override suspend fun delete(
         userId: String,
         confirmPassword: String,
-    ): ApiResult<Unit> = safeApiCall {
+    ): ApiResult<Unit> = safeApiCall(tag = "AuthApi.delete") {
         client.delete("/auth/$userId")
         Unit
     }

@@ -21,12 +21,14 @@ import com.pollyannawu.justwoo.data.network.service.SettlementApiService
 import com.pollyannawu.justwoo.data.network.service.TaskApiService
 import com.pollyannawu.justwoo.data.network.createHttpClient
 import com.pollyannawu.justwoo.data.network.createRefreshClient
+import com.pollyannawu.justwoo.data.network.log.ApiLogger
+import com.pollyannawu.justwoo.data.network.log.defaultApiLogger
 import io.ktor.client.HttpClient
 import kotlinx.serialization.json.Json
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
-private const val BASE_URL = "https://api.justwoo-tw.uk"
+private const val BASE_URL = "https://justwoo-tw.uk"
 val SECURE_SETTINGS = named("secure")
 val PREFS_SETTINGS  = named("prefs")
 
@@ -48,8 +50,10 @@ val networkModule = module {
         }
     }
 
+    single<ApiLogger> { defaultApiLogger() }
+
     single<HttpClient>(REFRESH_CLIENT) {
-        createRefreshClient(engine = get(), config = get(), json = get())
+        createRefreshClient(engine = get(), config = get(), json = get(), apiLogger = get())
     }
 
 
@@ -71,6 +75,7 @@ val networkModule = module {
             json = get(),
             tokenStorage = get(),
             tokenRefresher = get(),
+            apiLogger = get(),
         )
     }
 

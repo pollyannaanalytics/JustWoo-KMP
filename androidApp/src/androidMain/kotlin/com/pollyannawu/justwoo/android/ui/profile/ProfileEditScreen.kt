@@ -63,7 +63,8 @@ fun ProfileEditScreen(
     viewModel: ProfileEditViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
-    val tasks by viewModel.tasks.collectAsState()
+    val allTasks by viewModel.allTasks.collectAsState()
+    val tasksInWindow by viewModel.tasksInWindow.collectAsState()
 
     LaunchedEffect(state.saved) {
         if (state.saved) {
@@ -74,7 +75,8 @@ fun ProfileEditScreen(
 
     ProfileEditContent(
         state = state,
-        tasks = tasks,
+        allTasks = allTasks,
+        tasksInWindow = tasksInWindow,
         onClose = onClose,
         onNameChange = viewModel::onNameChange,
         onBioChange = viewModel::onBioChange,
@@ -83,14 +85,14 @@ fun ProfileEditScreen(
         onRemoveHashtag = viewModel::removeHashtag,
         onSelectDate = viewModel::selectDate,
         onSave = viewModel::save,
-        tasksOnSelectedDate = { viewModel.tasksOnSelectedDate(it) }
     )
 }
 
 @Composable
 private fun ProfileEditContent(
     state: ProfileEditViewModel.UiState,
-    tasks: List<Task>,
+    allTasks: List<Task>,
+    tasksInWindow: List<Task>,
     onClose: () -> Unit,
     onNameChange: (String) -> Unit,
     onBioChange: (String) -> Unit,
@@ -99,7 +101,6 @@ private fun ProfileEditContent(
     onRemoveHashtag: (String) -> Unit,
     onSelectDate: (LocalDate) -> Unit,
     onSave: () -> Unit,
-    tasksOnSelectedDate: (List<Task>) -> List<Task>,
 ) {
     var viewMonth by remember {
         mutableStateOf(LocalDate(state.selectedDate.year, state.selectedDate.monthNumber, 1))
@@ -246,7 +247,7 @@ private fun ProfileEditContent(
                     month = viewMonth,
                     selected = state.selectedDate,
                     onSelect = onSelectDate,
-                    tasks = tasks,
+                    tasks = allTasks,
                 )
             }
 
@@ -260,17 +261,16 @@ private fun ProfileEditContent(
             }
             item { Spacer(Modifier.height(JustWooSpacing.Small)) }
 
-            val tasksOnDate = tasksOnSelectedDate(tasks)
-            if (tasksOnDate.isEmpty()) {
+            if (tasksInWindow.isEmpty()) {
                 item {
                     Text(
-                        "No tasks scheduled.",
+                        "No tasks in this window.",
                         color = JustWooColors.TextSecondary,
                         style = MaterialTheme.typography.bodyLarge,
                     )
                 }
             } else {
-                items(tasksOnDate, key = { it.id }) { task ->
+                items(tasksInWindow, key = { it.id }) { task ->
                     TaskCard(task = task, onClick = {})
                     Spacer(Modifier.height(JustWooSpacing.Medium))
                 }

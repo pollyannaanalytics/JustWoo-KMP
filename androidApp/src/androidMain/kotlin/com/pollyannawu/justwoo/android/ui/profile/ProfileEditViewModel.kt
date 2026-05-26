@@ -3,11 +3,14 @@ package com.pollyannawu.justwoo.android.ui.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pollyannawu.justwoo.core.Task
-import com.pollyannawu.justwoo.data.TaskRepository
+import com.pollyannawu.justwoo.domain.usecase.task.ObserveAllTasksUseCase
+import com.pollyannawu.justwoo.domain.usecase.task.ObserveProfileTasksInWindowUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.datetime.Clock
@@ -24,7 +27,8 @@ import kotlinx.datetime.toLocalDateTime
  * is pure form state.
  */
 class ProfileEditViewModel(
-    private val taskRepository: TaskRepository,
+    private val observeAllTasks: ObserveAllTasksUseCase,
+    private val observeProfileTasksInWindow: ObserveProfileTasksInWindowUseCase,
 ) : ViewModel() {
 
     companion object {
@@ -48,8 +52,20 @@ class ProfileEditViewModel(
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
-    val tasks: StateFlow<List<Task>> = taskRepository
-        .observeTasks()
+    /** All cached tasks — feeds the calendar grid's per-day markers. */
+    val allTasks: StateFlow<List<Task>> = observeAllTasks()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /**
+     * Tasks within the 7-day window ending on the currently selected date.
+     * Re-subscribes whenever `selectedDate` changes.
+     */
+    val tasksInWindow: StateFlow<List<Task>> = _uiState
+        .map { it.selectedDate }
+        .let { dates ->
+            @Suppress("OPT_IN_USAGE")
+            dates.flatMapLatest { anchor -> observeProfileTasksInWindow(anchor = anchor) }
+        }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     fun onNameChange(v: String) = _uiState.update {
@@ -85,12 +101,6 @@ class ProfileEditViewModel(
     }
 
     fun selectDate(date: LocalDate) = _uiState.update { it.copy(selectedDate = date) }
-
-    fun tasksOnSelectedDate(all: List<Task>): List<Task> {
-        val date = _uiState.value.selectedDate
-        val tz = TimeZone.currentSystemDefault()
-        return all.filter { it.dueTime.toLocalDateTime(tz).date == date }
-    }
 
     fun save() {
         val s = _uiState.value

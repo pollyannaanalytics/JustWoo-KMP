@@ -2,11 +2,10 @@ package com.pollyannawu.justwoo.android.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.pollyannawu.justwoo.core.AssignStatus
 import com.pollyannawu.justwoo.core.Task
-import com.pollyannawu.justwoo.core.TaskStatus
 import com.pollyannawu.justwoo.data.HouseRepository
 import com.pollyannawu.justwoo.data.TaskRepository
+import com.pollyannawu.justwoo.domain.usecase.task.ObserveHomeTodayTasksUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,6 +23,7 @@ import kotlinx.datetime.toLocalDateTime
 class HomeViewModel(
     private val taskRepository: TaskRepository,
     private val houseRepository: HouseRepository,
+    private val observeHomeTodayTasks: ObserveHomeTodayTasksUseCase,
 ) : ViewModel() {
 
     data class UiState(
@@ -34,21 +34,9 @@ class HomeViewModel(
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
-    /** Tasks assigned to (and accepted by) the current user that are due today. */
+    /** Tasks for the current user within ±3 days of today (defaults from the use case). */
     fun todayTasks(currentUserId: Long): Flow<List<Task>> =
-        taskRepository.observeTasks().map { tasks ->
-            val zone = TimeZone.currentSystemDefault()
-            val today = Clock.System.now().toLocalDateTime(zone).date
-            tasks
-                .filter { t ->
-                    t.taskStatus != TaskStatus.DONE &&
-                        t.assignees.any { a ->
-                            a.userId == currentUserId && a.status == AssignStatus.ACCEPTED
-                        } &&
-                        t.dueTime.toLocalDateTime(zone).date == today
-                }
-                .sortedBy { it.dueTime }
-        }
+        observeHomeTodayTasks(userId = currentUserId)
 
     /** Count of tasks involving the user within the current calendar month. */
     fun monthlyCount(currentUserId: Long): Flow<Int> =

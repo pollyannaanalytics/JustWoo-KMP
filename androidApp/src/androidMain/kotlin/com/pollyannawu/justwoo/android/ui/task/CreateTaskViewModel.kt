@@ -3,15 +3,12 @@ package com.pollyannawu.justwoo.android.ui.task
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pollyannawu.justwoo.core.AccessLevel
-import com.pollyannawu.justwoo.core.dto.CreateTaskRequest
-import com.pollyannawu.justwoo.data.HouseRepository
-import com.pollyannawu.justwoo.data.TaskRepository
+import com.pollyannawu.justwoo.domain.usecase.house.ObserveHouseMembersUseCase
+import com.pollyannawu.justwoo.domain.usecase.task.CreateTaskOutcome
+import com.pollyannawu.justwoo.domain.usecase.task.CreateTaskUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
@@ -21,8 +18,8 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 
 class CreateTaskViewModel(
-    private val taskRepository: TaskRepository,
-    private val houseRepository: HouseRepository,
+    private val observeHouseMembers: ObserveHouseMembersUseCase,
+    private val createTask: CreateTaskUseCase,
 ) : ViewModel() {
 
     data class Assignee(val id: Long, val label: String)
@@ -45,17 +42,15 @@ class CreateTaskViewModel(
 
     fun bind(houseId: Long) {
         viewModelScope.launch {
-            houseRepository.observeHouses()
-                .map { houses -> houses.firstOrNull { it.id == houseId }?.members.orEmpty() }
-                .collect { members ->
-                    _uiState.update { state ->
-                        state.copy(
-                            availableAssignees = members.map {
-                                Assignee(id = it.userId, label = "Member #${it.userId}")
-                            }
-                        )
-                    }
+            observeHouseMembers(houseId).collect { members ->
+                _uiState.update { state ->
+                    state.copy(
+                        availableAssignees = members.map {
+                            Assignee(id = it.userId, label = "Member #${it.userId}")
+                        }
+                    )
                 }
+            }
         }
     }
 
@@ -70,34 +65,29 @@ class CreateTaskViewModel(
 
     fun submit(currentUserId: Long, houseId: Long) {
         val s = _uiState.value
-        if (s.title.isBlank()) {
-            _uiState.update { it.copy(titleError = "Please enter a task title.") }
-            return
-        }
-        // "Everyone" → all house members; otherwise just the picked one.
-        val assigneeIds = if (s.assigneeId == null) {
-            s.availableAssignees.map { it.id }.ifEmpty { listOf(currentUserId) }
-        } else {
-            listOf(s.assigneeId)
-        }
-
-        _uiState.update { it.copy(loading = true) }
+        _uiState.update { it.copy(loading = true, titleError = null) }
         viewModelScope.launch {
-            try {
-                taskRepository.createTask(
-                    CreateTaskRequest(
-                        title = s.title.trim(),
-                        ownerId = currentUserId,
-                        description = s.description.takeIf { it.isNotBlank() },
-                        houseId = houseId,
-                        accessLevel = s.accessLevel,
-                        assigneeIds = assigneeIds,
-                        dueTime = s.dueTime,
-                    )
+            val outcome = createTask(
+                CreateTaskUseCase.Input(
+                    title = s.title,
+                    description = s.description,
+                    ownerId = currentUserId,
+                    houseId = houseId,
+                    accessLevel = s.accessLevel,
+                    assigneeId = s.assigneeId,
+                    availableMemberIds = s.availableAssignees.map { it.id },
+                    dueTime = s.dueTime,
                 )
-                _uiState.update { it.copy(loading = false, saved = true) }
-            } catch (t: Throwable) {
-                _uiState.update { it.copy(loading = false, titleError = t.message ?: "Could not save task.") }
+            )
+            when (outcome) {
+                CreateTaskOutcome.Success ->
+                    _uiState.update { it.copy(loading = false, saved = true) }
+                CreateTaskOutcome.Failure.BlankTitle ->
+                    _uiState.update { it.copy(loading = false, titleError = "Please enter a task title.") }
+                is CreateTaskOutcome.Failure.Unknown ->
+                    _uiState.update {
+                        it.copy(loading = false, titleError = outcome.message ?: "Could not save task.")
+                    }
             }
         }
     }

@@ -2,7 +2,11 @@ package com.pollyannawu.justwoo.android.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.pollyannawu.justwoo.data.AuthRepository
+import com.pollyannawu.justwoo.domain.usecase.auth.HasActiveSessionUseCase
+import com.pollyannawu.justwoo.domain.usecase.auth.HasOnboardedUseCase
+import com.pollyannawu.justwoo.domain.usecase.auth.ObserveCurrentHouseIdUseCase
+import com.pollyannawu.justwoo.domain.usecase.auth.ObserveCurrentUserIdUseCase
+import com.pollyannawu.justwoo.domain.usecase.auth.ObserveIsAuthenticatedUseCase
 import com.pollyannawu.justwoo.ui.nav.auth.AuthStart
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -11,16 +15,20 @@ import kotlinx.coroutines.flow.stateIn
 /**
  * Activity-scoped session/state holder. Acts as the boundary between the
  * data layer and the Decompose nav graph: nothing under `ui/nav/` should
- * import [AuthRepository] — they observe state through this VM instead.
+ * see the repository — they observe state through this VM (via use cases).
  */
 class MainViewModel(
-    private val authRepository: AuthRepository,
+    observeCurrentUserId: ObserveCurrentUserIdUseCase,
+    observeCurrentHouseId: ObserveCurrentHouseIdUseCase,
+    observeIsAuthenticated: ObserveIsAuthenticatedUseCase,
+    private val hasActiveSession: HasActiveSessionUseCase,
+    private val hasOnboarded: HasOnboardedUseCase,
 ) : ViewModel() {
 
-    val currentUserId: StateFlow<Long?> = authRepository.currentUserId
+    val currentUserId: StateFlow<Long?> = observeCurrentUserId()
         .stateIn(viewModelScope, SharingStarted.Eagerly, initialValue = null)
 
-    val currentHouseId: StateFlow<Long?> = authRepository.currentHouseId
+    val currentHouseId: StateFlow<Long?> = observeCurrentHouseId()
         .stateIn(viewModelScope, SharingStarted.Eagerly, initialValue = null)
 
     /**
@@ -28,11 +36,11 @@ class MainViewModel(
      * of prefs so first composition can pick the right Decompose config
      * without flashing the wrong screen.
      */
-    val isAuthenticated: StateFlow<Boolean> = authRepository.isAuthenticated
+    val isAuthenticated: StateFlow<Boolean> = observeIsAuthenticated()
         .stateIn(
             viewModelScope,
             SharingStarted.Eagerly,
-            initialValue = authRepository.hasActiveSession(),
+            initialValue = hasActiveSession(),
         )
 
     /**
@@ -41,5 +49,5 @@ class MainViewModel(
      * each time the auth sub-stack is constructed.
      */
     fun resolveAuthStart(): AuthStart =
-        if (authRepository.hasOnboarded()) AuthStart.SignIn else AuthStart.Register
+        if (hasOnboarded()) AuthStart.SignIn else AuthStart.Register
 }

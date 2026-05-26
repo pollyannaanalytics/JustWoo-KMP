@@ -13,8 +13,27 @@ import com.pollyannawu.justwoo.data.DefaultHouseRepository
 import com.pollyannawu.justwoo.data.DefaultTaskRepository
 import com.pollyannawu.justwoo.data.HouseRepository
 import com.pollyannawu.justwoo.data.TaskRepository
+import com.pollyannawu.justwoo.domain.usecase.auth.HasActiveSessionUseCase
+import com.pollyannawu.justwoo.domain.usecase.auth.HasOnboardedUseCase
 import com.pollyannawu.justwoo.domain.usecase.auth.LoginUseCase
+import com.pollyannawu.justwoo.domain.usecase.auth.LogoutUseCase
+import com.pollyannawu.justwoo.domain.usecase.auth.ObserveCurrentHouseIdUseCase
+import com.pollyannawu.justwoo.domain.usecase.auth.ObserveCurrentUserIdUseCase
+import com.pollyannawu.justwoo.domain.usecase.auth.ObserveIsAuthenticatedUseCase
 import com.pollyannawu.justwoo.domain.usecase.auth.RegisterUseCase
+import com.pollyannawu.justwoo.domain.usecase.house.GetHouseMembersUseCase
+import com.pollyannawu.justwoo.domain.usecase.house.ObserveHouseMembersUseCase
+import com.pollyannawu.justwoo.domain.usecase.task.CreateTaskUseCase
+import com.pollyannawu.justwoo.domain.usecase.task.FilterPendingTasksForUserUseCase
+import com.pollyannawu.justwoo.domain.usecase.task.FilterTasksInWindowUseCase
+import com.pollyannawu.justwoo.domain.usecase.task.GetHomeTodayTasksUseCase
+import com.pollyannawu.justwoo.domain.usecase.task.GetPendingTasksForUserUseCase
+import com.pollyannawu.justwoo.domain.usecase.task.GetProfileTasksInWindowUseCase
+import com.pollyannawu.justwoo.domain.usecase.task.ObserveAllTasksUseCase
+import com.pollyannawu.justwoo.domain.usecase.task.ObserveHomeTodayTasksUseCase
+import com.pollyannawu.justwoo.domain.usecase.task.ObservePendingTasksForUserUseCase
+import com.pollyannawu.justwoo.domain.usecase.task.ObserveProfileTasksInWindowUseCase
+import com.pollyannawu.justwoo.domain.usecase.task.SubmitTaskDecisionUseCase
 import org.koin.androidx.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 
@@ -45,12 +64,31 @@ val androidModule = module {
 
     factory { LoginUseCase(get()) }
     factory { RegisterUseCase(get()) }
+    factory { ObserveCurrentUserIdUseCase(get()) }
+    factory { ObserveCurrentHouseIdUseCase(get()) }
+    factory { ObserveIsAuthenticatedUseCase(get()) }
+    factory { HasActiveSessionUseCase(get()) }
+    factory { HasOnboardedUseCase(get()) }
+    factory { LogoutUseCase(get()) }
+    factory { FilterTasksInWindowUseCase() }
+    factory { ObserveAllTasksUseCase(get()) }
+    factory { ObserveHomeTodayTasksUseCase(get(), get()) }
+    factory { GetHomeTodayTasksUseCase(get(), get()) }
+    factory { ObserveProfileTasksInWindowUseCase(get(), get()) }
+    factory { GetProfileTasksInWindowUseCase(get(), get()) }
+    factory { FilterPendingTasksForUserUseCase() }
+    factory { ObservePendingTasksForUserUseCase(get(), get()) }
+    factory { GetPendingTasksForUserUseCase(get(), get()) }
+    factory { SubmitTaskDecisionUseCase(get()) }
+    factory { CreateTaskUseCase(get()) }
+    factory { ObserveHouseMembersUseCase(get()) }
+    factory { GetHouseMembersUseCase(get()) }
 
-    viewModel { MainViewModel(get()) }
+    viewModel { MainViewModel(get(), get(), get(), get(), get()) }
     viewModel { SignInViewModel(get()) }
     viewModel { RegisterViewModel(get()) }
-    viewModel { HomeViewModel(get(), get()) }
-    viewModel { CreateTaskViewModel(get(), get()) }
-    viewModel { TaskExplorationViewModel(get()) }
-    viewModel { ProfileEditViewModel(get()) }
+    viewModel { HomeViewModel(get(), get(), get()) }
+    viewModel { CreateTaskViewModel(get(), get()) } // observeHouseMembers, createTask
+    viewModel { TaskExplorationViewModel(get(), get()) }
+    viewModel { ProfileEditViewModel(get(), get()) }
 }

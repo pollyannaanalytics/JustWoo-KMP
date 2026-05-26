@@ -4,27 +4,25 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pollyannawu.justwoo.core.AssignStatus
 import com.pollyannawu.justwoo.core.Task
-import com.pollyannawu.justwoo.core.TaskAssignee
-import com.pollyannawu.justwoo.data.TaskRepository
+import com.pollyannawu.justwoo.domain.usecase.task.ObservePendingTasksForUserUseCase
+import com.pollyannawu.justwoo.domain.usecase.task.SubmitTaskDecisionUseCase
+import com.pollyannawu.justwoo.domain.usecase.task.TaskDecisionOutcome
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * Drives the "Task Exploration" swipe deck: the user sees one card per pending
- * task assigned to them, and swipes right to accept / left to decline.
- *
- * UNASSIGNED + PENDING_APPROVAL count as "pending" — anything the user has yet
- * to act on.
- */
+
 class TaskExplorationViewModel(
-    private val taskRepository: TaskRepository,
+    private val observePendingTasksForUser: ObservePendingTasksForUserUseCase,
+    private val submitTaskDecision: SubmitTaskDecisionUseCase,
 ) : ViewModel() {
 
     data class UiState(
@@ -41,10 +39,13 @@ class TaskExplorationViewModel(
     private val _currentIndex = MutableStateFlow(0)
     private val _submitting = MutableStateFlow(false)
     private val _error = MutableStateFlow<String?>(null)
-    private val _userId = MutableStateFlow(0L)
+    private val _userId = MutableStateFlow<Long?>(null)
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<UiState> = combine(
-        taskRepository.observeTasks().map { it.filterPendingFor(_userId.value) },
+        _userId.flatMapLatest { id ->
+            if (id == null) flowOf(emptyList()) else observePendingTasksForUser(id)
+        },
         _currentIndex,
         _submitting,
         _error,
@@ -72,31 +73,25 @@ class TaskExplorationViewModel(
         houseId: Long,
         userId: Long,
         taskId: Long,
-        status: AssignStatus,
+        decision: AssignStatus,
     ) {
         _submitting.value = true
         _error.value = null
         viewModelScope.launch {
-            try {
-                taskRepository.updateTaskAssignStatus(
-                    houseId = houseId,
-                    taskId = taskId,
-                    assignee = TaskAssignee(userId = userId, status = status),
-                )
-                _currentIndex.update { it + 1 }
-            } catch (t: Throwable) {
-                _error.value = t.message ?: "Could not update task."
-            } finally {
-                _submitting.value = false
+            when (val outcome = submitTaskDecision(
+                houseId = houseId,
+                taskId = taskId,
+                userId = userId,
+                decision = decision,
+            )) {
+                TaskDecisionOutcome.Success ->
+                    _currentIndex.update { it + 1 }
+                TaskDecisionOutcome.Failure.InvalidStatus ->
+                    _error.value = "Invalid decision."
+                is TaskDecisionOutcome.Failure.Unknown ->
+                    _error.value = outcome.message ?: "Could not update task."
             }
+            _submitting.value = false
         }
     }
-
-    private fun List<Task>.filterPendingFor(userId: Long): List<Task> =
-        filter { task ->
-            task.assignees.any { a ->
-                a.userId == userId &&
-                    (a.status == AssignStatus.UNASSIGNED || a.status == AssignStatus.PENDING_APPROVAL)
-            }
-        }.sortedBy { it.dueTime }
 }

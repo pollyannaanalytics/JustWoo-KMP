@@ -2,12 +2,13 @@ package com.pollyannawu.justwoo.data.network
 
 import com.pollyannawu.justwoo.config.AppConfig
 import com.pollyannawu.justwoo.data.datasource.auth.TokenStorage
+import com.pollyannawu.justwoo.data.network.log.ApiLogger
+import com.pollyannawu.justwoo.data.network.log.d
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.logging.DEFAULT
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
@@ -27,6 +28,7 @@ fun createHttpClient(
     json: Json,
     tokenStorage: TokenStorage,
     tokenRefresher: TokenRefresher,
+    apiLogger: ApiLogger,
 ): HttpClient = HttpClient(engine) {
 
     expectSuccess = true
@@ -46,7 +48,7 @@ fun createHttpClient(
 
     install(Logging) {
         level = if (config.isDebug) LogLevel.ALL else LogLevel.INFO
-        logger = Logger.DEFAULT
+        logger = apiLogger.asKtorLogger(KTOR_TAG)
     }
 
     install(Auth) {
@@ -78,7 +80,8 @@ fun createHttpClient(
 fun createRefreshClient(
     engine: HttpClientEngine,
     config: AppConfig,
-    json: Json
+    json: Json,
+    apiLogger: ApiLogger,
 ): HttpClient = HttpClient(engine) {
     expectSuccess = true
     install(ContentNegotiation) { json(json) }
@@ -88,10 +91,20 @@ fun createRefreshClient(
     }
     install(Logging) {
         level = if (config.isDebug) LogLevel.ALL else LogLevel.INFO
-        logger = Logger.DEFAULT
+        logger = apiLogger.asKtorLogger(KTOR_REFRESH_TAG)
     }
     defaultRequest {
         url(config.baseUrl)
         contentType(ContentType.Application.Json)
+    }
+}
+
+private const val KTOR_TAG = "JustWooApi"
+private const val KTOR_REFRESH_TAG = "JustWooApi.refresh"
+
+/** Adapts our KMP [ApiLogger] into the [Logger] surface Ktor's Logging plugin expects. */
+private fun ApiLogger.asKtorLogger(tag: String): Logger = object : Logger {
+    override fun log(message: String) {
+        this@asKtorLogger.d(tag, message)
     }
 }
