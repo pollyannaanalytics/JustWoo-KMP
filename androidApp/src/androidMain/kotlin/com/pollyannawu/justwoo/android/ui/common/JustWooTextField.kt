@@ -3,7 +3,6 @@ package com.pollyannawu.justwoo.android.ui.common
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -13,8 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.unit.dp
 import com.pollyannawu.justwoo.android.ui.theme.JustWooColors
+import com.pollyannawu.justwoo.android.ui.theme.JustWooShapes
+import com.pollyannawu.justwoo.android.ui.theme.JustWooSpacing
 
 /**
  * Rounded-pill input matching the Sign in screen in Figma:
@@ -40,7 +40,7 @@ fun JustWooTextField(
             placeholder = { Text(placeholder, color = JustWooColors.TextPlaceholder) },
             isError = isError,
             singleLine = singleLine,
-            shape = RoundedCornerShape(28.dp),
+            shape = JustWooShapes.Pill,
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
             visualTransformation = visualTransformation,
             colors = OutlinedTextFieldDefaults.colors(
@@ -60,7 +60,7 @@ fun JustWooTextField(
                 text = "*$errorMessage",
                 color = JustWooColors.Error,
                 style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                modifier = Modifier.padding(start = JustWooSpacing.Default, top = JustWooSpacing.XSmall)
             )
         }
     }

@@ -5,10 +5,10 @@ import com.pollyannawu.justwoo.core.TaskAssignee
 import com.pollyannawu.justwoo.core.TaskStatus
 import com.pollyannawu.justwoo.core.dto.CreateTaskRequest
 import com.pollyannawu.justwoo.core.toTask
-import com.pollyannawu.justwoo.datasource.auth.UserStorage
-import com.pollyannawu.justwoo.datasource.TaskDataSource
+import com.pollyannawu.justwoo.data.datasource.auth.UserStorage
+import com.pollyannawu.justwoo.data.datasource.TaskDataSource
 import com.pollyannawu.justwoo.model.ApiResult
-import com.pollyannawu.justwoo.network.service.TaskApiService
+import com.pollyannawu.justwoo.data.network.service.TaskApiService
 import kotlinx.coroutines.flow.Flow
 
 interface TaskRepository {

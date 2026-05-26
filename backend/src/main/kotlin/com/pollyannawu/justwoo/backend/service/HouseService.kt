@@ -36,6 +36,12 @@ class DefaultHouseService(
     private val profileRepository: ProfileRepository
 ) : HouseService {
     override suspend fun createHouse(adminUserId: Long, request: HouseRequest): HouseDataResult<HouseResponse> {
+        if (request.name.isBlank() || request.name.length > 50) {
+            return HouseDataResult.Error.BadRequest("House name must be between 1 and 50 characters")
+        }
+        if (houseRepository.isAnyMember(adminUserId)) {
+            return HouseDataResult.Error.AlreadyMember
+        }
         val newHouse = houseRepository.createHouse(request.toDomain(), adminUserId)
         return HouseDataResult.Success(
             mergeHouseAndProfileDetails(newHouse)

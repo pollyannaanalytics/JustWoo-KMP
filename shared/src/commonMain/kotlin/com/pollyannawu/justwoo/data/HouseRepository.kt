@@ -3,10 +3,10 @@ package com.pollyannawu.justwoo.data
 import com.pollyannawu.justwoo.core.House
 import com.pollyannawu.justwoo.core.dto.HouseRequest
 import com.pollyannawu.justwoo.core.toHouse
-import com.pollyannawu.justwoo.datasource.auth.UserStorage
-import com.pollyannawu.justwoo.datasource.HouseDataSource
+import com.pollyannawu.justwoo.data.datasource.auth.UserStorage
+import com.pollyannawu.justwoo.data.datasource.HouseDataSource
 import com.pollyannawu.justwoo.model.ApiResult
-import com.pollyannawu.justwoo.network.service.HouseApiService
+import com.pollyannawu.justwoo.data.network.service.HouseApiService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Clock
 

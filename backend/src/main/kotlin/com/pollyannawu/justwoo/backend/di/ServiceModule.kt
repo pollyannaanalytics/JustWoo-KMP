@@ -2,10 +2,12 @@ package com.pollyannawu.justwoo.backend.di
 
 import com.pollyannawu.justwoo.backend.service.AuthService
 import com.pollyannawu.justwoo.backend.service.DefaultAuthService
+import com.pollyannawu.justwoo.backend.service.DefaultHouseInviteService
 import com.pollyannawu.justwoo.backend.service.DefaultHouseService
 import com.pollyannawu.justwoo.backend.service.DefaultProfileService
 import com.pollyannawu.justwoo.backend.service.DefaultSettlementService
 import com.pollyannawu.justwoo.backend.service.DefaultTaskService
+import com.pollyannawu.justwoo.backend.service.HouseInviteService
 import com.pollyannawu.justwoo.backend.service.HouseService
 import com.pollyannawu.justwoo.backend.service.ProfileService
 import com.pollyannawu.justwoo.backend.service.SettlementService
@@ -18,6 +20,7 @@ import org.koin.dsl.module
 
 val servicesModule = module {
     single<HouseService>{ DefaultHouseService(get(), get()) }
+    single<HouseInviteService> { DefaultHouseInviteService(get(), get(), get()) }
     single<TaskService>{ DefaultTaskService(get(), get(), get()) }
     single<AuthService> { DefaultAuthService(get(), get(), get(), get(), get(), get()) }
     single<ProfileService> { DefaultProfileService(get()) }

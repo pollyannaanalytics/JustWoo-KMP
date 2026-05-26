@@ -1,10 +1,22 @@
 package com.pollyannawu.justwoo.android.ui.profile
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.pollyannawu.justwoo.core.Task
+import com.pollyannawu.justwoo.domain.usecase.task.ObserveAllTasksUseCase
+import com.pollyannawu.justwoo.domain.usecase.task.ObserveProfileTasksInWindowUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 /**
  * Profile edit — matches the Figma variants: edit 姓名 / bio / hashtags
@@ -14,7 +26,10 @@ import kotlinx.coroutines.flow.update
  * when it does, inject it here and wire submit() to it. For now this screen
  * is pure form state.
  */
-class ProfileEditViewModel : ViewModel() {
+class ProfileEditViewModel(
+    private val observeAllTasks: ObserveAllTasksUseCase,
+    private val observeProfileTasksInWindow: ObserveProfileTasksInWindowUseCase,
+) : ViewModel() {
 
     companion object {
         const val NAME_LIMIT = 20
@@ -31,10 +46,27 @@ class ProfileEditViewModel : ViewModel() {
         val bioError: String? = null,
         val hashtagError: String? = null,
         val saved: Boolean = false,
+        val selectedDate: LocalDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date,
     )
 
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
+
+    /** All cached tasks — feeds the calendar grid's per-day markers. */
+    val allTasks: StateFlow<List<Task>> = observeAllTasks()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /**
+     * Tasks within the 7-day window ending on the currently selected date.
+     * Re-subscribes whenever `selectedDate` changes.
+     */
+    val tasksInWindow: StateFlow<List<Task>> = _uiState
+        .map { it.selectedDate }
+        .let { dates ->
+            @Suppress("OPT_IN_USAGE")
+            dates.flatMapLatest { anchor -> observeProfileTasksInWindow(anchor = anchor) }
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     fun onNameChange(v: String) = _uiState.update {
         it.copy(
@@ -67,6 +99,8 @@ class ProfileEditViewModel : ViewModel() {
     fun removeHashtag(tag: String) = _uiState.update {
         it.copy(hashtags = it.hashtags - tag)
     }
+
+    fun selectDate(date: LocalDate) = _uiState.update { it.copy(selectedDate = date) }
 
     fun save() {
         val s = _uiState.value
