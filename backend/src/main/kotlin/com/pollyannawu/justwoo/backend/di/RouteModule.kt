@@ -2,6 +2,7 @@ package com.pollyannawu.justwoo.backend.di
 
 import com.pollyannawu.justwoo.backend.routes.authRoute
 import com.pollyannawu.justwoo.backend.routes.houseRoute
+import com.pollyannawu.justwoo.backend.routes.inviteRoute
 import com.pollyannawu.justwoo.backend.routes.profileRoute
 import com.pollyannawu.justwoo.backend.routes.schemaRoute
 import com.pollyannawu.justwoo.backend.routes.settlementRoute
@@ -18,6 +19,7 @@ fun Application.routeModule(){
         authRoute()
         taskRoute()
         houseRoute()
+        inviteRoute()
         profileRoute()
         settlementRoute()
         schemaRoute()

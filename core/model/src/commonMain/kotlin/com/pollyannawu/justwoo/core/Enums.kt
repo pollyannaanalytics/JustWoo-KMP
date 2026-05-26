@@ -24,3 +24,8 @@ enum class TaskStatus {
 enum class MemberRole(val value: Int) {
     ADMIN(0), MEMBER(1)
 }
+
+@Serializable
+enum class JoinRequestStatus(val value: Int) {
+    PENDING(0), APPROVED(1), REJECTED(2)
+}

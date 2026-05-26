@@ -8,6 +8,10 @@ sealed class HouseDataResult<out T> {
         data class UserNotAllowed(val id: Long, val type: HouseUserType) : Error()
         data class DatabaseError(val message: String) : Error()
         object NotFound : Error()
+        object AlreadyMember : Error()
+        object InvalidCode : Error()
+        object AlreadyProcessed : Error()
+        data class BadRequest(val message: String) : Error()
     }
 }
 

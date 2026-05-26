@@ -4,9 +4,11 @@ import com.pollyannawu.justwoo.config.AppConfig
 import com.pollyannawu.justwoo.data.network.service.AuthApiService
 import com.pollyannawu.justwoo.data.network.service.DefaultAuthApiService
 import com.pollyannawu.justwoo.data.network.service.DefaultHouseApiService
+import com.pollyannawu.justwoo.data.network.service.DefaultHouseInviteApiService
 import com.pollyannawu.justwoo.data.network.service.DefaultProfileApiService
 import com.pollyannawu.justwoo.data.network.service.DefaultSettlementApiService
 import com.pollyannawu.justwoo.data.network.service.DefaultTaskApiService
+import com.pollyannawu.justwoo.data.network.service.HouseInviteApiService
 import com.pollyannawu.justwoo.data.datasource.auth.DefaultDeviceIdProvider
 import com.pollyannawu.justwoo.data.datasource.auth.DefaultTokenStorage
 import com.pollyannawu.justwoo.data.datasource.auth.DefaultUserStorage
@@ -79,9 +81,10 @@ val networkModule = module {
         )
     }
 
-    single<AuthApiService>       { DefaultAuthApiService(get()) }
-    single<HouseApiService>      { DefaultHouseApiService(get()) }
-    single<TaskApiService>       { DefaultTaskApiService(get()) }
-    single<ProfileApiService>    { DefaultProfileApiService(get()) }
-    single<SettlementApiService> { DefaultSettlementApiService(get()) }
+    single<AuthApiService>        { DefaultAuthApiService(get()) }
+    single<HouseApiService>       { DefaultHouseApiService(get()) }
+    single<HouseInviteApiService> { DefaultHouseInviteApiService(get()) }
+    single<TaskApiService>        { DefaultTaskApiService(get()) }
+    single<ProfileApiService>     { DefaultProfileApiService(get()) }
+    single<SettlementApiService>  { DefaultSettlementApiService(get()) }
 }

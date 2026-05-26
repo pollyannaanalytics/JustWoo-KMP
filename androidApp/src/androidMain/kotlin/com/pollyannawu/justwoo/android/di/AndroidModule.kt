@@ -9,8 +9,10 @@ import com.pollyannawu.justwoo.android.ui.task.CreateTaskViewModel
 import com.pollyannawu.justwoo.android.ui.task.TaskExplorationViewModel
 import com.pollyannawu.justwoo.data.AuthRepository
 import com.pollyannawu.justwoo.data.DefaultAuthRepository
+import com.pollyannawu.justwoo.data.DefaultHouseInviteRepository
 import com.pollyannawu.justwoo.data.DefaultHouseRepository
 import com.pollyannawu.justwoo.data.DefaultTaskRepository
+import com.pollyannawu.justwoo.data.HouseInviteRepository
 import com.pollyannawu.justwoo.data.HouseRepository
 import com.pollyannawu.justwoo.data.TaskRepository
 import com.pollyannawu.justwoo.domain.usecase.auth.HasActiveSessionUseCase
@@ -21,8 +23,14 @@ import com.pollyannawu.justwoo.domain.usecase.auth.ObserveCurrentHouseIdUseCase
 import com.pollyannawu.justwoo.domain.usecase.auth.ObserveCurrentUserIdUseCase
 import com.pollyannawu.justwoo.domain.usecase.auth.ObserveIsAuthenticatedUseCase
 import com.pollyannawu.justwoo.domain.usecase.auth.RegisterUseCase
+import com.pollyannawu.justwoo.domain.usecase.house.ApproveMemberUseCase
+import com.pollyannawu.justwoo.domain.usecase.house.CreateHouseUseCase
+import com.pollyannawu.justwoo.domain.usecase.house.GenerateInviteCodeUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.GetHouseMembersUseCase
+import com.pollyannawu.justwoo.domain.usecase.house.GetJoinRequestStatusUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.ObserveHouseMembersUseCase
+import com.pollyannawu.justwoo.domain.usecase.house.RejectMemberUseCase
+import com.pollyannawu.justwoo.domain.usecase.house.SubmitJoinRequestUseCase
 import com.pollyannawu.justwoo.domain.usecase.task.CreateTaskUseCase
 import com.pollyannawu.justwoo.domain.usecase.task.FilterPendingTasksForUserUseCase
 import com.pollyannawu.justwoo.domain.usecase.task.FilterTasksInWindowUseCase
@@ -61,6 +69,12 @@ val androidModule = module {
             taskDataSource = get(),
         )
     }
+    single<HouseInviteRepository> {
+        DefaultHouseInviteRepository(
+            houseInviteApiService = get(),
+            houseRepository = get(),
+        )
+    }
 
     factory { LoginUseCase(get()) }
     factory { RegisterUseCase(get()) }
@@ -83,6 +97,12 @@ val androidModule = module {
     factory { CreateTaskUseCase(get()) }
     factory { ObserveHouseMembersUseCase(get()) }
     factory { GetHouseMembersUseCase(get()) }
+    factory { CreateHouseUseCase(get()) }
+    factory { GenerateInviteCodeUseCase(get()) }
+    factory { SubmitJoinRequestUseCase(get()) }
+    factory { ApproveMemberUseCase(get()) }
+    factory { RejectMemberUseCase(get()) }
+    factory { GetJoinRequestStatusUseCase(get()) }
 
     viewModel { MainViewModel(get(), get(), get(), get(), get()) }
     viewModel { SignInViewModel(get()) }

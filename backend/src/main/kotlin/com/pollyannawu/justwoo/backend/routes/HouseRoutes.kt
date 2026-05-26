@@ -102,9 +102,14 @@ private suspend inline fun <reified T : Any> ApplicationCall.respondResult(resul
         is HouseDataResult.Success -> respond(HttpStatusCode.OK, result.data)
         is HouseDataResult.Error -> {
             val (status, message) = when (result) {
-                is HouseDataResult.Error.DatabaseError -> HttpStatusCode.InternalServerError to (result.message)
+                is HouseDataResult.Error.DatabaseError -> HttpStatusCode.InternalServerError to result.message
+                is HouseDataResult.Error.BadRequest -> HttpStatusCode.BadRequest to result.message
                 is HouseDataResult.Error.UserNotAllowed -> HttpStatusCode.Forbidden to "User ${result.id} is not allowed (${result.type})"
-                is HouseDataResult.Error.HouseNotFound, HouseDataResult.Error.NotFound -> HttpStatusCode.NotFound to "House not found"
+                is HouseDataResult.Error.HouseNotFound,
+                HouseDataResult.Error.NotFound -> HttpStatusCode.NotFound to "Not found"
+                HouseDataResult.Error.AlreadyMember -> HttpStatusCode.Conflict to "User already belongs to a house"
+                HouseDataResult.Error.InvalidCode -> HttpStatusCode.BadRequest to "Code is invalid or expired. Ask your admin to generate a new one."
+                HouseDataResult.Error.AlreadyProcessed -> HttpStatusCode.Conflict to "Join request has already been processed"
             }
             respond(status, mapOf("error" to message))
         }

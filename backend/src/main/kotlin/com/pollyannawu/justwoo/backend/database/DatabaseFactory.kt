@@ -4,6 +4,8 @@ import com.pollyannawu.justwoo.backend.schema.Chats
 import com.pollyannawu.justwoo.backend.schema.ChatsTasks
 import com.pollyannawu.justwoo.backend.schema.HouseMembers
 import com.pollyannawu.justwoo.backend.schema.Houses
+import com.pollyannawu.justwoo.backend.schema.InviteCodes
+import com.pollyannawu.justwoo.backend.schema.JoinRequests
 import com.pollyannawu.justwoo.backend.schema.Profiles
 import com.pollyannawu.justwoo.backend.schema.Settlements
 import com.pollyannawu.justwoo.backend.schema.Tasks
@@ -47,7 +49,7 @@ object DatabaseFactory {
                 SchemaUtils.create(
                     Tasks, Houses, Profiles, Chats,
                     TasksAssignees, HouseMembers, ChatsTasks,
-                    Users, Settlements
+                    Users, Settlements, InviteCodes, JoinRequests
                 )
             }
         } catch (e: Exception) {

@@ -26,6 +26,8 @@ import kotlin.Int
 
 interface HouseRepository {
     suspend fun isMember(userId: Long, houseId: Long): Boolean
+    suspend fun isAnyMember(userId: Long): Boolean
+    suspend fun isAdmin(userId: Long, houseId: Long): Boolean
     suspend fun getPagedHouses(userId: Long, houseId: Long? = null, size: Int,
                                offset: Long,): PagedResult<House>
     suspend fun createHouse(house: House, userId: Long): House
@@ -45,6 +47,18 @@ internal class DefaultHouseRepository: HouseRepository{
         }.toList()
         log.trace("members: {}", resultRow.size)
         return@dbQuery resultRow.isNotEmpty()
+    }
+
+    override suspend fun isAnyMember(userId: Long): Boolean = dbQuery {
+        HouseMembers.selectAll().where { HouseMembers.memberId eq userId }.any()
+    }
+
+    override suspend fun isAdmin(userId: Long, houseId: Long): Boolean = dbQuery {
+        HouseMembers.selectAll().where {
+            (HouseMembers.memberId eq userId) and
+                (HouseMembers.houseId eq houseId) and
+                (HouseMembers.role eq MemberRole.ADMIN.value)
+        }.any()
     }
 
     override suspend fun getPagedHouses(
