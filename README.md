@@ -62,11 +62,11 @@ graph TD
     subgraph Clients[Client Layer]
         subgraph Android
             AUI[Jetpack Compose UI]
-            ADB[(Room Database)]
+            ADB[(SQLDelight)]
         end
         subgraph iOS
             IUI[SwiftUI]
-            IDB[(Core Data / SQLite)]
+            IDB[(SQLDelight)]
         end
     end
 
@@ -126,10 +126,10 @@ The `:core` module is compiled for JVM, Android, and iOS. DTOs defined here are 
 
 Local storage interfaces are defined in `shared/commonMain` and implemented per platform with native solutions:
 
-- **Android**: Room Database — leveraging Jetpack's lifecycle-aware persistence
-- **iOS**: Native SQLite / Core Data — idiomatic to the Apple ecosystem
+- **Android**: SQLDelight — type-safe SQL with generated Kotlin APIs
+- **iOS**: SQLDelight — same shared schema, with generated Swift-compatible APIs
 
-This approach provides the benefits of shared business logic without sacrificing platform-native database capabilities or forcing a lowest-common-denominator solution.
+This approach provides the benefits of shared business logic and a single source of truth for the database schema across both platforms.
 
 ### Repository Pattern with Sealed Result Types
 
@@ -383,8 +383,9 @@ http://localhost:9000
 - [x] Shared: Repository pattern, API client, DataSource interfaces
 - [x] CI/CD: GitHub Actions — test → auto-merge → deploy
 - [x] Production: AWS Lightsail + Nginx SSL + Docker Compose
-- [ ] Android: Compose UI + Room DataSource implementation
-- [ ] iOS: SwiftUI + native DataSource implementation
+- [x] Android: Decompose navigation setup
+- [ ] Android: Compose UI (in progress)
+- [ ] iOS: SwiftUI + SQLDelight DataSource implementation
 
 ---
 
