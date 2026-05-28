@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -35,6 +37,9 @@ fun HomeTopBar(
     onOpenMenu: () -> Unit,
     onOpenProfile: () -> Unit,
     modifier: Modifier = Modifier,
+    isAdmin: Boolean = false,
+    onInviteMember: () -> Unit = {},
+    onPendingRequests: () -> Unit = {},
 ) {
     Row(
         modifier = modifier
@@ -54,6 +59,14 @@ fun HomeTopBar(
             fontSize = DesignTokens.FontSize.Stat.sp,
         )
         Spacer(Modifier.weight(1f))
+        if (isAdmin) {
+            IconButton(onClick = onInviteMember) {
+                Icon(Icons.Default.PersonAdd, contentDescription = "Invite member", tint = JustWooColors.TextPrimary)
+            }
+            IconButton(onClick = onPendingRequests) {
+                Icon(Icons.Default.People, contentDescription = "Pending requests", tint = JustWooColors.TextPrimary)
+            }
+        }
         Box(
             modifier = Modifier
                 .size(36.dp)

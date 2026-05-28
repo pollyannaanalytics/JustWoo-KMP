@@ -38,6 +38,9 @@ fun HomeScreen(
     onOpenCalendar: () -> Unit,
     onOpenProfile: () -> Unit,
     onOpenMenu: () -> Unit,
+    isAdmin: Boolean = false,
+    onInviteMember: () -> Unit = {},
+    onPendingRequests: () -> Unit = {},
     viewModel: HomeViewModel = koinViewModel(),
 ) {
     val todayTasks by remember(currentUserId) { viewModel.todayTasks(currentUserId) }
@@ -53,6 +56,9 @@ fun HomeScreen(
         onOpenCalendar = onOpenCalendar,
         onOpenProfile = onOpenProfile,
         onOpenMenu = onOpenMenu,
+        isAdmin = isAdmin,
+        onInviteMember = onInviteMember,
+        onPendingRequests = onPendingRequests,
     )
 }
 
@@ -68,10 +74,21 @@ private fun HomeScreenContent(
     onOpenCalendar: () -> Unit,
     onOpenProfile: () -> Unit,
     onOpenMenu: () -> Unit,
+    isAdmin: Boolean = false,
+    onInviteMember: () -> Unit = {},
+    onPendingRequests: () -> Unit = {},
 ) {
     Scaffold(
         containerColor = JustWooColors.Cream,
-        topBar = { HomeTopBar(onOpenMenu = onOpenMenu, onOpenProfile = onOpenProfile) },
+        topBar = {
+            HomeTopBar(
+                onOpenMenu = onOpenMenu,
+                onOpenProfile = onOpenProfile,
+                isAdmin = isAdmin,
+                onInviteMember = onInviteMember,
+                onPendingRequests = onPendingRequests,
+            )
+        },
         bottomBar = {
             HomeBottomBar(
                 onOpenChat = { /* not in scope */ },

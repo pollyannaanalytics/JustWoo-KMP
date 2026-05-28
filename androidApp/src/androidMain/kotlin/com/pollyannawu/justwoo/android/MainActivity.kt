@@ -13,9 +13,9 @@ import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.defaultComponentContext
 import com.pollyannawu.justwoo.android.ui.MainViewModel
 import com.pollyannawu.justwoo.android.ui.nav.RootContent
-import com.pollyannawu.justwoo.ui.nav.DefaultRootComponent
 import com.pollyannawu.justwoo.android.ui.theme.JustWooColors
 import com.pollyannawu.justwoo.android.ui.theme.JustWooTheme
+import com.pollyannawu.justwoo.ui.nav.DefaultRootComponent
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity : ComponentActivity() {
@@ -34,10 +34,15 @@ class MainActivity : ComponentActivity() {
         setContent {
             val userId by mainViewModel.currentUserId.collectAsState()
             val houseId by mainViewModel.currentHouseId.collectAsState()
-            val isAuthenticated by mainViewModel.isAuthenticated.collectAsState()
+            val navCommand by mainViewModel.navCommand.collectAsState()
+            val isAdmin by mainViewModel.isAdmin.collectAsState()
 
-            LaunchedEffect(isAuthenticated) {
-                root.onSessionChanged(isAuthenticated)
+            LaunchedEffect(navCommand) {
+                when (navCommand) {
+                    MainViewModel.NavCommand.ToAuth -> root.onSessionChanged(false)
+                    MainViewModel.NavCommand.ToHouseOnboarding -> root.onHouseOnboardingRequired()
+                    MainViewModel.NavCommand.ToHome -> root.onHouseOnboardingComplete()
+                }
             }
 
             JustWooTheme {
@@ -51,6 +56,7 @@ class MainActivity : ComponentActivity() {
                         component = root,
                         currentUserId = userId ?: 0L,
                         currentHouseId = houseId ?: 0L,
+                        isAdmin = isAdmin,
                     )
                 }
             }
