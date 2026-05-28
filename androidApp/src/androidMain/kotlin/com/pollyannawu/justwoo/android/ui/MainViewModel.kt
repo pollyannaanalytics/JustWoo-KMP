@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pollyannawu.justwoo.core.MemberRole
 import com.pollyannawu.justwoo.domain.usecase.auth.HasActiveSessionUseCase
-import com.pollyannawu.justwoo.domain.usecase.auth.HasOnboardedUseCase
 import com.pollyannawu.justwoo.domain.usecase.auth.ObserveCurrentHouseIdUseCase
 import com.pollyannawu.justwoo.domain.usecase.auth.ObserveCurrentUserIdUseCase
 import com.pollyannawu.justwoo.domain.usecase.auth.ObserveIsAuthenticatedUseCase
@@ -28,7 +27,6 @@ class MainViewModel(
     observeCurrentHouseId: ObserveCurrentHouseIdUseCase,
     observeIsAuthenticated: ObserveIsAuthenticatedUseCase,
     private val hasActiveSession: HasActiveSessionUseCase,
-    private val hasOnboarded: HasOnboardedUseCase,
     observeHouseMembers: ObserveHouseMembersUseCase,
 ) : ViewModel() {
 
@@ -90,11 +88,5 @@ class MainViewModel(
         data object ToHome : NavCommand
     }
 
-    /**
-     * Fresh installs land on Register (onboarding); a user who has ever
-     * signed in/up on this device sees Sign in by default. Re-evaluated
-     * each time the auth sub-stack is constructed.
-     */
-    fun resolveAuthStart(): AuthStart =
-        if (hasOnboarded()) AuthStart.SignIn else AuthStart.Register
+    fun resolveAuthStart(): AuthStart = AuthStart.SignIn
 }

@@ -20,7 +20,6 @@ import com.pollyannawu.justwoo.data.HouseInviteRepository
 import com.pollyannawu.justwoo.data.HouseRepository
 import com.pollyannawu.justwoo.data.TaskRepository
 import com.pollyannawu.justwoo.domain.usecase.auth.HasActiveSessionUseCase
-import com.pollyannawu.justwoo.domain.usecase.auth.HasOnboardedUseCase
 import com.pollyannawu.justwoo.domain.usecase.auth.LoginUseCase
 import com.pollyannawu.justwoo.domain.usecase.auth.LogoutUseCase
 import com.pollyannawu.justwoo.domain.usecase.auth.ObserveCurrentHouseIdUseCase
@@ -86,7 +85,6 @@ val androidModule = module {
     factory { ObserveCurrentHouseIdUseCase(get()) }
     factory { ObserveIsAuthenticatedUseCase(get()) }
     factory { HasActiveSessionUseCase(get()) }
-    factory { HasOnboardedUseCase(get()) }
     factory { LogoutUseCase(get()) }
     factory { FilterTasksInWindowUseCase() }
     factory { ObserveAllTasksUseCase(get()) }
@@ -108,7 +106,7 @@ val androidModule = module {
     factory { RejectMemberUseCase(get()) }
     factory { GetJoinRequestStatusUseCase(get()) }
 
-    viewModel { MainViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel { MainViewModel(get(), get(), get(), get(), get()) }
     viewModel { SignInViewModel(get()) }
     viewModel { RegisterViewModel(get()) }
     viewModel { HomeViewModel(get(), get(), get()) }
