@@ -4,6 +4,10 @@ import com.pollyannawu.justwoo.android.ui.MainViewModel
 import com.pollyannawu.justwoo.android.ui.auth.RegisterViewModel
 import com.pollyannawu.justwoo.android.ui.auth.SignInViewModel
 import com.pollyannawu.justwoo.android.ui.home.HomeViewModel
+import com.pollyannawu.justwoo.android.ui.house.CreateHouseViewModel
+import com.pollyannawu.justwoo.android.ui.house.GenerateInviteCodeViewModel
+import com.pollyannawu.justwoo.android.ui.house.JoinHouseViewModel
+import com.pollyannawu.justwoo.android.ui.house.PendingRequestsViewModel
 import com.pollyannawu.justwoo.android.ui.profile.ProfileEditViewModel
 import com.pollyannawu.justwoo.android.ui.task.CreateTaskViewModel
 import com.pollyannawu.justwoo.android.ui.task.TaskExplorationViewModel
@@ -104,11 +108,15 @@ val androidModule = module {
     factory { RejectMemberUseCase(get()) }
     factory { GetJoinRequestStatusUseCase(get()) }
 
-    viewModel { MainViewModel(get(), get(), get(), get(), get()) }
+    viewModel { MainViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { SignInViewModel(get()) }
     viewModel { RegisterViewModel(get()) }
     viewModel { HomeViewModel(get(), get(), get()) }
     viewModel { CreateTaskViewModel(get(), get()) } // observeHouseMembers, createTask
     viewModel { TaskExplorationViewModel(get(), get()) }
     viewModel { ProfileEditViewModel(get(), get()) }
+    viewModel { CreateHouseViewModel(get()) }
+    viewModel { JoinHouseViewModel(get(), get()) }
+    viewModel { GenerateInviteCodeViewModel(get(), get(), get(), get()) }
+    viewModel { PendingRequestsViewModel(get(), get(), get(), get()) }
 }

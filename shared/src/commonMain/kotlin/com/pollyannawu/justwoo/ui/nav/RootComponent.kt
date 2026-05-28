@@ -18,6 +18,8 @@ import com.pollyannawu.justwoo.ui.nav.auth.AuthStart
 import com.pollyannawu.justwoo.ui.nav.auth.DefaultAuthComponent
 import com.pollyannawu.justwoo.ui.nav.home.DefaultHomeComponent
 import com.pollyannawu.justwoo.ui.nav.home.HomeComponent
+import com.pollyannawu.justwoo.ui.nav.house.DefaultHouseOnboardingComponent
+import com.pollyannawu.justwoo.ui.nav.house.HouseOnboardingComponent
 import com.pollyannawu.justwoo.ui.nav.profile.DefaultProfileComponent
 import com.pollyannawu.justwoo.ui.nav.profile.ProfileComponent
 import com.pollyannawu.justwoo.ui.nav.tasks.DefaultTaskComponent
@@ -42,12 +44,15 @@ interface RootComponent {
      * decoupled from any auth/data type.
      */
     fun onSessionChanged(isAuthenticated: Boolean)
+    fun onHouseOnboardingRequired()
+    fun onHouseOnboardingComplete()
 
     sealed interface Child {
         class Auth(val component: AuthComponent) : Child
         class Home(val component: HomeComponent) : Child
         class Tasks(val component: TaskComponent) : Child
         class Profile(val component: ProfileComponent) : Child
+        class HouseOnboarding(val component: HouseOnboardingComponent) : Child
     }
 }
 
@@ -99,6 +104,18 @@ class DefaultRootComponent(
         }
     }
 
+    override fun onHouseOnboardingRequired() {
+        if (stack.value.active.configuration !is Config.HouseOnboarding) {
+            navigation.replaceAll(Config.HouseOnboarding)
+        }
+    }
+
+    override fun onHouseOnboardingComplete() {
+        if (stack.value.active.configuration !is Config.Home) {
+            navigation.replaceAll(Config.Home)
+        }
+    }
+
     override fun onProfileClick() {
         navigation.bringToFront(Config.Profile)
     }
@@ -141,6 +158,12 @@ class DefaultRootComponent(
                 onFinished = { navigation.pop() },
             ),
         )
+        Config.HouseOnboarding -> RootComponent.Child.HouseOnboarding(
+            DefaultHouseOnboardingComponent(
+                componentContext = childContext,
+                onCompleted = { onHouseOnboardingComplete() },
+            ),
+        )
     }
 
     private fun createSlotChild(
@@ -160,6 +183,7 @@ class DefaultRootComponent(
         @Serializable data object Home : Config
         @Serializable data object Tasks : Config
         @Serializable data object Profile : Config
+        @Serializable data object HouseOnboarding : Config
     }
 
     @Serializable

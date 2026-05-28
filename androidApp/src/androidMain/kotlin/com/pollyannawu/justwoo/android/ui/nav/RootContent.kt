@@ -13,6 +13,7 @@ import com.arkivanov.decompose.extensions.compose.stack.animation.slide
 import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.pollyannawu.justwoo.android.ui.home.HomeScreen
+import com.pollyannawu.justwoo.android.ui.nav.house.HouseOnboardingContent
 import com.pollyannawu.justwoo.android.ui.nav.tasks.TaskContent
 import com.pollyannawu.justwoo.android.ui.nav.tasks.TaskQuickStatusOverlay
 import com.pollyannawu.justwoo.android.ui.profile.ProfileEditScreen
@@ -23,6 +24,7 @@ fun RootContent(
     component: RootComponent,
     currentUserId: Long,
     currentHouseId: Long,
+    isAdmin: Boolean = false,
 ) {
     CompositionLocalProvider(
         LocalAppActions provides AppActions(
@@ -45,6 +47,7 @@ fun RootContent(
                     is RootComponent.Child.Home -> HomeRoute(
                         currentUserId = currentUserId,
                         currentHouseId = currentHouseId,
+                        isAdmin = isAdmin,
                     )
                     is RootComponent.Child.Tasks -> TaskContent(
                         component = child.component,
@@ -53,6 +56,9 @@ fun RootContent(
                     )
                     is RootComponent.Child.Profile -> ProfileEditScreen(
                         onClose = child.component::onClose,
+                    )
+                    is RootComponent.Child.HouseOnboarding -> HouseOnboardingContent(
+                        component = child.component,
                     )
                 }
             }
@@ -68,15 +74,18 @@ fun RootContent(
 
 
 @Composable
-private fun HomeRoute(currentUserId: Long, currentHouseId: Long) {
+private fun HomeRoute(currentUserId: Long, currentHouseId: Long, isAdmin: Boolean) {
     val actions = LocalAppActions.current
     HomeScreen(
         currentUserId = currentUserId,
         currentHouseId = currentHouseId,
         onCreateTask = actions.onCreateTaskClick,
         onOpenTaskSpace = actions.onTaskListClick,
-        onOpenCalendar = { /* TODO: calendar 還沒建 */ },
+        onOpenCalendar = { /* TODO: calendar */ },
         onOpenProfile = actions.onProfileClick,
-        onOpenMenu = { /* TODO: drawer 還沒建 */ },
+        onOpenMenu = { /* TODO: drawer */ },
+        isAdmin = isAdmin,
+        onInviteMember = { /* TODO: show GenerateInviteCodeSheet */ },
+        onPendingRequests = { /* TODO: navigate to PendingRequestsScreen */ },
     )
 }
