@@ -29,6 +29,7 @@ interface TaskComponent {
 class DefaultTaskComponent(
     componentContext: ComponentContext,
     private val onExit: () -> Unit,
+    startOnCreate: Boolean = false,
 ) : TaskComponent, ComponentContext by componentContext {
 
     private val navigation = StackNavigation<Config>()
@@ -37,7 +38,7 @@ class DefaultTaskComponent(
         childStack(
             source = navigation,
             serializer = Config.serializer(),
-            initialConfiguration = Config.List,
+            initialConfiguration = if (startOnCreate) Config.Create else Config.List,
             handleBackButton = true,
             childFactory = ::createChild,
         )
