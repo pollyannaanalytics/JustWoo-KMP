@@ -25,9 +25,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val initialNavCommand = mainViewModel.navCommand.value
         val root = DefaultRootComponent(
             componentContext = defaultComponentContext(),
             initiallyAuthenticated = mainViewModel.isAuthenticated.value,
+            startInLoading = initialNavCommand == MainViewModel.NavCommand.Loading,
             authStartProvider = mainViewModel::resolveAuthStart,
         )
 
@@ -40,6 +42,7 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(navCommand) {
                 when (navCommand) {
                     MainViewModel.NavCommand.ToAuth -> root.onSessionChanged(false)
+                    MainViewModel.NavCommand.Loading -> root.onCheckingHouse()
                     MainViewModel.NavCommand.ToHouseOnboarding -> root.onHouseOnboardingRequired()
                     MainViewModel.NavCommand.ToHome -> root.onHouseOnboardingComplete()
                 }

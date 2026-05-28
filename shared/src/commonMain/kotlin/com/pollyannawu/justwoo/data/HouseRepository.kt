@@ -17,6 +17,9 @@ interface HouseRepository {
     suspend fun updateHouse(house: House)
     suspend fun addMember(houseId: Long, memberId: Long)
     suspend fun removeMember(houseId: Long, memberId: Long)
+
+    /** Fetches the first house the current user belongs to from the server; returns its id or null. */
+    suspend fun fetchFirstHouseId(): Long?
 }
 
 class DefaultHouseRepository(
@@ -98,5 +101,10 @@ class DefaultHouseRepository(
         } else if (result is ApiResult.Error) {
             throw Exception(result.exception)
         }
+    }
+
+    override suspend fun fetchFirstHouseId(): Long? {
+        val result = houseApiService.getHouses(page = 1)
+        return if (result is ApiResult.Success) result.data.content.firstOrNull()?.id else null
     }
 }

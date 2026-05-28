@@ -2,9 +2,11 @@ package com.pollyannawu.justwoo.android.ui.nav
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.stack.animation.fade
@@ -41,6 +43,10 @@ fun RootContent(
                 animation = stackAnimation(fade() + slide()),
             ) { created ->
                 when (val child = created.instance) {
+                    RootComponent.Child.Loading -> Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) { CircularProgressIndicator() }
                     is RootComponent.Child.Auth -> AuthContent(
                         component = child.component,
                     )

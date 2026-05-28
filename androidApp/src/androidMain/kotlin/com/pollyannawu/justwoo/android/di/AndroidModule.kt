@@ -19,6 +19,7 @@ import com.pollyannawu.justwoo.data.DefaultTaskRepository
 import com.pollyannawu.justwoo.data.HouseInviteRepository
 import com.pollyannawu.justwoo.data.HouseRepository
 import com.pollyannawu.justwoo.data.TaskRepository
+import com.pollyannawu.justwoo.domain.usecase.auth.GetCurrentHouseIdUseCase
 import com.pollyannawu.justwoo.domain.usecase.auth.HasActiveSessionUseCase
 import com.pollyannawu.justwoo.domain.usecase.auth.LoginUseCase
 import com.pollyannawu.justwoo.domain.usecase.auth.LogoutUseCase
@@ -33,6 +34,7 @@ import com.pollyannawu.justwoo.domain.usecase.house.GetHouseMembersUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.GetJoinRequestStatusUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.ObserveHouseMembersUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.RejectMemberUseCase
+import com.pollyannawu.justwoo.domain.usecase.house.ResolveCurrentHouseUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.SubmitJoinRequestUseCase
 import com.pollyannawu.justwoo.domain.usecase.task.CreateTaskUseCase
 import com.pollyannawu.justwoo.domain.usecase.task.FilterPendingTasksForUserUseCase
@@ -85,6 +87,7 @@ val androidModule = module {
     factory { ObserveCurrentHouseIdUseCase(get()) }
     factory { ObserveIsAuthenticatedUseCase(get()) }
     factory { HasActiveSessionUseCase(get()) }
+    factory { GetCurrentHouseIdUseCase(get()) }
     factory { LogoutUseCase(get()) }
     factory { FilterTasksInWindowUseCase() }
     factory { ObserveAllTasksUseCase(get()) }
@@ -105,8 +108,9 @@ val androidModule = module {
     factory { ApproveMemberUseCase(get()) }
     factory { RejectMemberUseCase(get()) }
     factory { GetJoinRequestStatusUseCase(get()) }
+    factory { ResolveCurrentHouseUseCase(get(), get()) }
 
-    viewModel { MainViewModel(get(), get(), get(), get(), get()) }
+    viewModel { MainViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { SignInViewModel(get()) }
     viewModel { RegisterViewModel(get()) }
     viewModel { HomeViewModel(get(), get(), get()) }

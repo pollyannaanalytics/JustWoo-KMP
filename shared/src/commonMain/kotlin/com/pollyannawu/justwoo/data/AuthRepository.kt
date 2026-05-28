@@ -20,24 +20,10 @@ interface AuthRepository {
     val currentUserId: Flow<Long?>
     val currentHouseId: Flow<Long?>
 
-    /**
-     * `true` when both a persisted user and a token pair exist. Flips to
-     * `false` on logout or when the bearer refresh fails and the token
-     * pair is cleared — letting nav react without polling prefs.
-     */
     val isAuthenticated: Flow<Boolean>
 
-    /**
-     * Synchronous read of session state for one-shot decisions
-     * (e.g. picking the initial Decompose config at startup).
-     */
     fun hasActiveSession(): Boolean
-
-    /**
-     * `true` once any sign-in / sign-up has succeeded on this install.
-     * Used to decide whether the auth flow opens on Sign-in (returning
-     * user) or Register (fresh install onboarding).
-     */
+    fun getCurrentHouseId(): Long?
     fun hasOnboarded(): Boolean
 
     suspend fun register(email: String, password: String): AuthDataResult
@@ -64,6 +50,8 @@ class DefaultAuthRepository(
 
     override fun hasActiveSession(): Boolean =
         userStorage.getUser() != null && tokenStorage.getTokens() != null
+
+    override fun getCurrentHouseId(): Long? = userStorage.getHouseId()
 
     override fun hasOnboarded(): Boolean = userStorage.hasOnboarded()
 

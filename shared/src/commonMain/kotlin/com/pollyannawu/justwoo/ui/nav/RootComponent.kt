@@ -11,6 +11,7 @@ import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.bringToFront
 import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.router.stack.pop
+import com.arkivanov.decompose.router.stack.push
 import com.arkivanov.decompose.router.stack.replaceAll
 import com.arkivanov.decompose.value.Value
 import com.pollyannawu.justwoo.ui.nav.auth.AuthComponent
@@ -44,10 +45,12 @@ interface RootComponent {
      * decoupled from any auth/data type.
      */
     fun onSessionChanged(isAuthenticated: Boolean)
+    fun onCheckingHouse()
     fun onHouseOnboardingRequired()
     fun onHouseOnboardingComplete()
 
     sealed interface Child {
+        data object Loading : Child
         class Auth(val component: AuthComponent) : Child
         class Home(val component: HomeComponent) : Child
         class Tasks(val component: TaskComponent) : Child
@@ -65,12 +68,7 @@ interface RootComponent {
 class DefaultRootComponent(
     componentContext: ComponentContext,
     initiallyAuthenticated: Boolean,
-    /**
-     * Resolved lazily each time the Auth sub-stack is built so the
-     * decision is re-evaluated when the user logs out after onboarding
-     * (return path → Sign in, not Register again). Default keeps prior
-     * behaviour for any caller that doesn't care.
-     */
+    startInLoading: Boolean = false,
     private val authStartProvider: () -> AuthStart = { AuthStart.SignIn },
 ) : RootComponent, ComponentContext by componentContext {
 
@@ -81,7 +79,11 @@ class DefaultRootComponent(
         childStack(
             source = navigation,
             serializer = Config.serializer(),
-            initialConfiguration = if (initiallyAuthenticated) Config.Home else Config.Auth,
+            initialConfiguration = when {
+                startInLoading -> Config.Loading
+                initiallyAuthenticated -> Config.Home
+                else -> Config.Auth
+            },
             handleBackButton = true,
             childFactory = ::createChild,
         )
@@ -104,6 +106,12 @@ class DefaultRootComponent(
         }
     }
 
+    override fun onCheckingHouse() {
+        if (stack.value.active.configuration !is Config.Loading) {
+            navigation.replaceAll(Config.Loading)
+        }
+    }
+
     override fun onHouseOnboardingRequired() {
         if (stack.value.active.configuration !is Config.HouseOnboarding) {
             navigation.replaceAll(Config.HouseOnboarding)
@@ -121,12 +129,11 @@ class DefaultRootComponent(
     }
 
     override fun onTaskListClick() {
-        navigation.bringToFront(Config.Tasks)
+        navigation.bringToFront(Config.Tasks())
     }
 
     override fun onCreateTaskClick() {
-        // 暫時：先帶到 Tasks 模組（會落在 List 頁），之後可接 deep-link 到 Create
-        navigation.bringToFront(Config.Tasks)
+        navigation.push(Config.Tasks(startOnCreate = true))
     }
 
     override fun onTaskQuickClick(taskId: Long) {
@@ -137,6 +144,7 @@ class DefaultRootComponent(
         config: Config,
         childContext: ComponentContext,
     ): RootComponent.Child = when (config) {
+        Config.Loading -> RootComponent.Child.Loading
         Config.Auth -> RootComponent.Child.Auth(
             DefaultAuthComponent(
                 componentContext = childContext,
@@ -146,10 +154,11 @@ class DefaultRootComponent(
         Config.Home -> RootComponent.Child.Home(
             DefaultHomeComponent(componentContext = childContext),
         )
-        Config.Tasks -> RootComponent.Child.Tasks(
+        is Config.Tasks -> RootComponent.Child.Tasks(
             DefaultTaskComponent(
                 componentContext = childContext,
                 onExit = { navigation.pop() },
+                startOnCreate = config.startOnCreate,
             ),
         )
         Config.Profile -> RootComponent.Child.Profile(
@@ -179,9 +188,10 @@ class DefaultRootComponent(
 
     @Serializable
     private sealed interface Config {
+        @Serializable data object Loading : Config
         @Serializable data object Auth : Config
         @Serializable data object Home : Config
-        @Serializable data object Tasks : Config
+        @Serializable data class Tasks(val startOnCreate: Boolean = false) : Config
         @Serializable data object Profile : Config
         @Serializable data object HouseOnboarding : Config
     }
