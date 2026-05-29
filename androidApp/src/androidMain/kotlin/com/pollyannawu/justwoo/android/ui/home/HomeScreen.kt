@@ -6,7 +6,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -25,10 +29,6 @@ import com.pollyannawu.justwoo.android.ui.theme.JustWooTheme
 import com.pollyannawu.justwoo.core.Task
 import org.koin.androidx.compose.koinViewModel
 
-/**
- * Homepage — composes the cards in `components/` against the [HomeViewModel]
- * state. The Scaffold owns the bottom bar (which holds the central "+" FAB).
- */
 @Composable
 fun HomeScreen(
     currentUserId: Long,
@@ -47,10 +47,13 @@ fun HomeScreen(
         .collectAsState(initial = emptyList())
     val monthlyCount by remember(currentUserId) { viewModel.monthlyCount(currentUserId) }
         .collectAsState(initial = 0)
+    val uiState by viewModel.uiState.collectAsState()
 
     HomeScreenContent(
         todayTasks = todayTasks,
         monthlyCount = monthlyCount,
+        isRefreshing = uiState.refreshing,
+        onRefresh = { viewModel.refresh(currentHouseId) },
         onCreateTask = onCreateTask,
         onOpenTaskSpace = onOpenTaskSpace,
         onOpenCalendar = onOpenCalendar,
@@ -62,13 +65,13 @@ fun HomeScreen(
     )
 }
 
-/**
- * Stateless variant — easier to drive from previews and tests.
- */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HomeScreenContent(
     todayTasks: List<Task>,
     monthlyCount: Int,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
     onCreateTask: () -> Unit,
     onOpenTaskSpace: () -> Unit,
     onOpenCalendar: () -> Unit,
@@ -99,17 +102,25 @@ private fun HomeScreenContent(
             )
         },
     ) { padding ->
-        Column(
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = onRefresh,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = JustWooSpacing.Large),
-            verticalArrangement = Arrangement.spacedBy(JustWooSpacing.Large),
+                .padding(padding),
         ) {
-            Spacer(Modifier.height(JustWooSpacing.XSmall))
-            TodayToDoCard(tasks = todayTasks)
-            MonthlyStatCard(count = monthlyCount)
-            TaskSpaceCard(onClick = onOpenTaskSpace)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = JustWooSpacing.Large),
+                verticalArrangement = Arrangement.spacedBy(JustWooSpacing.Large),
+            ) {
+                Spacer(Modifier.height(JustWooSpacing.XSmall))
+                TodayToDoCard(tasks = todayTasks)
+                MonthlyStatCard(count = monthlyCount)
+                TaskSpaceCard(onClick = onOpenTaskSpace)
+            }
         }
     }
 }
@@ -121,6 +132,8 @@ private fun HomeScreenPreview() {
         HomeScreenContent(
             todayTasks = PreviewSamples.todayTasks,
             monthlyCount = 10,
+            isRefreshing = false,
+            onRefresh = {},
             onCreateTask = {},
             onOpenTaskSpace = {},
             onOpenCalendar = {},
@@ -130,16 +143,18 @@ private fun HomeScreenPreview() {
     }
 }
 
-@Preview()
+@Preview
 @Composable
 private fun HomeScreenEmptyPreview() {
-        HomeScreenContent(
-            todayTasks = emptyList(),
-            monthlyCount = 0,
-            onCreateTask = {},
-            onOpenTaskSpace = {},
-            onOpenCalendar = {},
-            onOpenProfile = {},
-            onOpenMenu = {},
-        )
+    HomeScreenContent(
+        todayTasks = emptyList(),
+        monthlyCount = 0,
+        isRefreshing = false,
+        onRefresh = {},
+        onCreateTask = {},
+        onOpenTaskSpace = {},
+        onOpenCalendar = {},
+        onOpenProfile = {},
+        onOpenMenu = {},
+    )
 }

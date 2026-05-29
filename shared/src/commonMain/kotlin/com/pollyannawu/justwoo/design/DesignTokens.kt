@@ -49,6 +49,9 @@ object DesignTokens {
         const val UrgencyGreen: Long = 0xFF6AAE6C
         const val UrgencyGreenBg: Long = 0xFFDFEFDC
 
+        const val UrgencyBlue: Long = 0xFF4A90D9
+        const val UrgencyBlueBg: Long = 0xFFDAEAF8
+
         // Accent (egg / Task Space dinosaur band)
         const val AccentMint: Long = 0xFFB3E5DA
     }

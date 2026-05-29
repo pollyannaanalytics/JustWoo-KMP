@@ -78,7 +78,7 @@ private fun RegisterContent(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(Modifier.height(72.dp))
-        JustWooLogo()
+        JustWooLogo(modifier = Modifier.height(80.dp))
         Spacer(Modifier.height(JustWooSpacing.Default))
         Text(
             text = "Sign up",
