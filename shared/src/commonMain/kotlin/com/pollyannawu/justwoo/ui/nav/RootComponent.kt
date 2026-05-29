@@ -21,6 +21,8 @@ import com.pollyannawu.justwoo.ui.nav.home.DefaultHomeComponent
 import com.pollyannawu.justwoo.ui.nav.home.HomeComponent
 import com.pollyannawu.justwoo.ui.nav.house.DefaultHouseOnboardingComponent
 import com.pollyannawu.justwoo.ui.nav.house.HouseOnboardingComponent
+import com.pollyannawu.justwoo.ui.nav.houseinfo.DefaultHouseInfoComponent
+import com.pollyannawu.justwoo.ui.nav.houseinfo.HouseInfoComponent
 import com.pollyannawu.justwoo.ui.nav.profile.DefaultProfileComponent
 import com.pollyannawu.justwoo.ui.nav.profile.ProfileComponent
 import com.pollyannawu.justwoo.ui.nav.tasks.DefaultTaskComponent
@@ -33,17 +35,12 @@ interface RootComponent {
     val stack: Value<ChildStack<*, Child>>
     val taskQuickSlot: Value<ChildSlot<*, TaskQuickStatusComponent>>
 
+    fun onHomeClick()
     fun onProfileClick()
     fun onTaskListClick()
     fun onCreateTaskClick()
     fun onTaskQuickClick(taskId: Long)
-
-    /**
-     * Called by the host (Activity/ViewModel boundary) whenever the
-     * session predicate flips — fresh sign-in, logout, or bearer refresh
-     * failure clearing the token pair. The component itself stays
-     * decoupled from any auth/data type.
-     */
+    fun onHouseInfoClick()
     fun onSessionChanged(isAuthenticated: Boolean)
     fun onCheckingHouse()
     fun onHouseOnboardingRequired()
@@ -56,6 +53,7 @@ interface RootComponent {
         class Tasks(val component: TaskComponent) : Child
         class Profile(val component: ProfileComponent) : Child
         class HouseOnboarding(val component: HouseOnboardingComponent) : Child
+        class HouseInfo(val component: HouseInfoComponent) : Child
     }
 }
 
@@ -101,6 +99,7 @@ class DefaultRootComponent(
         when {
             isAuthenticated && current is Config.Auth ->
                 navigation.replaceAll(Config.Home)
+
             !isAuthenticated && current !is Config.Auth ->
                 navigation.replaceAll(Config.Auth)
         }
@@ -124,6 +123,10 @@ class DefaultRootComponent(
         }
     }
 
+    override fun onHomeClick() {
+        navigation.bringToFront(Config.Home)
+    }
+
     override fun onProfileClick() {
         navigation.bringToFront(Config.Profile)
     }
@@ -140,6 +143,10 @@ class DefaultRootComponent(
         slotNavigation.activate(SlotConfig.QuickStatus(taskId))
     }
 
+    override fun onHouseInfoClick() {
+        navigation.bringToFront(Config.HouseInfo)
+    }
+
     private fun createChild(
         config: Config,
         childContext: ComponentContext,
@@ -151,9 +158,11 @@ class DefaultRootComponent(
                 initialScreen = authStartProvider(),
             ),
         )
+
         Config.Home -> RootComponent.Child.Home(
             DefaultHomeComponent(componentContext = childContext),
         )
+
         is Config.Tasks -> RootComponent.Child.Tasks(
             DefaultTaskComponent(
                 componentContext = childContext,
@@ -161,16 +170,25 @@ class DefaultRootComponent(
                 startOnCreate = config.startOnCreate,
             ),
         )
+
         Config.Profile -> RootComponent.Child.Profile(
             DefaultProfileComponent(
                 componentContext = childContext,
                 onFinished = { navigation.pop() },
             ),
         )
+
         Config.HouseOnboarding -> RootComponent.Child.HouseOnboarding(
             DefaultHouseOnboardingComponent(
                 componentContext = childContext,
                 onCompleted = { onHouseOnboardingComplete() },
+            )
+        )
+
+        Config.HouseInfo -> RootComponent.Child.HouseInfo(
+            DefaultHouseInfoComponent(
+                componentContext = childContext,
+                onClose = { navigation.pop() },
             ),
         )
     }
@@ -188,16 +206,26 @@ class DefaultRootComponent(
 
     @Serializable
     private sealed interface Config {
-        @Serializable data object Loading : Config
-        @Serializable data object Auth : Config
-        @Serializable data object Home : Config
-        @Serializable data class Tasks(val startOnCreate: Boolean = false) : Config
-        @Serializable data object Profile : Config
-        @Serializable data object HouseOnboarding : Config
+        @Serializable
+        data object Loading : Config
+        @Serializable
+        data object Auth : Config
+        @Serializable
+        data object Home : Config
+        @Serializable
+        data class Tasks(val startOnCreate: Boolean = false) : Config
+        @Serializable
+        data object Profile : Config
+        @Serializable
+        data object HouseOnboarding : Config
+        @Serializable
+        data object HouseInfo : Config
+
     }
 
     @Serializable
     private sealed interface SlotConfig {
-        @Serializable data class QuickStatus(val taskId: Long) : SlotConfig
+        @Serializable
+        data class QuickStatus(val taskId: Long) : SlotConfig
     }
 }

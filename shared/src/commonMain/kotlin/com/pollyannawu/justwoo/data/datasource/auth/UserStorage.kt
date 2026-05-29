@@ -17,6 +17,7 @@ interface UserStorage {
     val houseIdFlow: Flow<Long?>
     fun getHouseId(): Long?
     fun saveHouseId(houseId: Long)
+    fun clearHouseId()
 
     /**
      * Sticky "user has had at least one successful sign-in / sign-up on
@@ -52,6 +53,10 @@ class DefaultUserStorage(
 
     override fun saveHouseId(houseId: Long) {
         settings.putLong(KEY_HOUSE_ID, houseId)
+    }
+
+    override fun clearHouseId() {
+        settings.remove(KEY_HOUSE_ID)
     }
 
     override fun hasOnboarded(): Boolean = settings.getBoolean(KEY_HAS_ONBOARDED, false)

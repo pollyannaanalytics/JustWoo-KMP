@@ -12,8 +12,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AttachMoney
-import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.outlined.Inbox
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -27,12 +27,9 @@ import com.pollyannawu.justwoo.android.ui.theme.JustWooColors
 import com.pollyannawu.justwoo.android.ui.theme.JustWooSpacing
 import com.pollyannawu.justwoo.android.ui.theme.JustWooTheme
 
-/**
- * Bottom navigation strip with a raised central FAB ("+") for creating a task.
- */
 @Composable
 fun HomeBottomBar(
-    onOpenChat: () -> Unit,
+    onOpenMenu: () -> Unit,
     onOpenHome: () -> Unit,
     onCreateTask: () -> Unit,
     onOpenTaskSpace: () -> Unit,
@@ -50,7 +47,7 @@ fun HomeBottomBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceAround,
         ) {
-            BottomBarIcon(Icons.Default.ChatBubbleOutline, "Chat", onOpenChat)
+            BottomBarIcon(Icons.Default.Menu, "Menu", onOpenMenu)
             BottomBarIcon(Icons.Default.Home, "Home", onOpenHome)
             Spacer(Modifier.size(JustWooSpacing.XXLarge + JustWooSpacing.XXLarge))
             BottomBarIcon(Icons.Outlined.Inbox, "Task Space", onOpenTaskSpace)
@@ -84,7 +81,7 @@ private fun BottomBarIcon(
 private fun HomeBottomBarPreview() {
     JustWooTheme {
         HomeBottomBar(
-            onOpenChat = {},
+            onOpenMenu = {},
             onOpenHome = {},
             onCreateTask = {},
             onOpenTaskSpace = {},

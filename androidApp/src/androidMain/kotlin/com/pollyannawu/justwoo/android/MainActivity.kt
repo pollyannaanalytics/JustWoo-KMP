@@ -3,6 +3,7 @@ package com.pollyannawu.justwoo.android
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
@@ -24,6 +25,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
 
         val initialNavCommand = mainViewModel.navCommand.value
         val root = DefaultRootComponent(
@@ -37,7 +39,6 @@ class MainActivity : ComponentActivity() {
             val userId by mainViewModel.currentUserId.collectAsState()
             val houseId by mainViewModel.currentHouseId.collectAsState()
             val navCommand by mainViewModel.navCommand.collectAsState()
-            val isAdmin by mainViewModel.isAdmin.collectAsState()
 
             LaunchedEffect(navCommand) {
                 when (navCommand) {
@@ -59,7 +60,6 @@ class MainActivity : ComponentActivity() {
                         component = root,
                         currentUserId = userId ?: 0L,
                         currentHouseId = houseId ?: 0L,
-                        isAdmin = isAdmin,
                     )
                 }
             }
