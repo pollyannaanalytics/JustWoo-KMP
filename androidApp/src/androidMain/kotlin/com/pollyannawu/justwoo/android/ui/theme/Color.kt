@@ -33,5 +33,8 @@ object JustWooColors {
     val UrgencyGreen = Color(DesignTokens.Colors.UrgencyGreen)
     val UrgencyGreenBg = Color(DesignTokens.Colors.UrgencyGreenBg)
 
+    val UrgencyBlue = Color(DesignTokens.Colors.UrgencyBlue)
+    val UrgencyBlueBg = Color(DesignTokens.Colors.UrgencyBlueBg)
+
     val AccentMint = Color(DesignTokens.Colors.AccentMint)
 }

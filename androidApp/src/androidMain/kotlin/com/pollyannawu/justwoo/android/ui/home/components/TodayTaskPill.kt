@@ -24,12 +24,11 @@ import com.pollyannawu.justwoo.design.DesignTokens
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
-/**
- * One red pill row inside the "Today's To-Do" card: HH:mm + title.
- */
 @Composable
 fun TodayTaskPill(
     task: Task,
+    pillColor: Color = JustWooColors.UrgencyRed,
+    textColor: Color = Color.White,
     modifier: Modifier = Modifier,
 ) {
     val time = task.dueTime.toLocalDateTime(TimeZone.currentSystemDefault()).time
@@ -38,20 +37,20 @@ fun TodayTaskPill(
         modifier = modifier
             .fillMaxWidth()
             .clip(JustWooShapes.XXLarge)
-            .background(JustWooColors.UrgencyRed)
+            .background(pillColor)
             .padding(horizontal = JustWooSpacing.Default, vertical = JustWooSpacing.Small),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = timeLabel,
-            color = Color.White,
+            color = textColor,
             fontWeight = JustWooFontWeight.Bold,
             fontSize = DesignTokens.FontSize.BodyLarge.sp,
         )
         Spacer(Modifier.size(JustWooSpacing.Medium))
         Text(
             text = task.title,
-            color = Color.White,
+            color = textColor,
             fontWeight = JustWooFontWeight.SemiBold,
             fontSize = DesignTokens.FontSize.BodyLarge.sp,
             maxLines = 1,
@@ -61,8 +60,36 @@ fun TodayTaskPill(
 
 @Preview(showBackground = true, backgroundColor = 0xFFFFFDF7)
 @Composable
-private fun TodayTaskPillPreview() {
+private fun TodayTaskPillRedPreview() {
     JustWooTheme {
-        TodayTaskPill(task = PreviewSamples.task(title = "買電池", hour = 15, minute = 0))
+        TodayTaskPill(
+            task = PreviewSamples.task(title = "買電池", hour = 15, minute = 0),
+            pillColor = JustWooColors.UrgencyRed,
+            textColor = Color.White,
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFFFFDF7)
+@Composable
+private fun TodayTaskPillYellowPreview() {
+    JustWooTheme {
+        TodayTaskPill(
+            task = PreviewSamples.task(title = "帶豆漿去散步", hour = 18, minute = 0),
+            pillColor = JustWooColors.UrgencyYellow,
+            textColor = JustWooColors.TextPrimary,
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFFFFDF7)
+@Composable
+private fun TodayTaskPillBluePreview() {
+    JustWooTheme {
+        TodayTaskPill(
+            task = PreviewSamples.task(title = "倒垃圾", hour = 21, minute = 30),
+            pillColor = JustWooColors.UrgencyBlue,
+            textColor = Color.White,
+        )
     }
 }

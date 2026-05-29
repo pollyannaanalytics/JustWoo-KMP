@@ -7,13 +7,10 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 
-/**
- * Sample data for @Preview functions in this package. Keep here, not under
- * `previewParameters/`, so previews don't depend on resources.
- */
 internal object PreviewSamples {
     private val zone = TimeZone.currentSystemDefault()
     private val today = Clock.System.now().toLocalDateTime(zone).date
@@ -23,6 +20,7 @@ internal object PreviewSamples {
         title: String = "買電池",
         hour: Int = 15,
         minute: Int = 0,
+        daysOffset: Int = 0,
         status: TaskStatus = TaskStatus.TODO,
     ): Task = Task(
         id = id,
@@ -33,7 +31,7 @@ internal object PreviewSamples {
         ownerId = 1L,
         houseId = 1L,
         assignees = emptyList(),
-        dueTime = today.atStartOfDayIn(zone)
+        dueTime = today.plus(daysOffset, DateTimeUnit.DAY).atStartOfDayIn(zone)
             .plus(hour, DateTimeUnit.HOUR)
             .plus(minute, DateTimeUnit.MINUTE),
         createTime = Clock.System.now(),
@@ -41,8 +39,11 @@ internal object PreviewSamples {
     )
 
     val todayTasks: List<Task> = listOf(
-        task(id = 1L, title = "買電池", hour = 15, minute = 0),
-        task(id = 2L, title = "帶豆漿去散步", hour = 18, minute = 0),
-        task(id = 3L, title = "倒垃圾", hour = 21, minute = 30),
+        task(id = 1L, title = "倒垃圾", hour = 9, minute = 0, daysOffset = -1),
+        task(id = 2L, title = "繳水電費", hour = 14, minute = 0, daysOffset = -2),
+        task(id = 3L, title = "買電池", hour = 15, minute = 0, daysOffset = 0),
+        task(id = 4L, title = "帶豆漿去散步", hour = 18, minute = 0, daysOffset = 0),
+        task(id = 5L, title = "訂早餐", hour = 8, minute = 30, daysOffset = 1),
+        task(id = 6L, title = "打電話給媽媽", hour = 20, minute = 0, daysOffset = 1),
     )
 }

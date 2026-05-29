@@ -3,6 +3,7 @@ package com.pollyannawu.justwoo.android.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pollyannawu.justwoo.core.Task
+import com.pollyannawu.justwoo.core.TaskStatus
 import com.pollyannawu.justwoo.data.HouseRepository
 import com.pollyannawu.justwoo.data.TaskRepository
 import com.pollyannawu.justwoo.domain.usecase.task.ObserveHomeTodayTasksUseCase
@@ -17,9 +18,6 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
-/**
- * Drives the Home screen — the cards on the Figma "Homepage v4_re_Today" page.
- */
 class HomeViewModel(
     private val taskRepository: TaskRepository,
     private val houseRepository: HouseRepository,
@@ -45,8 +43,7 @@ class HomeViewModel(
             val now = Clock.System.now().toLocalDateTime(zone)
             tasks.count { t ->
                 val due = t.dueTime.toLocalDateTime(zone)
-                val involves = t.ownerId == currentUserId ||
-                    t.assignees.any { it.userId == currentUserId }
+                val involves = t.assignees.any { it.userId == currentUserId } && t.taskStatus == TaskStatus.DONE
                 involves && due.year == now.year && due.monthNumber == now.monthNumber
             }
         }
