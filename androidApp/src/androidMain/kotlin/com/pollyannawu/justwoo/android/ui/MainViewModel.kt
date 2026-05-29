@@ -11,6 +11,7 @@ import com.pollyannawu.justwoo.domain.usecase.auth.ObserveIsAuthenticatedUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.ObserveHouseMembersUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.ResolveCurrentHouseUseCase
 import com.pollyannawu.justwoo.ui.nav.auth.AuthStart
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -37,6 +38,7 @@ class MainViewModel(
     val currentHouseId: StateFlow<Long?> = observeCurrentHouseId()
         .stateIn(viewModelScope, SharingStarted.Eagerly, initialValue = null)
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     val userRole: StateFlow<MemberRole?> = combine(
         observeCurrentUserId(),
         observeCurrentHouseId(),

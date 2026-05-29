@@ -8,6 +8,7 @@ import com.pollyannawu.justwoo.android.ui.house.CreateHouseViewModel
 import com.pollyannawu.justwoo.android.ui.house.GenerateInviteCodeViewModel
 import com.pollyannawu.justwoo.android.ui.house.JoinHouseViewModel
 import com.pollyannawu.justwoo.android.ui.house.PendingRequestsViewModel
+import com.pollyannawu.justwoo.android.ui.home.HouseInfoViewModel
 import com.pollyannawu.justwoo.android.ui.profile.ProfileEditViewModel
 import com.pollyannawu.justwoo.android.ui.task.CreateTaskViewModel
 import com.pollyannawu.justwoo.android.ui.task.TaskExplorationViewModel
@@ -32,6 +33,7 @@ import com.pollyannawu.justwoo.domain.usecase.house.CreateHouseUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.GenerateInviteCodeUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.GetHouseMembersUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.GetJoinRequestStatusUseCase
+import com.pollyannawu.justwoo.domain.usecase.house.LeaveHouseUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.ObserveHouseMembersUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.RejectMemberUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.ResolveCurrentHouseUseCase
@@ -47,7 +49,7 @@ import com.pollyannawu.justwoo.domain.usecase.task.ObserveHomeTodayTasksUseCase
 import com.pollyannawu.justwoo.domain.usecase.task.ObservePendingTasksForUserUseCase
 import com.pollyannawu.justwoo.domain.usecase.task.ObserveProfileTasksInWindowUseCase
 import com.pollyannawu.justwoo.domain.usecase.task.SubmitTaskDecisionUseCase
-import org.koin.androidx.viewmodel.dsl.viewModel
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val androidModule = module {
@@ -109,6 +111,7 @@ val androidModule = module {
     factory { RejectMemberUseCase(get()) }
     factory { GetJoinRequestStatusUseCase(get()) }
     factory { ResolveCurrentHouseUseCase(get(), get()) }
+    factory { LeaveHouseUseCase(get(), get()) }
 
     viewModel { MainViewModel(get(), get(), get(), get(), get(), get(), get()) }
     viewModel { SignInViewModel(get()) }
@@ -121,4 +124,5 @@ val androidModule = module {
     viewModel { JoinHouseViewModel(get(), get()) }
     viewModel { GenerateInviteCodeViewModel(get(), get(), get(), get()) }
     viewModel { PendingRequestsViewModel(get(), get(), get(), get()) }
+    viewModel { HouseInfoViewModel(get(), get()) }
 }

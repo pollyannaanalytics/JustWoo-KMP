@@ -5,13 +5,15 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material3.Icon
@@ -29,7 +31,6 @@ import com.pollyannawu.justwoo.android.ui.theme.JustWooTheme
 
 @Composable
 fun HomeTopBar(
-    onOpenMenu: () -> Unit,
     onOpenProfile: () -> Unit,
     modifier: Modifier = Modifier,
     isAdmin: Boolean = false,
@@ -40,14 +41,12 @@ fun HomeTopBar(
         modifier = modifier
             .fillMaxWidth()
             .background(JustWooColors.Cream)
+            .windowInsetsPadding(WindowInsets.statusBars)
             .padding(horizontal = JustWooSpacing.Medium, vertical = JustWooSpacing.Medium),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(onClick = onOpenMenu) {
-            Icon(Icons.Default.Menu, contentDescription = "Menu", tint = JustWooColors.TextPrimary)
-        }
         Spacer(Modifier.weight(1f))
-        JustWooLogo(modifier = Modifier.height(32.dp))
+        JustWooLogo(modifier = Modifier.height(48.dp))
         Spacer(Modifier.weight(1f))
         if (isAdmin) {
             IconButton(onClick = onInviteMember) {
@@ -67,10 +66,10 @@ fun HomeTopBar(
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFF5F1E7)
+@Preview(showBackground = true, backgroundColor = 0xFFF5F1E7, showSystemUi = true)
 @Composable
 private fun HomeTopBarPreview() {
     JustWooTheme {
-        HomeTopBar(onOpenMenu = {}, onOpenProfile = {})
+        HomeTopBar(onOpenProfile = {})
     }
 }
