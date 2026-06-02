@@ -9,13 +9,17 @@ data class ProfileResponse(
     val name: String,
     val avatar: String,
     val bankAccount: String,
+    val bio: String = "",
+    val hashtags: List<String> = emptyList(),
     val updateTime: Instant,
-    val createTime: Instant
+    val createTime: Instant,
 )
 
 @Serializable
 data class ProfileRequest(
     val name: String,
     val avatar: String,
-    val bankAccount: String
+    val bankAccount: String,
+    val bio: String,
+    val hashtags: List<String>,
 )

@@ -10,12 +10,6 @@ import kotlinx.serialization.Serializable
 
 /**
  * Two-screen Decompose sub-stack for the unauthenticated flow.
- *
- * The components themselves carry no auth state — the Android-side
- * ViewModels (`SignInViewModel` / `RegisterViewModel`) own that. Once a
- * sign-in or sign-up persists a session, [AuthRepository.isAuthenticated]
- * flips and [RootComponent] swaps this whole sub-tree out, so we don't
- * need an `onAuthenticated` callback here.
  */
 interface AuthComponent {
     val stack: Value<ChildStack<*, Child>>

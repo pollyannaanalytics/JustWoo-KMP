@@ -1,6 +1,7 @@
 package com.pollyannawu.justwoo.data.network.service
 
 import com.pollyannawu.justwoo.core.dto.AuthResponse
+import com.pollyannawu.justwoo.core.dto.ChangePasswordRequest
 import com.pollyannawu.justwoo.core.dto.LoginRequest
 import com.pollyannawu.justwoo.core.dto.RegisterRequest
 import com.pollyannawu.justwoo.model.ApiResult
@@ -9,12 +10,14 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.delete
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 
 interface AuthApiService {
     suspend fun loginByEmailAndPassword(email: String, plainPassword: String, deviceId: String): ApiResult<AuthResponse?>
     suspend fun register(email: String, plainPassword: String, deviceId: String): ApiResult<AuthResponse?>
     suspend fun delete(userId: String, confirmPassword: String): ApiResult<Unit>
+    suspend fun changePassword(oldPassword: String, newPassword: String): ApiResult<Unit>
 }
 
 class DefaultAuthApiService(
@@ -46,6 +49,16 @@ class DefaultAuthApiService(
         confirmPassword: String,
     ): ApiResult<Unit> = safeApiCall(tag = "AuthApi.delete") {
         client.delete("/auth/$userId")
+        Unit
+    }
+
+    override suspend fun changePassword(
+        oldPassword: String,
+        newPassword: String,
+    ): ApiResult<Unit> = safeApiCall(tag = "AuthApi.changePassword") {
+        client.put("/auth/password") {
+            setBody(ChangePasswordRequest(oldPassword = oldPassword, newPassword = newPassword))
+        }
         Unit
     }
 }

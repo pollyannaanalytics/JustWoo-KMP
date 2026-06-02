@@ -18,6 +18,12 @@ data class LoginRequest(
 )
 
 @Serializable
+data class ChangePasswordRequest(
+    val oldPassword: String,
+    val newPassword: String,
+)
+
+@Serializable
 data class RefreshRequest(
     val deviceId: String,
     val token: String,

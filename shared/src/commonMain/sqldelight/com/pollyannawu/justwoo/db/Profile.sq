@@ -5,6 +5,8 @@ CREATE TABLE ProfileEntity (
     name        TEXT    NOT NULL,
     avatar      TEXT    NOT NULL,
     bankAccount TEXT    NOT NULL,
+    bio         TEXT    NOT NULL DEFAULT '',
+    hashtags    TEXT    NOT NULL DEFAULT '',
     createTime  INTEGER AS Instant NOT NULL,
     updateTime  INTEGER AS Instant NOT NULL
 );
@@ -17,7 +19,7 @@ SELECT * FROM ProfileEntity WHERE id = :id;
 
 upsert:
 INSERT OR REPLACE INTO ProfileEntity (
-    id, name, avatar, bankAccount, createTime, updateTime
+    id, name, avatar, bankAccount, bio, hashtags, createTime, updateTime
 ) VALUES ?;
 
 deleteById:

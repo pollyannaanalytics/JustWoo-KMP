@@ -21,6 +21,7 @@ import com.pollyannawu.justwoo.android.ui.nav.house.HouseOnboardingContent
 import com.pollyannawu.justwoo.android.ui.nav.tasks.TaskContent
 import com.pollyannawu.justwoo.android.ui.nav.tasks.TaskQuickStatusOverlay
 import com.pollyannawu.justwoo.android.ui.profile.ProfileEditScreen
+import com.pollyannawu.justwoo.android.ui.profile.ProfileViewScreen
 import com.pollyannawu.justwoo.domain.usecase.auth.LogoutUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.LeaveHouseUseCase
 import com.pollyannawu.justwoo.ui.nav.RootComponent
@@ -41,6 +42,7 @@ fun RootContent(
         LocalAppActions provides AppActions(
             onHomeClick = component::onHomeClick,
             onProfileClick = component::onProfileClick,
+            onProfileEditClick = component::onProfileEditClick,
             onCreateTaskClick = component::onCreateTaskClick,
             onTaskListClick = component::onTaskListClick,
             onTaskQuickClick = component::onTaskQuickClick,
@@ -87,6 +89,10 @@ fun RootContent(
                         component = child.component,
                         currentUserId = currentUserId,
                         currentHouseId = currentHouseId,
+                    )
+
+                    is RootComponent.Child.ProfileView -> ProfileViewScreen(
+                        component = child.component,
                     )
 
                     is RootComponent.Child.Profile -> ProfileEditScreen(

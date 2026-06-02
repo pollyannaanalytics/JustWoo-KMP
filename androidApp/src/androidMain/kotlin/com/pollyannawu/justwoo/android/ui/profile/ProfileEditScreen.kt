@@ -1,34 +1,29 @@
 package com.pollyannawu.justwoo.android.ui.profile
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -43,18 +38,13 @@ import androidx.compose.ui.unit.dp
 import com.pollyannawu.justwoo.android.ui.common.JustWooPrimaryButton
 import com.pollyannawu.justwoo.android.ui.common.JustWooTextField
 import com.pollyannawu.justwoo.android.ui.home.TaskCard
-import com.pollyannawu.justwoo.android.ui.home.palette
-import com.pollyannawu.justwoo.android.ui.home.urgency
 import com.pollyannawu.justwoo.android.ui.theme.JustWooColors
 import com.pollyannawu.justwoo.android.ui.theme.JustWooFontWeight
-import com.pollyannawu.justwoo.android.ui.theme.JustWooShapes
 import com.pollyannawu.justwoo.android.ui.theme.JustWooSpacing
 import com.pollyannawu.justwoo.core.Task
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
-import kotlinx.datetime.toLocalDateTime
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -73,16 +63,26 @@ fun ProfileEditScreen(
         }
     }
 
+    state.saveError?.let { error ->
+        AlertDialog(
+            onDismissRequest = viewModel::consumeSaveError,
+            title = { Text("Save Failed") },
+            text = { Text(error) },
+            confirmButton = {
+                TextButton(onClick = viewModel::consumeSaveError) { Text("OK") }
+            },
+        )
+    }
+
     ProfileEditContent(
         state = state,
         allTasks = allTasks,
         tasksInWindow = tasksInWindow,
+        canSave = state.canSave,
         onClose = onClose,
         onNameChange = viewModel::onNameChange,
         onBioChange = viewModel::onBioChange,
-        onNewHashtagChange = viewModel::onNewHashtagChange,
-        onAddHashtag = viewModel::addHashtag,
-        onRemoveHashtag = viewModel::removeHashtag,
+        onBankAccountChange = viewModel::onBankAccountChange,
         onSelectDate = viewModel::selectDate,
         onSave = viewModel::save,
     )
@@ -93,12 +93,11 @@ private fun ProfileEditContent(
     state: ProfileEditViewModel.UiState,
     allTasks: List<Task>,
     tasksInWindow: List<Task>,
+    canSave: Boolean,
     onClose: () -> Unit,
     onNameChange: (String) -> Unit,
     onBioChange: (String) -> Unit,
-    onNewHashtagChange: (String) -> Unit,
-    onAddHashtag: () -> Unit,
-    onRemoveHashtag: (String) -> Unit,
+    onBankAccountChange: (String) -> Unit,
     onSelectDate: (LocalDate) -> Unit,
     onSave: () -> Unit,
 ) {
@@ -114,6 +113,7 @@ private fun ProfileEditContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.statusBars)
                 .padding(horizontal = JustWooSpacing.XSmall, vertical = JustWooSpacing.Small),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -195,38 +195,19 @@ private fun ProfileEditContent(
             item { CounterHint(state.bio.length, ProfileEditViewModel.BIO_LIMIT) }
             item { Spacer(Modifier.height(JustWooSpacing.Default)) }
 
-            item { Text("Hashtags", fontWeight = JustWooFontWeight.SemiBold) }
+            item { Text("Bank Account", fontWeight = JustWooFontWeight.SemiBold) }
             item { Spacer(Modifier.height(JustWooSpacing.Small)) }
             item {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    JustWooTextField(
-                        value = state.newHashtag,
-                        onValueChange = onNewHashtagChange,
-                        placeholder = "add #hashtag",
-                        isError = state.hashtagError != null,
-                        errorMessage = state.hashtagError,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Spacer(Modifier.width(JustWooSpacing.Small))
-                    Box(
-                        modifier = Modifier
-                            .clip(JustWooShapes.XLarge)
-                            .background(JustWooColors.Primary)
-                            .clickable { onAddHashtag() }
-                            .padding(horizontal = JustWooSpacing.Default, vertical = JustWooSpacing.Medium)
-                    ) {
-                        Text("Add", color = JustWooColors.OnPrimary, fontWeight = JustWooFontWeight.Bold)
-                    }
-                }
+                JustWooTextField(
+                    value = state.bankAccount,
+                    onValueChange = onBankAccountChange,
+                    placeholder = "Your bank account number",
+                    isError = state.bankAccountError != null,
+                    errorMessage = state.bankAccountError,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
-            item { Spacer(Modifier.height(JustWooSpacing.Small)) }
-            item {
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(JustWooSpacing.Small)) {
-                    items(state.hashtags, key = { it }) { tag ->
-                        HashtagChip(tag = tag, onRemove = { onRemoveHashtag(tag) })
-                    }
-                }
-            }
+            item { CounterHint(state.bankAccount.length, ProfileEditViewModel.BANK_ACCOUNT_LIMIT) }
 
             item { Spacer(Modifier.height(JustWooSpacing.XLarge)) }
             item {
@@ -281,6 +262,7 @@ private fun ProfileEditContent(
                 JustWooPrimaryButton(
                     text = "Save",
                     onClick = onSave,
+                    enabled = canSave,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -289,99 +271,6 @@ private fun ProfileEditContent(
     }
 }
 
-@Composable
-private fun MonthHeader(month: LocalDate, onPrev: () -> Unit, onNext: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = JustWooSpacing.Small),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        IconButton(onClick = onPrev) { Icon(Icons.Default.ChevronLeft, contentDescription = "Previous month") }
-        Text(
-            text = "${month.month.name.lowercase().replaceFirstChar { it.titlecase() }} ${month.year}",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = JustWooFontWeight.Bold,
-            modifier = Modifier.weight(1f),
-        )
-        IconButton(onClick = onNext) { Icon(Icons.Default.ChevronRight, contentDescription = "Next month") }
-    }
-}
-
-@Composable
-private fun MonthGrid(
-    month: LocalDate,
-    selected: LocalDate,
-    onSelect: (LocalDate) -> Unit,
-    tasks: List<Task>,
-) {
-    val firstOfMonth = LocalDate(month.year, month.monthNumber, 1)
-    val daysInMonth = when (month.monthNumber) {
-        1, 3, 5, 7, 8, 10, 12 -> 31
-        4, 6, 9, 11 -> 30
-        2 -> if (month.year % 4 == 0 && (month.year % 100 != 0 || month.year % 400 == 0)) 29 else 28
-        else -> 30
-    }
-    val firstDow = firstOfMonth.dayOfWeek.ordinal // Monday = 0
-    val cells = buildList {
-        repeat(firstDow) { add(null) }
-        repeat(daysInMonth) { add(firstOfMonth.plus(DatePeriod(days = it))) }
-    }
-    val tz = TimeZone.currentSystemDefault()
-    val dotsByDate = tasks.groupBy { it.dueTime.toLocalDateTime(tz).date }
-
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
-            listOf("M", "T", "W", "T", "F", "S", "S").forEach {
-                Text(it, color = JustWooColors.TextSecondary, fontWeight = JustWooFontWeight.Bold)
-            }
-        }
-        Spacer(Modifier.height(JustWooSpacing.Small))
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(7),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(260.dp),
-            verticalArrangement = Arrangement.spacedBy(JustWooSpacing.XSmall),
-            horizontalArrangement = Arrangement.spacedBy(JustWooSpacing.XSmall),
-        ) {
-            items(cells.size) { idx ->
-                val date = cells[idx]
-                if (date == null) {
-                    Box(Modifier.size(36.dp))
-                } else {
-                    val isSelected = date == selected
-                    val dayTasks = dotsByDate[date].orEmpty()
-                    val accent = dayTasks.firstOrNull()?.urgency()?.palette()?.accent
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(if (isSelected) JustWooColors.Primary else JustWooColors.CreamSurface)
-                            .clickable { onSelect(date) },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = date.dayOfMonth.toString(),
-                                color = if (isSelected) JustWooColors.OnPrimary else JustWooColors.TextPrimary,
-                                fontWeight = JustWooFontWeight.SemiBold,
-                            )
-                            if (accent != null) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(JustWooSpacing.XSmall)
-                                        .clip(CircleShape)
-                                        .background(accent)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
 @Composable
 private fun CounterHint(current: Int, max: Int) {
@@ -395,22 +284,3 @@ private fun CounterHint(current: Int, max: Int) {
     )
 }
 
-@Composable
-private fun HashtagChip(tag: String, onRemove: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .clip(JustWooShapes.Large)
-            .background(JustWooColors.UrgencyYellowBg)
-            .padding(horizontal = JustWooSpacing.Medium, vertical = JustWooSpacing.XSmall),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text("#$tag", color = JustWooColors.PrimaryDeep, fontWeight = JustWooFontWeight.SemiBold)
-        Spacer(Modifier.width(JustWooSpacing.XSmall))
-        Icon(
-            Icons.Default.Close,
-            contentDescription = "Remove",
-            tint = JustWooColors.PrimaryDeep,
-            modifier = Modifier.size(16.dp).clickable(onClick = onRemove)
-        )
-    }
-}

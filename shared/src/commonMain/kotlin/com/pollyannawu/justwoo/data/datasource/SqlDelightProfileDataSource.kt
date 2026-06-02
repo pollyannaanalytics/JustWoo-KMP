@@ -56,6 +56,8 @@ private fun Profile.toEntity(): ProfileEntity = ProfileEntity(
     name = name,
     avatar = avatar,
     bankAccount = bankAccount,
+    bio = bio,
+    hashtags = hashtags.joinToString(","),
     createTime = createTime,
     updateTime = updateTime,
 )
@@ -65,6 +67,8 @@ private fun ProfileEntity.toDomain(): Profile = Profile(
     name = name,
     avatar = avatar,
     bankAccount = bankAccount,
+    bio = bio,
+    hashtags = if (hashtags.isBlank()) emptyList() else hashtags.split(","),
     createTime = createTime,
     updateTime = updateTime,
 )

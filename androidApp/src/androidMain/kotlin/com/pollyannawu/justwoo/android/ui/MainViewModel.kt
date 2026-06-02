@@ -10,6 +10,7 @@ import com.pollyannawu.justwoo.domain.usecase.auth.ObserveCurrentUserIdUseCase
 import com.pollyannawu.justwoo.domain.usecase.auth.ObserveIsAuthenticatedUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.ObserveHouseMembersUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.ResolveCurrentHouseUseCase
+import com.pollyannawu.justwoo.domain.usecase.profile.SyncCurrentProfileUseCase
 import com.pollyannawu.justwoo.ui.nav.auth.AuthStart
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +31,7 @@ class MainViewModel(
     private val getCurrentHouseId: GetCurrentHouseIdUseCase,
     private val resolveCurrentHouse: ResolveCurrentHouseUseCase,
     observeHouseMembers: ObserveHouseMembersUseCase,
+    private val syncCurrentProfile: SyncCurrentProfileUseCase,
 ) : ViewModel() {
 
     val currentUserId: StateFlow<Long?> = observeCurrentUserId()
@@ -101,6 +103,9 @@ class MainViewModel(
                     _isCheckingHouse.value = true
                     try { resolveCurrentHouse() } catch (_: Exception) {}
                     _isCheckingHouse.value = false
+                }
+                if (isAuth) {
+                    try { syncCurrentProfile() } catch (_: Exception) {}
                 }
                 if (!isAuth) {
                     houseCheckDone = false

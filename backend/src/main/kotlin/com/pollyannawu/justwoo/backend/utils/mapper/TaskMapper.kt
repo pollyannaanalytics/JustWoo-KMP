@@ -71,7 +71,9 @@ fun Profile.toResponse(): ProfileResponse {
         name = this.name,
         avatar = this.avatar,
         bankAccount = this.bankAccount,
+        bio = this.bio,
+        hashtags = this.hashtags,
         createTime = this.createTime,
-        updateTime = this.updateTime
+        updateTime = this.updateTime,
     )
 }
