@@ -82,7 +82,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout main
           git pull origin main
-          git merge --ff-only origin/develop
+          git merge --no-ff origin/develop -m "ci: merge develop into main"
           git push origin main
 
       - name: Copy artifacts to server
