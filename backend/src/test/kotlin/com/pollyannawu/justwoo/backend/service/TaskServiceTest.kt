@@ -40,6 +40,8 @@ class TaskServiceTest {
         name = "Alice",
         avatar = "avatar.png",
         bankAccount = "123",
+        bio = "",
+        hashtags = emptyList(),
         createTime = now,
         updateTime = now
     )
