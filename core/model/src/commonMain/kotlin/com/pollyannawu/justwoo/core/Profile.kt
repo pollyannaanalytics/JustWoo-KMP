@@ -9,6 +9,8 @@ data class Profile(
     val name: String,
     val avatar: String,
     val bankAccount: String,
+    val bio: String,
+    val hashtags: List<String>,
     val updateTime: Instant,
-    val createTime: Instant
+    val createTime: Instant,
 )

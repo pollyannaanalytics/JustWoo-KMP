@@ -52,7 +52,7 @@ suspend inline fun <T> safeApiCall(block: () -> T): ApiResult<T> =
     safeApiCall(tag = "unlabeled", block = block)
 
 @PublishedApi
-internal const val SERVICE_TAG: String = "JustWooApi.svc"
+internal const val SERVICE_TAG: String = "JustWooApi"
 
 /** Lazy holder so `safeApiCall` can stay `inline` without leaking [defaultApiLogger] into call sites. */
 @PublishedApi

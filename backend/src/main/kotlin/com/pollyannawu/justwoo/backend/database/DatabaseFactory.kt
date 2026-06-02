@@ -46,11 +46,13 @@ object DatabaseFactory {
             val database = Database.connect(jdbcUrl, driver, user, password)
 
             transaction(database) {
-                SchemaUtils.create(
+                val tables = arrayOf(
                     Tasks, Houses, Profiles, Chats,
                     TasksAssignees, HouseMembers, ChatsTasks,
-                    Users, Settlements, InviteCodes, JoinRequests
+                    Users, Settlements, InviteCodes, JoinRequests,
                 )
+                SchemaUtils.create(*tables)
+                SchemaUtils.createMissingTablesAndColumns(*tables)
             }
         } catch (e: Exception) {
             logger.error("database connection failed: ${e.message}")

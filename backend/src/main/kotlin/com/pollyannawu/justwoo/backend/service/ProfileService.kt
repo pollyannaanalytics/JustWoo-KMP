@@ -19,15 +19,17 @@ class DefaultProfileService(
     private val profileRepository: ProfileRepository
 ) : ProfileService {
 
-    override suspend fun createProfile(userId: Long,request: ProfileRequest): ProfileDataResult<ProfileResponse> {
+    override suspend fun createProfile(userId: Long, request: ProfileRequest): ProfileDataResult<ProfileResponse> {
         val now = Clock.System.now()
         val profile = Profile(
             id = userId,
             name = request.name,
             avatar = request.avatar,
             bankAccount = request.bankAccount,
+            bio = request.bio,
+            hashtags = request.hashtags,
             createTime = now,
-            updateTime = now
+            updateTime = now,
         )
         val created = profileRepository.createProfile(profile)
         return ProfileDataResult.Success(created.toResponse())
@@ -41,7 +43,9 @@ class DefaultProfileService(
                     name = request.name,
                     avatar = request.avatar,
                     bankAccount = request.bankAccount,
-                    updateTime = Clock.System.now()
+                    bio = request.bio,
+                    hashtags = request.hashtags,
+                    updateTime = Clock.System.now(),
                 )
             )
             ProfileDataResult.Success(updated.toResponse())

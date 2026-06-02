@@ -112,7 +112,7 @@ class DefaultAuthService(
         val hashPassword = hashPasswordProvider.hashPassword(plainPassword)
         val user = authRepository.create(email, hashPassword)
         val now = Clock.System.now()
-        profileRepository.createProfile(Profile(id = user.id, name = "", avatar = "", bankAccount = "", createTime = now, updateTime = now))
+        profileRepository.createProfile(Profile(id = user.id, name = "", avatar = "", bankAccount = "", bio = "", hashtags = emptyList(), createTime = now, updateTime = now))
         val accessToken = accessTokenProvider.createAccessToken(user.id)
         val refreshToken =
             refreshTokenRepository.saveToken(user.id, deviceId, REFRESH_TOKEN_EXPIRATION_IN_SECONDS)

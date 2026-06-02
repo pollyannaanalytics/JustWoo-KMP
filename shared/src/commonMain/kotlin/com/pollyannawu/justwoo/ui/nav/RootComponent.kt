@@ -24,7 +24,9 @@ import com.pollyannawu.justwoo.ui.nav.house.HouseOnboardingComponent
 import com.pollyannawu.justwoo.ui.nav.houseinfo.DefaultHouseInfoComponent
 import com.pollyannawu.justwoo.ui.nav.houseinfo.HouseInfoComponent
 import com.pollyannawu.justwoo.ui.nav.profile.DefaultProfileComponent
+import com.pollyannawu.justwoo.ui.nav.profile.DefaultProfileViewComponent
 import com.pollyannawu.justwoo.ui.nav.profile.ProfileComponent
+import com.pollyannawu.justwoo.ui.nav.profile.ProfileViewComponent
 import com.pollyannawu.justwoo.ui.nav.tasks.DefaultTaskComponent
 import com.pollyannawu.justwoo.ui.nav.tasks.DefaultTaskQuickStatusComponent
 import com.pollyannawu.justwoo.ui.nav.tasks.TaskComponent
@@ -37,6 +39,7 @@ interface RootComponent {
 
     fun onHomeClick()
     fun onProfileClick()
+    fun onProfileEditClick()
     fun onTaskListClick()
     fun onCreateTaskClick()
     fun onTaskQuickClick(taskId: Long)
@@ -52,6 +55,7 @@ interface RootComponent {
         class Home(val component: HomeComponent) : Child
         class Tasks(val component: TaskComponent) : Child
         class Profile(val component: ProfileComponent) : Child
+        class ProfileView(val component: ProfileViewComponent) : Child
         class HouseOnboarding(val component: HouseOnboardingComponent) : Child
         class HouseInfo(val component: HouseInfoComponent) : Child
     }
@@ -128,6 +132,10 @@ class DefaultRootComponent(
     }
 
     override fun onProfileClick() {
+        navigation.bringToFront(Config.ProfileView)
+    }
+
+    override fun onProfileEditClick() {
         navigation.bringToFront(Config.Profile)
     }
 
@@ -178,6 +186,14 @@ class DefaultRootComponent(
             ),
         )
 
+        Config.ProfileView -> RootComponent.Child.ProfileView(
+            DefaultProfileViewComponent(
+                componentContext = childContext,
+                onEdit = { navigation.bringToFront(Config.Profile) },
+                onClose = { navigation.pop() },
+            ),
+        )
+
         Config.HouseOnboarding -> RootComponent.Child.HouseOnboarding(
             DefaultHouseOnboardingComponent(
                 componentContext = childContext,
@@ -216,6 +232,8 @@ class DefaultRootComponent(
         data class Tasks(val startOnCreate: Boolean = false) : Config
         @Serializable
         data object Profile : Config
+        @Serializable
+        data object ProfileView : Config
         @Serializable
         data object HouseOnboarding : Config
         @Serializable

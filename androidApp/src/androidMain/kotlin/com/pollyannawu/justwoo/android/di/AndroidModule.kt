@@ -10,17 +10,25 @@ import com.pollyannawu.justwoo.android.ui.house.JoinHouseViewModel
 import com.pollyannawu.justwoo.android.ui.house.PendingRequestsViewModel
 import com.pollyannawu.justwoo.android.ui.home.HouseInfoViewModel
 import com.pollyannawu.justwoo.android.ui.profile.ProfileEditViewModel
+import com.pollyannawu.justwoo.android.ui.profile.ProfileViewViewModel
 import com.pollyannawu.justwoo.android.ui.task.CreateTaskViewModel
 import com.pollyannawu.justwoo.android.ui.task.TaskExplorationViewModel
 import com.pollyannawu.justwoo.data.AuthRepository
 import com.pollyannawu.justwoo.data.DefaultAuthRepository
 import com.pollyannawu.justwoo.data.DefaultHouseInviteRepository
 import com.pollyannawu.justwoo.data.DefaultHouseRepository
+import com.pollyannawu.justwoo.data.DefaultProfileRepository
 import com.pollyannawu.justwoo.data.DefaultTaskRepository
 import com.pollyannawu.justwoo.data.HouseInviteRepository
 import com.pollyannawu.justwoo.data.HouseRepository
+import com.pollyannawu.justwoo.data.ProfileRepository
 import com.pollyannawu.justwoo.data.TaskRepository
+import com.pollyannawu.justwoo.domain.usecase.auth.ChangePasswordUseCase
 import com.pollyannawu.justwoo.domain.usecase.auth.GetCurrentHouseIdUseCase
+import com.pollyannawu.justwoo.domain.usecase.auth.ObserveCurrentUserEmailUseCase
+import com.pollyannawu.justwoo.domain.usecase.profile.ObserveCurrentProfileUseCase
+import com.pollyannawu.justwoo.domain.usecase.profile.SyncCurrentProfileUseCase
+import com.pollyannawu.justwoo.domain.usecase.profile.UpdateCurrentProfileUseCase
 import com.pollyannawu.justwoo.domain.usecase.auth.HasActiveSessionUseCase
 import com.pollyannawu.justwoo.domain.usecase.auth.LoginUseCase
 import com.pollyannawu.justwoo.domain.usecase.auth.LogoutUseCase
@@ -76,6 +84,9 @@ val androidModule = module {
             taskDataSource = get(),
         )
     }
+    single<ProfileRepository> {
+        DefaultProfileRepository(userStorage = get(), profileApiService = get(), profileDataSource = get())
+    }
     single<HouseInviteRepository> {
         DefaultHouseInviteRepository(
             houseInviteApiService = get(),
@@ -91,6 +102,8 @@ val androidModule = module {
     factory { HasActiveSessionUseCase(get()) }
     factory { GetCurrentHouseIdUseCase(get()) }
     factory { LogoutUseCase(get()) }
+    factory { ObserveCurrentUserEmailUseCase(get()) }
+    factory { ChangePasswordUseCase(get()) }
     factory { FilterTasksInWindowUseCase() }
     factory { ObserveAllTasksUseCase(get()) }
     factory { ObserveHomeTodayTasksUseCase(get(), get()) }
@@ -112,14 +125,18 @@ val androidModule = module {
     factory { GetJoinRequestStatusUseCase(get()) }
     factory { ResolveCurrentHouseUseCase(get(), get()) }
     factory { LeaveHouseUseCase(get(), get()) }
+    factory { ObserveCurrentProfileUseCase(get()) }
+    factory { SyncCurrentProfileUseCase(get()) }
+    factory { UpdateCurrentProfileUseCase(get()) }
 
-    viewModel { MainViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { MainViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { SignInViewModel(get()) }
     viewModel { RegisterViewModel(get()) }
     viewModel { HomeViewModel(get(), get(), get()) }
     viewModel { CreateTaskViewModel(get(), get()) } // observeHouseMembers, createTask
     viewModel { TaskExplorationViewModel(get(), get()) }
-    viewModel { ProfileEditViewModel(get(), get()) }
+    viewModel { ProfileEditViewModel(get(), get(), get(), get()) }
+    viewModel { ProfileViewViewModel(get(), get(), get()) }
     viewModel { CreateHouseViewModel(get()) }
     viewModel { JoinHouseViewModel(get(), get()) }
     viewModel { GenerateInviteCodeViewModel(get(), get(), get(), get()) }

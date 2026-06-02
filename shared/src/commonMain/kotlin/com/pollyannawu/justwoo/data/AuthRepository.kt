@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.map
 interface AuthRepository {
     val currentUserId: Flow<Long?>
     val currentHouseId: Flow<Long?>
+    val currentUserEmail: Flow<String?>
 
     val isAuthenticated: Flow<Boolean>
 
@@ -29,6 +30,7 @@ interface AuthRepository {
     suspend fun register(email: String, password: String): AuthDataResult
     suspend fun login(email: String, password: String): AuthDataResult
     suspend fun logout()
+    suspend fun changePassword(oldPassword: String, newPassword: String): Boolean
 
     fun setCurrentHouseId(houseId: Long)
 }
@@ -42,6 +44,7 @@ class DefaultAuthRepository(
 
     override val currentUserId: Flow<Long?> = userStorage.userFlow.map { it?.id }
     override val currentHouseId: Flow<Long?> = userStorage.houseIdFlow
+    override val currentUserEmail: Flow<String?> = userStorage.userFlow.map { it?.email }
 
     override val isAuthenticated: Flow<Boolean> =
         combine(userStorage.userFlow, tokenStorage.tokensFlow) { user, tokens ->
@@ -117,6 +120,9 @@ class DefaultAuthRepository(
         tokenStorage.clear()
         userStorage.clear()
     }
+
+    override suspend fun changePassword(oldPassword: String, newPassword: String): Boolean =
+        apiService.changePassword(oldPassword, newPassword) is ApiResult.Success
 
     private fun persistAuth(data: AuthResponse) {
         tokenStorage.saveTokens(

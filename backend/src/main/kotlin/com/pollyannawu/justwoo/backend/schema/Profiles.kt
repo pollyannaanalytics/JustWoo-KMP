@@ -9,25 +9,29 @@ object Profiles : LongIdTable("profiles") {
     val name = varchar("name", 100)
     val avatar = text("avatar")
     val bankAccount = varchar("bank_account", 50)
+    val bio = text("bio").default("")
+    val hashtags = text("hashtags").default("")
     val createTime = timestamp("create_time")
     val updateTime = timestamp("update_time")
-
 
     fun toDomain(row: org.jetbrains.exposed.sql.ResultRow) = com.pollyannawu.justwoo.core.Profile(
         id = row[userId].value,
         name = row[name],
         avatar = row[avatar],
         bankAccount = row[bankAccount],
+        bio = row[bio],
+        hashtags = row[hashtags].split(",").filter { it.isNotBlank() },
         createTime = row[createTime],
-        updateTime = row[updateTime]
+        updateTime = row[updateTime],
     )
-
 
     fun from(it: org.jetbrains.exposed.sql.statements.UpdateBuilder<*>, profile: com.pollyannawu.justwoo.core.Profile) {
         it[userId] = profile.id
         it[name] = profile.name
         it[avatar] = profile.avatar
         it[bankAccount] = profile.bankAccount
+        it[bio] = profile.bio
+        it[hashtags] = profile.hashtags.joinToString(",")
         it[createTime] = profile.createTime
         it[updateTime] = profile.updateTime
     }

@@ -31,7 +31,7 @@ fun MainShell(
         HomeMenuSheet(
             onDismiss = { showMenu = false },
             onHouseInfo = { showMenu = false; actions.onHouseInfoClick() },
-            onProfileEdit = { showMenu = false; actions.onProfileClick() },
+            onProfileEdit = { showMenu = false; actions.onProfileEditClick() },
             onLeaveHouse = { showMenu = false; actions.onLeaveHouse() },
             onLogOut = { showMenu = false; actions.onLogOut() },
         )
