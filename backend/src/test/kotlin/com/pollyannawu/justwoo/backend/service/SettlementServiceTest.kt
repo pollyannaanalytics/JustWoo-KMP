@@ -37,7 +37,7 @@ class SettlementServiceTest {
     private val requesterId = payerId
 
     private fun profile(id: Long, name: String) = Profile(
-        id = id, name = name, avatar = "", bankAccount = "", createTime = now, updateTime = now
+        id = id, name = name, avatar = "", bankAccount = "", bio = "", hashtags = emptyList(), createTime = now, updateTime = now
     )
 
     private fun fakeSettlement(
