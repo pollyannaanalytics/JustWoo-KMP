@@ -42,5 +42,5 @@ build/
 # AWS Lightsail CLI binary (download from AWS when needed)
 lightsailctl
 # Claude Code local
-.claude/
-claude/
+.claude/worktrees
+.claude/settings.local.json
