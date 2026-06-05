@@ -28,23 +28,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.pollyannawu.justwoo.android.ui.common.JustWooPrimaryButton
 import com.pollyannawu.justwoo.android.ui.common.JustWooTextField
-import com.pollyannawu.justwoo.android.ui.home.TaskCard
 import com.pollyannawu.justwoo.android.ui.theme.JustWooColors
 import com.pollyannawu.justwoo.android.ui.theme.JustWooFontWeight
 import com.pollyannawu.justwoo.android.ui.theme.JustWooSpacing
-import com.pollyannawu.justwoo.core.Task
-import kotlinx.datetime.DatePeriod
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.plus
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -53,8 +45,6 @@ fun ProfileEditScreen(
     viewModel: ProfileEditViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
-    val allTasks by viewModel.allTasks.collectAsState()
-    val tasksInWindow by viewModel.tasksInWindow.collectAsState()
 
     LaunchedEffect(state.saved) {
         if (state.saved) {
@@ -76,14 +66,11 @@ fun ProfileEditScreen(
 
     ProfileEditContent(
         state = state,
-        allTasks = allTasks,
-        tasksInWindow = tasksInWindow,
         canSave = state.canSave,
         onClose = onClose,
         onNameChange = viewModel::onNameChange,
         onBioChange = viewModel::onBioChange,
         onBankAccountChange = viewModel::onBankAccountChange,
-        onSelectDate = viewModel::selectDate,
         onSave = viewModel::save,
     )
 }
@@ -91,20 +78,13 @@ fun ProfileEditScreen(
 @Composable
 private fun ProfileEditContent(
     state: ProfileEditViewModel.UiState,
-    allTasks: List<Task>,
-    tasksInWindow: List<Task>,
     canSave: Boolean,
     onClose: () -> Unit,
     onNameChange: (String) -> Unit,
     onBioChange: (String) -> Unit,
     onBankAccountChange: (String) -> Unit,
-    onSelectDate: (LocalDate) -> Unit,
     onSave: () -> Unit,
 ) {
-    var viewMonth by remember {
-        mutableStateOf(LocalDate(state.selectedDate.year, state.selectedDate.monthNumber, 1))
-    }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -208,54 +188,6 @@ private fun ProfileEditContent(
                 )
             }
             item { CounterHint(state.bankAccount.length, ProfileEditViewModel.BANK_ACCOUNT_LIMIT) }
-
-            item { Spacer(Modifier.height(JustWooSpacing.XLarge)) }
-            item {
-                Text("Calendar", fontWeight = JustWooFontWeight.SemiBold)
-            }
-            item { Spacer(Modifier.height(JustWooSpacing.Small)) }
-
-            item {
-                MonthHeader(
-                    month = viewMonth,
-                    onPrev = { viewMonth = viewMonth.plus(DatePeriod(months = -1)) },
-                    onNext = { viewMonth = viewMonth.plus(DatePeriod(months = 1)) }
-                )
-            }
-
-            item {
-                MonthGrid(
-                    month = viewMonth,
-                    selected = state.selectedDate,
-                    onSelect = onSelectDate,
-                    tasks = allTasks,
-                )
-            }
-
-            item { Spacer(Modifier.height(JustWooSpacing.Small)) }
-            item {
-                Text(
-                    text = "${state.selectedDate}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = JustWooFontWeight.Bold,
-                )
-            }
-            item { Spacer(Modifier.height(JustWooSpacing.Small)) }
-
-            if (tasksInWindow.isEmpty()) {
-                item {
-                    Text(
-                        "No tasks in this window.",
-                        color = JustWooColors.TextSecondary,
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
-                }
-            } else {
-                items(tasksInWindow, key = { it.id }) { task ->
-                    TaskCard(task = task, onClick = {})
-                    Spacer(Modifier.height(JustWooSpacing.Medium))
-                }
-            }
 
             item { Spacer(Modifier.height(JustWooSpacing.Large)) }
             item {
