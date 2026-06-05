@@ -3,29 +3,16 @@ package com.pollyannawu.justwoo.android.ui.profile
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.pollyannawu.justwoo.core.Task
 import com.pollyannawu.justwoo.domain.usecase.profile.ObserveCurrentProfileUseCase
 import com.pollyannawu.justwoo.domain.usecase.profile.UpdateCurrentProfileUseCase
-import com.pollyannawu.justwoo.domain.usecase.task.ObserveAllTasksUseCase
-import com.pollyannawu.justwoo.domain.usecase.task.ObserveProfileTasksInWindowUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 
 class ProfileEditViewModel(
-    private val observeAllTasks: ObserveAllTasksUseCase,
-    private val observeProfileTasksInWindow: ObserveProfileTasksInWindowUseCase,
     private val observeCurrentProfile: ObserveCurrentProfileUseCase,
     private val updateCurrentProfile: UpdateCurrentProfileUseCase,
 ) : ViewModel() {
@@ -46,24 +33,12 @@ class ProfileEditViewModel(
         val bankAccountError: String? = null,
         val saved: Boolean = false,
         val saveError: String? = null,
-        val selectedDate: LocalDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date,
     ) {
         val canSave: Boolean get() = name.isNotBlank() && nameError == null && bioError == null && bankAccountError == null
     }
 
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
-
-    val allTasks: StateFlow<List<Task>> = observeAllTasks()
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
-
-    val tasksInWindow: StateFlow<List<Task>> = _uiState
-        .map { it.selectedDate }
-        .let { dates ->
-            @Suppress("OPT_IN_USAGE")
-            dates.flatMapLatest { anchor -> observeProfileTasksInWindow(anchor = anchor) }
-        }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     init {
         viewModelScope.launch {
@@ -100,8 +75,6 @@ class ProfileEditViewModel(
             bankAccountError = if (v.length > BANK_ACCOUNT_LIMIT) "Bank account cannot exceed $BANK_ACCOUNT_LIMIT characters." else null
         )
     }
-
-    fun selectDate(date: LocalDate) = _uiState.update { it.copy(selectedDate = date) }
 
     fun save() {
         val s = _uiState.value

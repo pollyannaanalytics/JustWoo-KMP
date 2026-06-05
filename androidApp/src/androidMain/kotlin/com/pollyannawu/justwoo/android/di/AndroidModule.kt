@@ -135,7 +135,7 @@ val androidModule = module {
     viewModel { HomeViewModel(get(), get(), get()) }
     viewModel { CreateTaskViewModel(get(), get()) } // observeHouseMembers, createTask
     viewModel { TaskExplorationViewModel(get(), get()) }
-    viewModel { ProfileEditViewModel(get(), get(), get(), get()) }
+    viewModel { ProfileEditViewModel(get(), get()) }
     viewModel { ProfileViewViewModel(get(), get(), get()) }
     viewModel { CreateHouseViewModel(get()) }
     viewModel { JoinHouseViewModel(get(), get()) }

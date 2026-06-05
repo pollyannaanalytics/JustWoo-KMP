@@ -2,7 +2,6 @@ package com.pollyannawu.justwoo.android.ui.profile
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,8 +9,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -134,48 +131,6 @@ fun ProfileViewScreen(
         ) {
             val bio = profile?.bio.orEmpty()
             ProfileInfoRow(label = "Bio", value = bio.ifBlank { "—" })
-            Spacer(Modifier.height(JustWooSpacing.Small))
-
-            val hashtags = profile?.hashtags.orEmpty()
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(JustWooShapes.Medium)
-                    .background(JustWooColors.CreamSurface)
-                    .padding(horizontal = JustWooSpacing.Default, vertical = JustWooSpacing.Default),
-            ) {
-                Text(
-                    text = "Hashtags",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = JustWooColors.TextSecondary,
-                )
-                if (hashtags.isEmpty()) {
-                    Text(
-                        text = "—",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = JustWooFontWeight.Medium,
-                        color = JustWooColors.TextPrimary,
-                    )
-                } else {
-                    Spacer(Modifier.height(JustWooSpacing.XSmall))
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(JustWooSpacing.Small)) {
-                        items(hashtags, key = { it }) { tag ->
-                            Box(
-                                modifier = Modifier
-                                    .clip(JustWooShapes.Large)
-                                    .background(JustWooColors.UrgencyYellowBg)
-                                    .padding(horizontal = JustWooSpacing.Medium, vertical = JustWooSpacing.XSmall),
-                            ) {
-                                Text(
-                                    "#$tag",
-                                    color = JustWooColors.PrimaryDeep,
-                                    fontWeight = JustWooFontWeight.SemiBold,
-                                )
-                            }
-                        }
-                    }
-                }
-            }
             Spacer(Modifier.height(JustWooSpacing.Small))
 
             ProfileInfoRow(
