@@ -1,5 +1,6 @@
 package com.pollyannawu.justwoo.data
 
+import com.pollyannawu.justwoo.core.AssignStatus
 import com.pollyannawu.justwoo.core.Task
 import com.pollyannawu.justwoo.core.TaskAssignee
 import com.pollyannawu.justwoo.core.TaskStatus
@@ -9,7 +10,12 @@ import com.pollyannawu.justwoo.data.datasource.auth.UserStorage
 import com.pollyannawu.justwoo.data.datasource.TaskDataSource
 import com.pollyannawu.justwoo.model.ApiResult
 import com.pollyannawu.justwoo.data.network.service.TaskApiService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 
 interface TaskRepository {
     fun observeTasks(): Flow<List<Task>>
@@ -25,6 +31,7 @@ class DefaultTaskRepository(
     private val userStorage: UserStorage,
     private val taskApiService: TaskApiService,
     private val taskDataSource: TaskDataSource,
+    private val backgroundScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ) : TaskRepository {
 
     override fun observeTasks(): Flow<List<Task>> = taskDataSource.getTasks()
@@ -44,13 +51,27 @@ class DefaultTaskRepository(
     override suspend fun getTaskById(taskId: Long): Task? =
         taskDataSource.getTaskById(taskId)
 
+    // Optimistic create: persist a placeholder task locally with a negative temp id so the
+    // UI updates immediately, then reconcile in the background. Server ids are positive
+    // autoincrement values, so the temp id space (negative) never collides with real rows.
     override suspend fun createTask(request: CreateTaskRequest) {
         userStorage.getUser() ?: return
-        val result = taskApiService.createTask(request)
-        if (result is ApiResult.Success) {
-            taskDataSource.saveTask(result.data.toTask())
-        } else if (result is ApiResult.Error) {
-            throw Exception(result.exception)
+
+        val tempId = -Clock.System.now().toEpochMilliseconds()
+        taskDataSource.saveTask(request.toLocalTask(tempId))
+
+        backgroundScope.launch {
+            when (val result = taskApiService.createTask(request)) {
+                is ApiResult.Success -> {
+                    taskDataSource.deleteTask(tempId)
+                    taskDataSource.saveTask(result.data.toTask())
+                }
+                is ApiResult.Error -> {
+                    // safeApiCall has already logged the failure; roll the placeholder back.
+                    taskDataSource.deleteTask(tempId)
+                }
+                ApiResult.Loading -> Unit
+            }
         }
     }
 
@@ -83,4 +104,24 @@ class DefaultTaskRepository(
             throw Exception(result.exception)
         }
     }
+}
+
+private fun CreateTaskRequest.toLocalTask(tempId: Long): Task {
+    val now = Clock.System.now()
+    return Task(
+        id = tempId,
+        title = title,
+        description = description.orEmpty(),
+        accessLevel = accessLevel,
+        taskStatus = TaskStatus.TODO,
+        ownerId = ownerId,
+        executorId = 0L,
+        houseId = houseId,
+        assignees = assigneeIds.map { TaskAssignee(it, AssignStatus.UNASSIGNED) },
+        dueTime = dueTime,
+        createTime = now,
+        updateTime = now,
+        price = price,
+        currencyCode = currencyCode,
+    )
 }

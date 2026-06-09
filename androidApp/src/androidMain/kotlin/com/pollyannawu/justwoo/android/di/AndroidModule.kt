@@ -11,6 +11,8 @@ import com.pollyannawu.justwoo.android.ui.house.PendingRequestsViewModel
 import com.pollyannawu.justwoo.android.ui.home.HouseInfoViewModel
 import com.pollyannawu.justwoo.android.ui.profile.ProfileEditViewModel
 import com.pollyannawu.justwoo.android.ui.profile.ProfileViewViewModel
+import com.pollyannawu.justwoo.android.ui.settlement.AddExpenseViewModel
+import com.pollyannawu.justwoo.android.ui.settlement.SettlementOverviewViewModel
 import com.pollyannawu.justwoo.android.ui.task.CreateTaskViewModel
 import com.pollyannawu.justwoo.android.ui.task.TaskExplorationViewModel
 import com.pollyannawu.justwoo.data.AuthRepository
@@ -18,10 +20,12 @@ import com.pollyannawu.justwoo.data.DefaultAuthRepository
 import com.pollyannawu.justwoo.data.DefaultHouseInviteRepository
 import com.pollyannawu.justwoo.data.DefaultHouseRepository
 import com.pollyannawu.justwoo.data.DefaultProfileRepository
+import com.pollyannawu.justwoo.data.DefaultSettlementRepository
 import com.pollyannawu.justwoo.data.DefaultTaskRepository
 import com.pollyannawu.justwoo.data.HouseInviteRepository
 import com.pollyannawu.justwoo.data.HouseRepository
 import com.pollyannawu.justwoo.data.ProfileRepository
+import com.pollyannawu.justwoo.data.SettlementRepository
 import com.pollyannawu.justwoo.data.TaskRepository
 import com.pollyannawu.justwoo.domain.usecase.auth.ChangePasswordUseCase
 import com.pollyannawu.justwoo.domain.usecase.auth.GetCurrentHouseIdUseCase
@@ -46,6 +50,10 @@ import com.pollyannawu.justwoo.domain.usecase.house.ObserveHouseMembersUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.RejectMemberUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.ResolveCurrentHouseUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.SubmitJoinRequestUseCase
+import com.pollyannawu.justwoo.domain.usecase.settlement.CreateSettlementUseCase
+import com.pollyannawu.justwoo.domain.usecase.settlement.GetHouseBalanceUseCase
+import com.pollyannawu.justwoo.domain.usecase.settlement.ObserveSettlementsUseCase
+import com.pollyannawu.justwoo.domain.usecase.settlement.SyncSettlementsUseCase
 import com.pollyannawu.justwoo.domain.usecase.task.CreateTaskUseCase
 import com.pollyannawu.justwoo.domain.usecase.task.FilterPendingTasksForUserUseCase
 import com.pollyannawu.justwoo.domain.usecase.task.FilterTasksInWindowUseCase
@@ -86,6 +94,9 @@ val androidModule = module {
     }
     single<ProfileRepository> {
         DefaultProfileRepository(userStorage = get(), profileApiService = get(), profileDataSource = get())
+    }
+    single<SettlementRepository> {
+        DefaultSettlementRepository(settlementApiService = get(), settlementDataSource = get())
     }
     single<HouseInviteRepository> {
         DefaultHouseInviteRepository(
@@ -128,6 +139,10 @@ val androidModule = module {
     factory { ObserveCurrentProfileUseCase(get()) }
     factory { SyncCurrentProfileUseCase(get()) }
     factory { UpdateCurrentProfileUseCase(get()) }
+    factory { ObserveSettlementsUseCase(get(), get()) }
+    factory { SyncSettlementsUseCase(get(), get()) }
+    factory { GetHouseBalanceUseCase(get(), get()) }
+    factory { CreateSettlementUseCase(get<SettlementRepository>(), get(), get()) }
 
     viewModel { MainViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { SignInViewModel(get()) }
@@ -142,4 +157,6 @@ val androidModule = module {
     viewModel { GenerateInviteCodeViewModel(get(), get(), get(), get()) }
     viewModel { PendingRequestsViewModel(get(), get(), get(), get()) }
     viewModel { HouseInfoViewModel(get(), get()) }
+    viewModel { SettlementOverviewViewModel(get(), get(), get(), get()) }
+    viewModel { AddExpenseViewModel(get(), get(), get(), get()) }
 }

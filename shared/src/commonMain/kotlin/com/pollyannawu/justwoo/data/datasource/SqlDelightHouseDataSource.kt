@@ -65,6 +65,7 @@ class SqlDelightHouseDataSource(
                 HouseMemberEntity(
                     houseId = house.id,
                     userId = m.userId,
+                    name = m.name,
                     role = m.role,
                     joinedAt = m.joinedAt,
                 ),
@@ -91,6 +92,7 @@ private fun HouseEntity.toDomain(members: List<HouseMemberEntity>): House = Hous
         HouseMember(
             houseId = it.houseId,
             userId = it.userId,
+            name = it.name,
             role = it.role,
             joinedAt = it.joinedAt,
         )

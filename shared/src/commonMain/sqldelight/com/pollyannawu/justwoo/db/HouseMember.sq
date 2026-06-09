@@ -4,6 +4,7 @@ import kotlinx.datetime.Instant;
 CREATE TABLE HouseMemberEntity (
     houseId  INTEGER NOT NULL,
     userId   INTEGER NOT NULL,
+    name     TEXT    NOT NULL DEFAULT '',
     role     TEXT    AS MemberRole NOT NULL,
     joinedAt INTEGER AS Instant NOT NULL,
     PRIMARY KEY (houseId, userId),
@@ -23,7 +24,7 @@ selectByUserId:
 SELECT * FROM HouseMemberEntity WHERE userId = :userId;
 
 upsert:
-INSERT OR REPLACE INTO HouseMemberEntity (houseId, userId, role, joinedAt) VALUES ?;
+INSERT OR REPLACE INTO HouseMemberEntity (houseId, userId, name, role, joinedAt) VALUES ?;
 
 deleteByHouseId:
 DELETE FROM HouseMemberEntity WHERE houseId = :houseId;

@@ -68,5 +68,9 @@ android {
         implementation(libs.kotlinx.serialization.json)
 
         implementation(libs.decompose.extensions.compose)
+
+        testImplementation(libs.junit)
+        testImplementation(libs.mockk)
+        testImplementation(libs.kotlinx.coroutines.test)
     }
 }

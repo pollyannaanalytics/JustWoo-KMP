@@ -70,7 +70,7 @@ internal class DefaultTaskRepository: TaskRepository {
             log.error("task assignees are empty")
         }
 
-        getTaskById(taskId) ?: throw IllegalStateException("task is not created successfully")
+        task.copy(id = taskId)
     }
 
     private fun getTaskById(taskId: Long): Task? {

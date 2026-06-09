@@ -27,6 +27,10 @@ import com.pollyannawu.justwoo.ui.nav.profile.DefaultProfileComponent
 import com.pollyannawu.justwoo.ui.nav.profile.DefaultProfileViewComponent
 import com.pollyannawu.justwoo.ui.nav.profile.ProfileComponent
 import com.pollyannawu.justwoo.ui.nav.profile.ProfileViewComponent
+import com.pollyannawu.justwoo.ui.nav.settlement.AddExpenseComponent
+import com.pollyannawu.justwoo.ui.nav.settlement.DefaultAddExpenseComponent
+import com.pollyannawu.justwoo.ui.nav.settlement.DefaultSettlementComponent
+import com.pollyannawu.justwoo.ui.nav.settlement.SettlementComponent
 import com.pollyannawu.justwoo.ui.nav.tasks.DefaultTaskComponent
 import com.pollyannawu.justwoo.ui.nav.tasks.DefaultTaskQuickStatusComponent
 import com.pollyannawu.justwoo.ui.nav.tasks.TaskComponent
@@ -44,6 +48,8 @@ interface RootComponent {
     fun onCreateTaskClick()
     fun onTaskQuickClick(taskId: Long)
     fun onHouseInfoClick()
+    fun onSettlementClick()
+    fun onAddExpenseClick()
     fun onSessionChanged(isAuthenticated: Boolean)
     fun onCheckingHouse()
     fun onHouseOnboardingRequired()
@@ -58,6 +64,8 @@ interface RootComponent {
         class ProfileView(val component: ProfileViewComponent) : Child
         class HouseOnboarding(val component: HouseOnboardingComponent) : Child
         class HouseInfo(val component: HouseInfoComponent) : Child
+        class Settlement(val component: SettlementComponent) : Child
+        class AddExpense(val component: AddExpenseComponent) : Child
     }
 }
 
@@ -155,6 +163,14 @@ class DefaultRootComponent(
         navigation.bringToFront(Config.HouseInfo)
     }
 
+    override fun onSettlementClick() {
+        navigation.bringToFront(Config.Settlement)
+    }
+
+    override fun onAddExpenseClick() {
+        navigation.push(Config.AddExpense)
+    }
+
     private fun createChild(
         config: Config,
         childContext: ComponentContext,
@@ -207,6 +223,22 @@ class DefaultRootComponent(
                 onClose = { navigation.pop() },
             ),
         )
+
+        Config.Settlement -> RootComponent.Child.Settlement(
+            DefaultSettlementComponent(
+                componentContext = childContext,
+                onFinished = { navigation.pop() },
+                onNavigateToAddExpense = { navigation.push(Config.AddExpense) },
+            ),
+        )
+
+        Config.AddExpense -> RootComponent.Child.AddExpense(
+            DefaultAddExpenseComponent(
+                componentContext = childContext,
+                onFinished = { navigation.pop() },
+                onExpenseSaved = { navigation.pop() },
+            ),
+        )
     }
 
     private fun createSlotChild(
@@ -238,7 +270,10 @@ class DefaultRootComponent(
         data object HouseOnboarding : Config
         @Serializable
         data object HouseInfo : Config
-
+        @Serializable
+        data object Settlement : Config
+        @Serializable
+        data object AddExpense : Config
     }
 
     @Serializable
