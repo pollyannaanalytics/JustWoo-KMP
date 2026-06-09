@@ -20,6 +20,7 @@ data class House(
 data class HouseMember(
     val houseId: Long,
     val userId: Long,
+    val name: String = "",
     val role: MemberRole,
     val joinedAt: Instant
 )
@@ -39,6 +40,7 @@ fun List<MemberProfileResponse>.toMembers(houseId: Long): List<HouseMember> =
         HouseMember(
             userId = it.profile.id,
             houseId = houseId,
+            name = it.profile.name,
             role = it.role,
             joinedAt = it.joinAt
         )

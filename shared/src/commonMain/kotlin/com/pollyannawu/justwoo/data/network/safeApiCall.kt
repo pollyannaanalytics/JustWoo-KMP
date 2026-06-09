@@ -34,10 +34,10 @@ suspend inline fun <T> safeApiCall(
         throw e
     } catch (e: ClientRequestException) {
         logger.w(SERVICE_TAG, "← $tag : client ${e.response.status}", e)
-        ApiResult.Error(e)
+        ApiResult.Error(e.withServerMessage())
     } catch (e: ServerResponseException) {
         logger.w(SERVICE_TAG, "← $tag : server ${e.response.status}", e)
-        ApiResult.Error(e)
+        ApiResult.Error(e.withServerMessage())
     } catch (e: HttpRequestTimeoutException) {
         logger.w(SERVICE_TAG, "← $tag : timeout", e)
         ApiResult.Error(e)
@@ -58,4 +58,22 @@ internal const val SERVICE_TAG: String = "JustWooApi"
 @PublishedApi
 internal object ServiceLogger {
     val instance: ApiLogger by lazy { defaultApiLogger() }
+}
+
+/**
+ * Wraps this exception in a new [Exception] whose message is the `"error"` field extracted
+ * from the JSON body embedded in Ktor's HTTP error message. Returns `this` unchanged when no
+ * such field is found (e.g. network timeouts, non-JSON bodies).
+ */
+@PublishedApi
+internal fun Throwable.withServerMessage(): Throwable {
+    val clean = message?.let { parseServerErrorMessage(it) } ?: return this
+    return Exception(clean, this)
+}
+
+/** Extracts the value of `"error"` from `{"error":"..."}` embedded in a Ktor exception message. */
+internal fun parseServerErrorMessage(raw: String): String? {
+    val start = raw.indexOf("Text: \"").takeIf { it >= 0 } ?: return null
+    val json = raw.substring(start + 7, raw.lastIndexOf('"'))
+    return Regex(""""error"\s*:\s*"([^"]+)"""").find(json)?.groupValues?.get(1)
 }
