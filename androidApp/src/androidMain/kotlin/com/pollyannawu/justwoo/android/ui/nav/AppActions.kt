@@ -10,6 +10,7 @@ data class AppActions(
     val onTaskListClick: () -> Unit,
     val onTaskQuickClick: (taskId: Long) -> Unit,
     val onHouseInfoClick: () -> Unit,
+    val onSettlementClick: () -> Unit,
     val onLogOut: () -> Unit,
     val onLeaveHouse: () -> Unit,
 )

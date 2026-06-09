@@ -48,7 +48,7 @@ fun MainShell(
                 onOpenHome = actions.onHomeClick,
                 onCreateTask = actions.onCreateTaskClick,
                 onOpenTaskSpace = actions.onTaskListClick,
-                onOpenSettlements = { /* TODO: settlements 還沒建 */ },
+                onOpenSettlements = actions.onSettlementClick,
             )
         },
         content = content,
