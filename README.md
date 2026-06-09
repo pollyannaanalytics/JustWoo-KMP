@@ -26,6 +26,7 @@ A **full-stack Kotlin Multiplatform** application for household task management 
 - [Getting Started](#getting-started)
 - [CI/CD](#cicd)
 - [Production Infrastructure](#production-infrastructure)
+- [Claude Code Skills](#claude-code-skills)
 - [Project Status](#project-status)
 
 ---
@@ -373,6 +374,48 @@ ssh -L 9000:localhost:9000 -i ~/.ssh/your-key.pem ubuntu@your-server-ip
 # Then open in browser
 http://localhost:9000
 ```
+
+---
+
+## Claude Code Skills
+
+This repo ships with a `.claude/skills/` directory that codifies the project's conventions for AI coding assistants. The full set of non-negotiable rules — TDD by default, Swagger as the API contract, money as ISO 4217 string, sealed result types — lives in [`CLAUDE.md`](CLAUDE.md). Each skill below extends that baseline for its scope. Skills auto-trigger by file path (`paths:` frontmatter) so only the relevant rules load into context.
+
+### Worker — best-practice rules per platform
+
+Defines the engineering shape of each module. Loads when you edit files under that scope.
+
+| Skill | Scope | Auto-triggers on |
+|:---|:---|:---|
+| `backend-best-practice` | Ktor + Exposed + Postgres + Redis, layered routes/service/repository, Swagger mandatory | `backend/src/**/*.kt`, `openapi/**` |
+| `aos-best-practice` | Android non-Composable code — Components, ViewModels, Koin, coroutines | `androidApp/**/*.kt` |
+| `ios-best-practice` | SwiftUI bound to Decompose Components, Keychain, ISO 4217 display | `iosApp/**`, `shared/src/iosMain/**` |
+| `kmp-best-practice` | `:core` cross-stack contract, `shared/commonMain` UseCases, `expect`/`actual` discipline | `shared/src/**`, `core/**` |
+| `compose-authoring` | One `@Composable` per file, mandatory `@Preview`, state hoisting, design tokens | `androidApp/**/ui/**/*.kt` |
+| `decompose-nav` | Component + Content pattern, `@Serializable` configs, no `NavController` | `**/ui/nav/**`, `*Component.kt` |
+
+### Feature context — domain invariants
+
+Pins the business rules that must survive any refactor in that domain.
+
+| Skill | Invariants enforced |
+|:---|:---|
+| `feature-auth` | Bcrypt only, JWT 1h + Redis refresh 7d, rate-limited login, generic auth errors (no email enumeration) |
+| `feature-house` | `ADMIN` / `MEMBER` roles, last-admin protection, invite codes single-use + TTL, no cross-house data leakage |
+| `feature-task` | House-scoped, owner/executor/assignee role split, status state machine, optional `price` + mandatory `currencyCode` when present |
+| `feature-settlement` | Immutable ledger, `payerId ≠ payeeId`, multi-currency balance via `BigDecimal`, decoupled from `Task` |
+
+### Agent — runs in a forked subagent
+
+Skills with `context: fork` execute in an isolated subagent and return a concise report, keeping the main conversation clean.
+
+| Skill | Purpose |
+|:---|:---|
+| `build-verifier` | Picks gradle targets from `git diff` (or an explicit arg), runs compile + tests, returns pass/fail with the first error block per target. Use after non-trivial edits, before declaring done. |
+
+### How they fit together
+
+When you edit `backend/.../service/SettlementService.kt`, `backend-best-practice` and `feature-settlement` both auto-load — the worker skill enforces layering and TDD flow, the feature skill enforces the domain invariants. Once the change is in place, invoke `/build-verifier` (or let Claude trigger it) to confirm the targets compile and tests pass.
 
 ---
 
