@@ -9,7 +9,7 @@ import com.arkivanov.decompose.router.stack.push
 import com.arkivanov.decompose.value.Value
 import kotlinx.serialization.Serializable
 
-interface HouseOnboardingComponent {
+interface HouseOnboardingComponent : ComponentContext {
     val stack: Value<ChildStack<*, Child>>
 
     fun onJoinSelected()

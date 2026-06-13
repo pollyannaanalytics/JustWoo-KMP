@@ -37,19 +37,21 @@ import com.pollyannawu.justwoo.android.ui.common.JustWooTextField
 import com.pollyannawu.justwoo.android.ui.theme.JustWooColors
 import com.pollyannawu.justwoo.android.ui.theme.JustWooFontWeight
 import com.pollyannawu.justwoo.android.ui.theme.JustWooSpacing
+import com.pollyannawu.justwoo.android.ui.common.componentViewModelStoreOwner
+import com.pollyannawu.justwoo.ui.nav.profile.ProfileComponent
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun ProfileEditScreen(
-    onClose: () -> Unit,
-    viewModel: ProfileEditViewModel = koinViewModel(),
+    component: ProfileComponent,
+    viewModel: ProfileEditViewModel = koinViewModel(viewModelStoreOwner = componentViewModelStoreOwner(component)),
 ) {
     val state by viewModel.uiState.collectAsState()
 
     LaunchedEffect(state.saved) {
         if (state.saved) {
             viewModel.consumeSaved()
-            onClose()
+            component.onClose()
         }
     }
 
@@ -67,7 +69,7 @@ fun ProfileEditScreen(
     ProfileEditContent(
         state = state,
         canSave = state.canSave,
-        onClose = onClose,
+        onClose = component::onClose,
         onNameChange = viewModel::onNameChange,
         onBioChange = viewModel::onBioChange,
         onBankAccountChange = viewModel::onBankAccountChange,

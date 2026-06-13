@@ -2,7 +2,7 @@ package com.pollyannawu.justwoo.ui.nav.profile
 
 import com.arkivanov.decompose.ComponentContext
 
-interface ProfileViewComponent {
+interface ProfileViewComponent : ComponentContext {
     fun onEdit()
     fun onClose()
 }
