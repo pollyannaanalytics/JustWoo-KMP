@@ -28,9 +28,7 @@ import com.pollyannawu.justwoo.ui.nav.profile.DefaultProfileViewComponent
 import com.pollyannawu.justwoo.ui.nav.profile.ProfileComponent
 import com.pollyannawu.justwoo.ui.nav.profile.ProfileViewComponent
 import com.pollyannawu.justwoo.ui.nav.settlement.AddExpenseComponent
-import com.pollyannawu.justwoo.ui.nav.settlement.CurrencyPickerComponent
 import com.pollyannawu.justwoo.ui.nav.settlement.DefaultAddExpenseComponent
-import com.pollyannawu.justwoo.ui.nav.settlement.DefaultCurrencyPickerComponent
 import com.pollyannawu.justwoo.ui.nav.settlement.DefaultSettlementComponent
 import com.pollyannawu.justwoo.ui.nav.settlement.SettlementComponent
 import com.pollyannawu.justwoo.ui.nav.tasks.DefaultTaskComponent
@@ -68,7 +66,6 @@ interface RootComponent {
         class HouseInfo(val component: HouseInfoComponent) : Child
         class Settlement(val component: SettlementComponent) : Child
         class AddExpense(val component: AddExpenseComponent) : Child
-        class CurrencyPicker(val component: CurrencyPickerComponent) : Child
     }
 }
 
@@ -87,7 +84,6 @@ class DefaultRootComponent(
 
     private val navigation = StackNavigation<Config>()
     private val slotNavigation = SlotNavigation<SlotConfig>()
-    private var pendingCurrencyCallback: ((String) -> Unit)? = null
 
     override val stack: Value<ChildStack<*, RootComponent.Child>> =
         childStack(
@@ -241,22 +237,6 @@ class DefaultRootComponent(
                 componentContext = childContext,
                 onFinished = { navigation.pop() },
                 onExpenseSaved = { navigation.pop() },
-                onNavigateToCurrencyPicker = { callback ->
-                    pendingCurrencyCallback = callback
-                    navigation.push(Config.CurrencyPicker)
-                },
-            ),
-        )
-
-        Config.CurrencyPicker -> RootComponent.Child.CurrencyPicker(
-            DefaultCurrencyPickerComponent(
-                componentContext = childContext,
-                onFinished = { navigation.pop() },
-                onSelected = { code ->
-                    pendingCurrencyCallback?.invoke(code)
-                    pendingCurrencyCallback = null
-                    navigation.pop()
-                },
             ),
         )
     }
@@ -294,8 +274,6 @@ class DefaultRootComponent(
         data object Settlement : Config
         @Serializable
         data object AddExpense : Config
-        @Serializable
-        data object CurrencyPicker : Config
     }
 
     @Serializable
