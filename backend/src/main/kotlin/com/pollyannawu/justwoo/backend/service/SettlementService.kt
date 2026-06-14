@@ -127,15 +127,18 @@ internal class DefaultSettlementService(
         }
     }
 
-    // executor owes owner for each priced task they completed for someone else
+    // each non-owner assignee owes the owner their equal share of the task price
     private fun buildDebtMap(tasks: List<Task>): Map<DebtPair, Map<String, Double>> {
         val debts = mutableMapOf<DebtPair, MutableMap<String, Double>>()
         for (task in tasks) {
             val price = task.price ?: continue
             val code = task.currencyCode ?: continue
-            val executorId = task.executorId.takeIf { it != 0L } ?: continue
-            if (executorId == task.ownerId) continue
-            debts.getOrPut(DebtPair(executorId, task.ownerId)) { mutableMapOf() }.merge(code, price, Double::plus)
+            val nonOwnerAssignees = task.assignees.map { it.userId }.filter { it != task.ownerId }
+            if (nonOwnerAssignees.isEmpty()) continue
+            val share = price / nonOwnerAssignees.size
+            for (assigneeId in nonOwnerAssignees) {
+                debts.getOrPut(DebtPair(assigneeId, task.ownerId)) { mutableMapOf() }.merge(code, share, Double::plus)
+            }
         }
         return debts
     }
