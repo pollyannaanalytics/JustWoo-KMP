@@ -328,6 +328,51 @@ class SettlementServiceTest {
     }
 
     @Test
+    fun `getHouseBalance splits price equally among multiple assignees`() = runTest {
+        // Bob (payeeId=20) owns a 300 TWD task; Alice (payerId=10) and a third user (30) are both assignees
+        // each assignee owes Bob 150 TWD (300 / 2)
+        val thirdUserId = 30L
+        val multiAssigneeTask = Task(
+            id = 99L,
+            title = "Split Task",
+            description = "",
+            accessLevel = AccessLevel.PUBLIC,
+            taskStatus = TaskStatus.DONE,
+            ownerId = payeeId,
+            executorId = payerId,
+            houseId = houseId,
+            assignees = listOf(
+                TaskAssignee(payerId, AssignStatus.ACCEPTED),
+                TaskAssignee(thirdUserId, AssignStatus.ACCEPTED),
+            ),
+            dueTime = now,
+            createTime = now,
+            updateTime = now,
+            price = 300.0,
+            currencyCode = "TWD"
+        )
+
+        coEvery { houseRepo.isMember(requesterId, houseId) } returns true
+        coEvery { settlementRepo.getTasksWithPrice(houseId) } returns listOf(multiAssigneeTask)
+        coEvery { settlementRepo.getSettlements(houseId) } returns emptyList()
+        coEvery { profileRepo.getProfiles(any()) } returns listOf(
+            profile(payerId, "Alice"),
+            profile(payeeId, "Bob"),
+            profile(thirdUserId, "Charlie"),
+        )
+
+        val result = service.getHouseBalance(houseId, requesterId)
+
+        assertInstanceOf(SettlementDataResult.Success::class.java, result)
+        val balances = (result as SettlementDataResult.Success).data.balances
+        assertEquals(2, balances.size)
+        balances.forEach { entry ->
+            assertEquals(payeeId, entry.counterpartId)
+            assertEquals(150.0, entry.netAmount, 0.01)
+        }
+    }
+
+    @Test
     fun `getHouseBalance skips tasks without executorId`() = runTest {
         val taskNoExecutor = Task(
             id = 1L,
