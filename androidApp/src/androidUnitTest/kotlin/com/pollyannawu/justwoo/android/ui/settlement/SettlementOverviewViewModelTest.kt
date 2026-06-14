@@ -6,7 +6,6 @@ import com.pollyannawu.justwoo.domain.usecase.auth.ObserveCurrentUserIdUseCase
 import com.pollyannawu.justwoo.domain.usecase.settlement.GetHouseBalanceUseCase
 import com.pollyannawu.justwoo.domain.usecase.settlement.ObserveSettlementsUseCase
 import com.pollyannawu.justwoo.domain.usecase.settlement.SyncSettlementsUseCase
-import com.pollyannawu.justwoo.model.ApiResult
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -36,7 +35,6 @@ class SettlementOverviewViewModelTest {
 
     private val observeSettlements: ObserveSettlementsUseCase = mockk()
     private val syncSettlements: SyncSettlementsUseCase = mockk()
-    private val getHouseBalance: GetHouseBalanceUseCase = mockk()
     private val observeCurrentUserId: ObserveCurrentUserIdUseCase = mockk()
 
     @Before
@@ -52,14 +50,14 @@ class SettlementOverviewViewModelTest {
         Dispatchers.resetMain()
     }
 
+    private fun buildVm(
+        getHouseBalance: GetHouseBalanceUseCase,
+    ) = SettlementOverviewViewModel(observeSettlements, syncSettlements, getHouseBalance, observeCurrentUserId)
+
     @Test
     fun `balance loads successfully and filters to current user`() = runTest {
-        val entry = BalanceEntry(userId = 1L, userName = "Alice", counterpartId = 2L, counterpartName = "Bob", netAmountTwd = 100.0, netAmount = 100.0, currencyCode = "TWD")
-        coEvery { getHouseBalance() } returns ApiResult.Success(
-            HouseBalanceResponse(houseId = 1L, displayCurrencyCode = "TWD", balances = listOf(entry))
-        )
-
-        val vm = SettlementOverviewViewModel(observeSettlements, syncSettlements, getHouseBalance, observeCurrentUserId)
+        val entry = BalanceEntry(userId = 1L, userName = "Alice", counterpartId = 2L, counterpartName = "Bob", netAmount = 100.0, currencyCode = "TWD")
+        val vm = buildVm { Result.success(HouseBalanceResponse(houseId = 1L, balances = listOf(entry))) }
         advanceUntilIdle()
 
         val state = vm.uiState.value
@@ -71,9 +69,7 @@ class SettlementOverviewViewModelTest {
 
     @Test
     fun `balance error sets balanceError and clears loading`() = runTest {
-        coEvery { getHouseBalance() } returns ApiResult.Error(Exception("Network error"))
-
-        val vm = SettlementOverviewViewModel(observeSettlements, syncSettlements, getHouseBalance, observeCurrentUserId)
+        val vm = buildVm { Result.failure(Exception("Network error")) }
         advanceUntilIdle()
 
         val state = vm.uiState.value
@@ -84,11 +80,7 @@ class SettlementOverviewViewModelTest {
 
     @Test
     fun `settlements history shows empty list when no records`() = runTest {
-        coEvery { getHouseBalance() } returns ApiResult.Success(
-            HouseBalanceResponse(houseId = 1L, displayCurrencyCode = "TWD", balances = emptyList())
-        )
-
-        val vm = SettlementOverviewViewModel(observeSettlements, syncSettlements, getHouseBalance, observeCurrentUserId)
+        val vm = buildVm { Result.success(HouseBalanceResponse(houseId = 1L, balances = emptyList())) }
         advanceUntilIdle()
 
         assertTrue(vm.uiState.value.settlements.isEmpty())
@@ -96,13 +88,9 @@ class SettlementOverviewViewModelTest {
 
     @Test
     fun `balance filters out entries belonging to other users`() = runTest {
-        val myEntry = BalanceEntry(userId = 1L, userName = "Me", counterpartId = 2L, counterpartName = "Bob", netAmountTwd = 30.0, netAmount = 30.0, currencyCode = "TWD")
-        val otherEntry = BalanceEntry(userId = 2L, userName = "Bob", counterpartId = 3L, counterpartName = "Carol", netAmountTwd = 10.0, netAmount = 10.0, currencyCode = "TWD")
-        coEvery { getHouseBalance() } returns ApiResult.Success(
-            HouseBalanceResponse(houseId = 1L, displayCurrencyCode = "TWD", balances = listOf(myEntry, otherEntry))
-        )
-
-        val vm = SettlementOverviewViewModel(observeSettlements, syncSettlements, getHouseBalance, observeCurrentUserId)
+        val myEntry = BalanceEntry(userId = 1L, userName = "Me", counterpartId = 2L, counterpartName = "Bob", netAmount = 30.0, currencyCode = "TWD")
+        val otherEntry = BalanceEntry(userId = 2L, userName = "Bob", counterpartId = 3L, counterpartName = "Carol", netAmount = 10.0, currencyCode = "TWD")
+        val vm = buildVm { Result.success(HouseBalanceResponse(houseId = 1L, balances = listOf(myEntry, otherEntry))) }
         advanceUntilIdle()
 
         assertEquals(1, vm.uiState.value.balanceEntries.size)
@@ -111,9 +99,7 @@ class SettlementOverviewViewModelTest {
 
     @Test
     fun `balance error message propagates from exception`() = runTest {
-        coEvery { getHouseBalance() } returns ApiResult.Error(Exception("Timeout"))
-
-        val vm = SettlementOverviewViewModel(observeSettlements, syncSettlements, getHouseBalance, observeCurrentUserId)
+        val vm = buildVm { Result.failure(Exception("Timeout")) }
         advanceUntilIdle()
 
         assertEquals("Timeout", vm.uiState.value.balanceError)
@@ -121,9 +107,7 @@ class SettlementOverviewViewModelTest {
 
     @Test
     fun `balance error falls back to default message when exception has no message`() = runTest {
-        coEvery { getHouseBalance() } returns ApiResult.Error(Exception())
-
-        val vm = SettlementOverviewViewModel(observeSettlements, syncSettlements, getHouseBalance, observeCurrentUserId)
+        val vm = buildVm { Result.failure(Exception()) }
         advanceUntilIdle()
 
         assertEquals("Failed to load balance", vm.uiState.value.balanceError)
@@ -131,13 +115,12 @@ class SettlementOverviewViewModelTest {
 
     @Test
     fun `refresh triggers second balance load`() = runTest {
-        val entryAfterRefresh = BalanceEntry(userId = 1L, userName = "Me", counterpartId = 2L, counterpartName = "Bob", netAmountTwd = 200.0, netAmount = 200.0, currencyCode = "TWD")
-        coEvery { getHouseBalance() } returnsMany listOf(
-            ApiResult.Success(HouseBalanceResponse(houseId = 1L, displayCurrencyCode = "TWD", balances = emptyList())),
-            ApiResult.Success(HouseBalanceResponse(houseId = 1L, displayCurrencyCode = "TWD", balances = listOf(entryAfterRefresh))),
+        val entryAfterRefresh = BalanceEntry(userId = 1L, userName = "Me", counterpartId = 2L, counterpartName = "Bob", netAmount = 200.0, currencyCode = "TWD")
+        val answers = mutableListOf(
+            Result.success(HouseBalanceResponse(houseId = 1L, balances = emptyList())),
+            Result.success(HouseBalanceResponse(houseId = 1L, balances = listOf(entryAfterRefresh))),
         )
-
-        val vm = SettlementOverviewViewModel(observeSettlements, syncSettlements, getHouseBalance, observeCurrentUserId)
+        val vm = buildVm { answers.removeFirst() }
         advanceUntilIdle()
         assertTrue(vm.uiState.value.balanceEntries.isEmpty())
 
@@ -152,11 +135,7 @@ class SettlementOverviewViewModelTest {
     fun `settlements list updates when repository flow emits`() = runTest {
         val settlementFlow = MutableStateFlow<List<com.pollyannawu.justwoo.core.Settlement>>(emptyList())
         every { observeSettlements() } returns settlementFlow
-        coEvery { getHouseBalance() } returns ApiResult.Success(
-            HouseBalanceResponse(houseId = 1L, displayCurrencyCode = "TWD", balances = emptyList())
-        )
-
-        val vm = SettlementOverviewViewModel(observeSettlements, syncSettlements, getHouseBalance, observeCurrentUserId)
+        val vm = buildVm { Result.success(HouseBalanceResponse(houseId = 1L, balances = emptyList())) }
         advanceUntilIdle()
         assertTrue(vm.uiState.value.settlements.isEmpty())
 

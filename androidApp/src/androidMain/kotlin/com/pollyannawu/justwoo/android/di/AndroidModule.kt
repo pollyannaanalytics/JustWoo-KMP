@@ -51,6 +51,7 @@ import com.pollyannawu.justwoo.domain.usecase.house.RejectMemberUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.ResolveCurrentHouseUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.SubmitJoinRequestUseCase
 import com.pollyannawu.justwoo.domain.usecase.settlement.CreateSettlementUseCase
+import com.pollyannawu.justwoo.domain.usecase.settlement.DefaultGetHouseBalanceUseCase
 import com.pollyannawu.justwoo.domain.usecase.settlement.GetHouseBalanceUseCase
 import com.pollyannawu.justwoo.domain.usecase.settlement.ObserveSettlementsUseCase
 import com.pollyannawu.justwoo.domain.usecase.settlement.SyncSettlementsUseCase
@@ -141,7 +142,7 @@ val androidModule = module {
     factory { UpdateCurrentProfileUseCase(get()) }
     factory { ObserveSettlementsUseCase(get(), get()) }
     factory { SyncSettlementsUseCase(get(), get()) }
-    factory { GetHouseBalanceUseCase(get(), get()) }
+    factory<GetHouseBalanceUseCase> { DefaultGetHouseBalanceUseCase(get(), get()) }
     factory { CreateSettlementUseCase(get<SettlementRepository>(), get(), get()) }
 
     viewModel { MainViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }

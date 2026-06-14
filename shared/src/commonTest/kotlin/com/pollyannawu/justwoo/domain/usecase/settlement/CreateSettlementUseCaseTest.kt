@@ -2,7 +2,6 @@ package com.pollyannawu.justwoo.domain.usecase.settlement
 
 import com.pollyannawu.justwoo.domain.usecase.auth.GetCurrentHouseIdUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.GetHouseMembersUseCase
-import com.pollyannawu.justwoo.model.ApiResult
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -54,7 +53,7 @@ class CreateSettlementUseCaseTest {
     @Test
     fun `single payee api error returns Failure with message`() = runTest {
         val repo = FakeSettlementRepository(
-            createFn = { _, _ -> ApiResult.Error(Exception("Amount must be greater than zero")) }
+            createFn = { _, _ -> Result.failure(Exception("Amount must be greater than zero")) }
         )
         val (useCase, _) = makeUseCase(repo = repo)
         val result = useCase(payerId = 1L, payeeId = 2L, amount = 100.0, currencyCode = "TWD", note = "")
@@ -133,8 +132,8 @@ class CreateSettlementUseCaseTest {
         var callIndex = 0
         val repo = FakeSettlementRepository(
             createFn = { _, _ ->
-                if (callIndex++ == 0) ApiResult.Error(Exception("db error"))
-                else ApiResult.Success(stubSettlementResponse())
+                if (callIndex++ == 0) Result.failure(Exception("db error"))
+                else Result.success(stubSettlementResponse())
             }
         )
         val (useCase, _) = makeUseCase(
@@ -149,7 +148,7 @@ class CreateSettlementUseCaseTest {
     @Test
     fun `house-wide all members fail returns PartialFailure`() = runTest {
         val repo = FakeSettlementRepository(
-            createFn = { _, _ -> ApiResult.Error(Exception("error")) }
+            createFn = { _, _ -> Result.failure(Exception("error")) }
         )
         val (useCase, _) = makeUseCase(
             members = listOf(stubMember(1L), stubMember(2L), stubMember(3L)),

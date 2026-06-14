@@ -25,36 +25,36 @@ interface HouseApiService {
 }
 
 class DefaultHouseApiService(
-    private val client: HttpClient,
+    private val ktorClient: HttpClient,
 ) : HouseApiService {
 
     override suspend fun getHouses(page: Int): ApiResult<PageResponse<HouseResponse>> = safeApiCall(tag = "HouseApi.getHouses") {
-        client.get("/houses") {
+        ktorClient.get("/houses") {
             parameter("page", page)
         }.body()
     }
 
     override suspend fun createHouse(request: HouseRequest): ApiResult<HouseResponse> = safeApiCall(tag = "HouseApi.createHouse") {
-        client.post("/houses") {
+        ktorClient.post("/houses") {
             setBody(request)
         }.body()
     }
 
     override suspend fun updateHouse(houseId: Long, request: HouseRequest): ApiResult<HouseResponse> = safeApiCall(tag = "HouseApi.updateHouse") {
-        client.patch("/houses/$houseId") {
+        ktorClient.patch("/houses/$houseId") {
             setBody(request)
         }.body()
     }
 
     override suspend fun getHouseById(houseId: Long): ApiResult<HouseResponse> = safeApiCall(tag = "HouseApi.getHouseById") {
-        client.get("/houses/$houseId").body()
+        ktorClient.get("/houses/$houseId").body()
     }
 
     override suspend fun addMember(houseId: Long, memberId: Long): ApiResult<HouseResponse> = safeApiCall(tag = "HouseApi.addMember") {
-        client.put("/houses/$houseId/members/$memberId").body()
+        ktorClient.put("/houses/$houseId/members/$memberId").body()
     }
 
     override suspend fun removeMember(houseId: Long, memberId: Long): ApiResult<HouseResponse> = safeApiCall(tag = "HouseApi.removeMember") {
-        client.delete("/houses/$houseId/members/$memberId").body()
+        ktorClient.delete("/houses/$houseId/members/$memberId").body()
     }
 }

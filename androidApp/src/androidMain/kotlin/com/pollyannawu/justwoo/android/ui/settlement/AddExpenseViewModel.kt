@@ -72,6 +72,8 @@ class AddExpenseViewModel(
     fun onPayeeSelect(payeeId: Long?) = _uiState.update { it.copy(selectedPayeeId = payeeId) }
     fun onNoteChange(v: String) = _uiState.update { it.copy(note = v) }
 
+    fun consumeSaved() = _uiState.update { it.copy(saved = false) }
+
     fun submit() {
         val s = _uiState.value
         val amount = s.amountValue ?: return
@@ -112,5 +114,4 @@ class AddExpenseViewModel(
         }
     }
 
-    fun consumeSaved() = _uiState.update { it.copy(saved = false) }
 }

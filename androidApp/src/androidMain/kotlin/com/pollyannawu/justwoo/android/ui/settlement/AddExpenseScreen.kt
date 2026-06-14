@@ -57,7 +57,6 @@ fun AddExpenseScreen(
 
     LaunchedEffect(state.saved) {
         if (state.saved) {
-            viewModel.consumeSaved()
             component.onSaved()
         }
     }

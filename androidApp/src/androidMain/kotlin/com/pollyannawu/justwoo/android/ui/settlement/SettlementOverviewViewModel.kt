@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.first
 import com.pollyannawu.justwoo.domain.usecase.settlement.GetHouseBalanceUseCase
 import com.pollyannawu.justwoo.domain.usecase.settlement.ObserveSettlementsUseCase
 import com.pollyannawu.justwoo.domain.usecase.settlement.SyncSettlementsUseCase
-import com.pollyannawu.justwoo.model.ApiResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -25,11 +24,15 @@ class SettlementOverviewViewModel(
     private val observeCurrentUserId: ObserveCurrentUserIdUseCase,
 ) : ViewModel() {
 
+    data class CurrencySummary(val currencyCode: String, val amount: Double)
+
     data class UiState(
         val settlements: List<Settlement> = emptyList(),
         val balanceEntries: List<BalanceEntry> = emptyList(),
         val isBalanceLoading: Boolean = true,
         val balanceError: String? = null,
+        val oweSummary: List<CurrencySummary> = emptyList(),
+        val owedSummary: List<CurrencySummary> = emptyList(),
     )
 
     private val _isBalanceLoading = MutableStateFlow(true)
@@ -47,11 +50,18 @@ class SettlementOverviewViewModel(
             balanceEntries = entries,
             isBalanceLoading = loading,
             balanceError = error,
+            oweSummary = entries
+                .filter { it.netAmount > 0.0 }
+                .groupBy { it.currencyCode }
+                .map { (code, list) -> CurrencySummary(code, list.sumOf { it.netAmount }) },
+            owedSummary = entries
+                .filter { it.netAmount < 0.0 }
+                .groupBy { it.currencyCode }
+                .map { (code, list) -> CurrencySummary(code, list.sumOf { -it.netAmount }) },
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, UiState())
 
     init {
-        viewModelScope.launch { syncSettlements() }
         loadBalance()
     }
 
@@ -64,18 +74,30 @@ class SettlementOverviewViewModel(
         _isBalanceLoading.value = true
         _balanceError.value = null
         viewModelScope.launch {
-            when (val result = getHouseBalance()) {
-                is ApiResult.Success -> {
+            getHouseBalance().fold(
+                onSuccess = { data ->
                     val currentUserId = observeCurrentUserId().first()
-                    _balanceEntries.value = result.data.balances.filter { it.userId == currentUserId }
+                        ?: run { _isBalanceLoading.value = false; return@launch }
+                    val debts = data.balances.filter { it.userId == currentUserId }
+                    val owed = data.balances
+                        .filter { it.counterpartId == currentUserId }
+                        .map { entry ->
+                            entry.copy(
+                                userId = currentUserId,
+                                userName = entry.counterpartName,
+                                counterpartId = entry.userId,
+                                counterpartName = entry.userName,
+                                netAmount = -entry.netAmount,
+                            )
+                        }
+                    _balanceEntries.value = debts + owed
                     _isBalanceLoading.value = false
-                }
-                is ApiResult.Error -> {
-                    _balanceError.update { result.exception.message ?: "Failed to load balance" }
+                },
+                onFailure = { e ->
+                    _balanceError.update { e.message ?: "Failed to load balance" }
                     _isBalanceLoading.value = false
-                }
-                ApiResult.Loading -> Unit
-            }
+                },
+            )
         }
     }
 }

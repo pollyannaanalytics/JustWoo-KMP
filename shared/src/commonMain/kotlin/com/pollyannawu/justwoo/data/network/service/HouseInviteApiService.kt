@@ -22,35 +22,35 @@ interface HouseInviteApiService {
 }
 
 class DefaultHouseInviteApiService(
-    private val client: HttpClient,
+    private val ktorClient: HttpClient,
 ) : HouseInviteApiService {
 
     override suspend fun generateInviteCode(houseId: Long): ApiResult<InviteCodeResponse> =
         safeApiCall(tag = "HouseInviteApi.generateInviteCode") {
-            client.post("/houses/$houseId/invite-codes").body()
+            ktorClient.post("/houses/$houseId/invite-codes").body()
         }
 
     override suspend fun submitJoinRequest(inviteCode: String): ApiResult<JoinRequestResponse> =
         safeApiCall(tag = "HouseInviteApi.submitJoinRequest") {
-            client.post("/join-requests") {
+            ktorClient.post("/join-requests") {
                 setBody(JoinRequestBody(inviteCode = inviteCode))
             }.body()
         }
 
     override suspend fun getPendingRequests(houseId: Long): ApiResult<List<JoinRequestResponse>> =
         safeApiCall(tag = "HouseInviteApi.getPendingRequests") {
-            client.get("/houses/$houseId/join-requests").body()
+            ktorClient.get("/houses/$houseId/join-requests").body()
         }
 
     override suspend fun processJoinRequest(requestId: Long, approve: Boolean): ApiResult<JoinRequestResponse> =
         safeApiCall(tag = "HouseInviteApi.processJoinRequest") {
-            client.patch("/join-requests/$requestId") {
+            ktorClient.patch("/join-requests/$requestId") {
                 setBody(JoinRequestDecision(approve = approve))
             }.body()
         }
 
     override suspend fun getMyJoinRequestStatus(): ApiResult<JoinRequestResponse> =
         safeApiCall(tag = "HouseInviteApi.getMyJoinRequestStatus") {
-            client.get("/join-requests/me").body()
+            ktorClient.get("/join-requests/me").body()
         }
 }

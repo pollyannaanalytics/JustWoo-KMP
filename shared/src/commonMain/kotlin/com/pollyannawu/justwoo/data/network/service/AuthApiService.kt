@@ -21,7 +21,7 @@ interface AuthApiService {
 }
 
 class DefaultAuthApiService(
-    private val client: HttpClient,
+    private val ktorClient: HttpClient,
 ) : AuthApiService {
 
     override suspend fun loginByEmailAndPassword(
@@ -29,7 +29,7 @@ class DefaultAuthApiService(
         plainPassword: String,
         deviceId: String,
     ): ApiResult<AuthResponse?> = safeApiCall(tag = "AuthApi.login") {
-        client.post("/auth/login") {
+        ktorClient.post("/auth/login") {
             setBody(LoginRequest(email = email, password = plainPassword, deviceId = deviceId))
         }.body()
     }
@@ -39,7 +39,7 @@ class DefaultAuthApiService(
         plainPassword: String,
         deviceId: String,
     ): ApiResult<AuthResponse?> = safeApiCall(tag = "AuthApi.register") {
-        client.post("/auth/register") {
+        ktorClient.post("/auth/register") {
             setBody(RegisterRequest(email = email, plainPassword = plainPassword, deviceId = deviceId))
         }.body()
     }
@@ -48,7 +48,7 @@ class DefaultAuthApiService(
         userId: String,
         confirmPassword: String,
     ): ApiResult<Unit> = safeApiCall(tag = "AuthApi.delete") {
-        client.delete("/auth/$userId")
+        ktorClient.delete("/auth/$userId")
         Unit
     }
 
@@ -56,7 +56,7 @@ class DefaultAuthApiService(
         oldPassword: String,
         newPassword: String,
     ): ApiResult<Unit> = safeApiCall(tag = "AuthApi.changePassword") {
-        client.put("/auth/password") {
+        ktorClient.put("/auth/password") {
             setBody(ChangePasswordRequest(oldPassword = oldPassword, newPassword = newPassword))
         }
         Unit
