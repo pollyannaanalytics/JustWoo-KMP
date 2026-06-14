@@ -32,8 +32,7 @@ data class BalanceEntry(
     val userName: String,
     val counterpartId: Long,
     val counterpartName: String,
-    // Positive = userId owes counterpartId
-    val netAmountTwd: Double,
+    // Positive = userId owes counterpartId, in currencyCode (no TWD conversion)
     val netAmount: Double,
     val currencyCode: String
 )
@@ -41,6 +40,5 @@ data class BalanceEntry(
 @Serializable
 data class HouseBalanceResponse(
     val houseId: Long,
-    val displayCurrencyCode: String,
     val balances: List<BalanceEntry>
 )

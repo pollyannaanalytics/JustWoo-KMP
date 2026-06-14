@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import com.pollyannawu.justwoo.android.ui.common.JustWooTextField
+import com.pollyannawu.justwoo.android.ui.common.componentViewModelStoreOwner
 import com.pollyannawu.justwoo.android.ui.nav.LocalAppActions
 import com.pollyannawu.justwoo.android.ui.task.components.AssignToRow
 import com.pollyannawu.justwoo.android.ui.task.components.CreateTaskFooterButtons
@@ -53,7 +54,7 @@ fun CreateTaskScreen(
     currentUserId: Long,
     currentHouseId: Long,
     component: TaskEditComponent,
-    viewModel: CreateTaskViewModel = koinViewModel(),
+    viewModel: CreateTaskViewModel = koinViewModel(viewModelStoreOwner = componentViewModelStoreOwner(component)),
 ) {
     LaunchedEffect(currentHouseId) { viewModel.bind(currentHouseId) }
     val state by viewModel.uiState.collectAsState()

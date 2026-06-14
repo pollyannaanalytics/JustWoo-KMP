@@ -21,24 +21,29 @@ class DefaultSettlementRepository(
     override suspend fun syncSettlements(houseId: Long) {
         val result = settlementApiService.getSettlements(houseId)
         if (result is ApiResult.Success) {
-            val settlements = result.data.map { it.toDomain() }
-            settlementDataSource.saveSettlements(settlements)
+            settlementDataSource.saveSettlements(result.data.map { it.toDomain() })
         }
     }
 
-    override suspend fun getBalance(houseId: Long): ApiResult<HouseBalanceResponse> =
-        settlementApiService.getBalance(houseId)
+    override suspend fun getBalance(houseId: Long): Result<HouseBalanceResponse> =
+        settlementApiService.getBalance(houseId).toResult()
 
-    override suspend fun createSettlement(houseId: Long, request: CreateSettlementRequest): ApiResult<SettlementResponse> {
-        val result = settlementApiService.createSettlement(houseId, request)
-        if (result is ApiResult.Success) {
-            settlementDataSource.saveSettlement(result.data.toDomain())
+    override suspend fun createSettlement(houseId: Long, request: CreateSettlementRequest): Result<SettlementResponse> {
+        val apiResult = settlementApiService.createSettlement(houseId, request)
+        if (apiResult is ApiResult.Success) {
+            settlementDataSource.saveSettlement(apiResult.data.toDomain())
         }
-        return result
+        return apiResult.toResult()
     }
 }
 
-private fun com.pollyannawu.justwoo.core.dto.SettlementResponse.toDomain() = Settlement(
+private fun <T> ApiResult<T>.toResult(): Result<T> = when (this) {
+    is ApiResult.Success -> Result.success(data)
+    is ApiResult.Error -> Result.failure(exception)
+    ApiResult.Loading -> Result.failure(IllegalStateException("Unexpected loading state"))
+}
+
+private fun SettlementResponse.toDomain() = Settlement(
     id = id,
     houseId = houseId,
     payerId = payerId,

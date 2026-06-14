@@ -4,7 +4,6 @@ import com.pollyannawu.justwoo.core.dto.CreateSettlementRequest
 import com.pollyannawu.justwoo.data.SettlementRepository
 import com.pollyannawu.justwoo.domain.usecase.auth.GetCurrentHouseIdUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.GetHouseMembersUseCase
-import com.pollyannawu.justwoo.model.ApiResult
 import kotlin.math.roundToInt
 
 sealed interface CreateSettlementResult {
@@ -42,17 +41,14 @@ class CreateSettlementUseCase(
         amount: Double,
         currencyCode: String,
         note: String,
-    ): CreateSettlementResult {
-        val result = settlementRepository.createSettlement(
+    ): CreateSettlementResult =
+        settlementRepository.createSettlement(
             houseId,
             CreateSettlementRequest(payerId = payerId, payeeId = payeeId, amount = amount, currencyCode = currencyCode, note = note),
+        ).fold(
+            onSuccess = { CreateSettlementResult.Success },
+            onFailure = { CreateSettlementResult.Failure(it.message ?: "Unknown error") },
         )
-        return when (result) {
-            is ApiResult.Success -> CreateSettlementResult.Success
-            is ApiResult.Error -> CreateSettlementResult.Failure(result.exception.message ?: "Unknown error")
-            ApiResult.Loading -> CreateSettlementResult.Failure("Unexpected loading state")
-        }
-    }
 
     private suspend fun createHouseWide(
         houseId: Long,
@@ -61,8 +57,8 @@ class CreateSettlementUseCase(
         currencyCode: String,
         note: String,
     ): CreateSettlementResult {
-        val members = getHouseMembers(houseId)
-        if (members.isEmpty()) return CreateSettlementResult.Failure("No active house")
+        val members = getHouseMembers(houseId).filter { it.userId != payerId }
+        if (members.isEmpty()) return CreateSettlementResult.Success
 
         val splitAmount = (amount / members.size * 100).roundToInt() / 100.0
         val remainder = (amount * 100).roundToInt() - (splitAmount * 100).roundToInt() * members.size
@@ -84,7 +80,7 @@ class CreateSettlementUseCase(
                     note = note,
                 ),
             )
-            if (result is ApiResult.Error) failedNames.add(member.userId)
+            if (result.isFailure) failedNames.add(member.userId)
         }
 
         return if (failedNames.isEmpty()) CreateSettlementResult.Success

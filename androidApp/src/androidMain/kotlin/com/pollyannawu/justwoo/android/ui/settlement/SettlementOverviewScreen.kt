@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronLeft
@@ -27,11 +28,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.pollyannawu.justwoo.android.ui.theme.JustWooColors
 import com.pollyannawu.justwoo.android.ui.theme.JustWooFontWeight
@@ -42,14 +45,31 @@ import com.pollyannawu.justwoo.core.dto.BalanceEntry
 import com.pollyannawu.justwoo.ui.nav.settlement.SettlementComponent
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import com.pollyannawu.justwoo.android.ui.common.componentViewModelStoreOwner
 import org.koin.androidx.compose.koinViewModel
+
+private val MemberColorPalette = listOf(
+    Color(0xFFB8D4F0),
+    Color(0xFFD4B8F0),
+    Color(0xFFB8EDD4),
+    Color(0xFFF0D4B8),
+    Color(0xFFF0B8D4),
+    Color(0xFFD4F0B8),
+    Color(0xFFF0E8B8),
+    Color(0xFFB8D4D4),
+)
+
+private fun memberBgColor(counterpartId: Long): Color =
+    MemberColorPalette[(counterpartId % MemberColorPalette.size).toInt()]
 
 @Composable
 fun SettlementOverviewScreen(
     component: SettlementComponent,
-    viewModel: SettlementOverviewViewModel = koinViewModel(),
+    viewModel: SettlementOverviewViewModel = koinViewModel(viewModelStoreOwner = componentViewModelStoreOwner(component)),
 ) {
     val state by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(Unit) { viewModel.refresh() }
 
     Scaffold(
         containerColor = JustWooColors.Cream,
@@ -102,6 +122,8 @@ fun SettlementOverviewScreen(
                         isLoading = state.isBalanceLoading,
                         error = state.balanceError,
                         entries = state.balanceEntries,
+                        oweSummary = state.oweSummary,
+                        owedSummary = state.owedSummary,
                     )
                     Spacer(Modifier.height(JustWooSpacing.Large))
                 }
@@ -136,6 +158,8 @@ private fun BalanceSection(
     isLoading: Boolean,
     error: String?,
     entries: List<BalanceEntry>,
+    oweSummary: List<SettlementOverviewViewModel.CurrencySummary>,
+    owedSummary: List<SettlementOverviewViewModel.CurrencySummary>,
 ) {
     when {
         isLoading -> Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -152,27 +176,92 @@ private fun BalanceSection(
             style = MaterialTheme.typography.bodyLarge,
         )
         else -> Column(verticalArrangement = Arrangement.spacedBy(JustWooSpacing.Small)) {
-            entries.forEach { entry -> BalanceRow(entry) }
+            SummarySubtitle(oweSummary = oweSummary, owedSummary = owedSummary)
+            entries.forEach { entry -> BalanceRow(entry, memberBgColor(entry.counterpartId)) }
         }
     }
 }
 
 @Composable
-private fun BalanceRow(entry: BalanceEntry) {
-    val isSettled = entry.netAmountTwd == 0.0
-    val isOwed = entry.netAmountTwd < 0.0
+private fun SummarySubtitle(
+    oweSummary: List<SettlementOverviewViewModel.CurrencySummary>,
+    owedSummary: List<SettlementOverviewViewModel.CurrencySummary>,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(JustWooShapes.Medium)
+            .background(JustWooColors.CreamSurface)
+            .padding(horizontal = JustWooSpacing.Default, vertical = JustWooSpacing.Default),
+        horizontalArrangement = Arrangement.spacedBy(JustWooSpacing.Default),
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text("You owe", style = MaterialTheme.typography.labelSmall, color = JustWooColors.TextSecondary)
+            if (oweSummary.isEmpty()) {
+                Text("—", style = MaterialTheme.typography.bodyMedium, color = JustWooColors.TextSecondary)
+            } else {
+                oweSummary.forEach { summary ->
+                    Text(
+                        "${String.format("%.2f", summary.amount)} ${summary.currencyCode}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = JustWooFontWeight.SemiBold,
+                        color = JustWooColors.UrgencyRed,
+                    )
+                }
+            }
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text("You're owed", style = MaterialTheme.typography.labelSmall, color = JustWooColors.TextSecondary)
+            if (owedSummary.isEmpty()) {
+                Text("—", style = MaterialTheme.typography.bodyMedium, color = JustWooColors.TextSecondary)
+            } else {
+                owedSummary.forEach { summary ->
+                    Text(
+                        "${String.format("%.2f", summary.amount)} ${summary.currencyCode}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = JustWooFontWeight.SemiBold,
+                        color = JustWooColors.UrgencyGreen,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MemberAvatar(name: String, bgColor: Color) {
+    Box(
+        modifier = Modifier
+            .size(36.dp)
+            .clip(CircleShape)
+            .background(bgColor),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = name.firstOrNull()?.uppercase() ?: "?",
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = JustWooFontWeight.Bold,
+            color = JustWooColors.TextPrimary,
+        )
+    }
+}
+
+@Composable
+private fun BalanceRow(entry: BalanceEntry, memberColor: Color) {
+    val isSettled = entry.netAmount == 0.0
+    val isOwed = entry.netAmount < 0.0
 
     val (label, amount, labelColor, bgColor) = when {
         isSettled -> BalanceRowStyle("All settled", "—", JustWooColors.TextSecondary, JustWooColors.CreamSurface)
         isOwed -> BalanceRowStyle(
             "You are owed",
-            "${String.format("%.2f", -entry.netAmountTwd)} ${entry.currencyCode}",
+            "${String.format("%.2f", -entry.netAmount)} ${entry.currencyCode}",
             JustWooColors.UrgencyGreen,
             JustWooColors.UrgencyGreenBg,
         )
         else -> BalanceRowStyle(
             "You owe",
-            "${String.format("%.2f", entry.netAmountTwd)} ${entry.currencyCode}",
+            "${String.format("%.2f", entry.netAmount)} ${entry.currencyCode}",
             JustWooColors.UrgencyRed,
             JustWooColors.UrgencyRedBg,
         )
@@ -187,9 +276,15 @@ private fun BalanceRow(entry: BalanceEntry) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column {
-            Text(entry.counterpartName, style = MaterialTheme.typography.bodyLarge, fontWeight = JustWooFontWeight.SemiBold, color = JustWooColors.TextPrimary)
-            Text(label, style = MaterialTheme.typography.labelSmall, color = labelColor)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(JustWooSpacing.Small),
+        ) {
+            MemberAvatar(name = entry.counterpartName, bgColor = memberColor)
+            Column {
+                Text(entry.counterpartName, style = MaterialTheme.typography.bodyLarge, fontWeight = JustWooFontWeight.SemiBold, color = JustWooColors.TextPrimary)
+                Text(label, style = MaterialTheme.typography.labelSmall, color = labelColor)
+            }
         }
         Text(amount, style = MaterialTheme.typography.bodyLarge, fontWeight = JustWooFontWeight.Bold, color = labelColor)
     }
