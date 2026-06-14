@@ -8,6 +8,7 @@ import com.pollyannawu.justwoo.core.dto.SettlementResponse
 import com.pollyannawu.justwoo.core.dto.TaskResponse
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.request.patch
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
@@ -214,8 +215,16 @@ class UserFlowIntegrationTest {
         assertEquals(320.0, task.price)
         assertEquals("TWD", task.currencyCode)
 
-        // Member pays back 100 TWD (partial settlement)
+        // Member accepts the task → sets executorId so the debt is tracked
         val memberToken = login("member-s3@test.com").accessToken
+        val acceptResponse = client.patch("/houses/${house.id}/tasks/${task.id}/assignees/$memberId") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json)
+            header(HttpHeaders.Authorization, "Bearer $memberToken")
+            setBody("\"ACCEPTED\"")
+        }
+        assertEquals(HttpStatusCode.OK, acceptResponse.status, "acceptTask failed: ${acceptResponse.bodyAsText()}")
+
+        // Member pays back 100 TWD (partial settlement)
         val settlementResponse = client.post("/houses/${house.id}/settlements") {
             header(HttpHeaders.ContentType, ContentType.Application.Json)
             header(HttpHeaders.Authorization, "Bearer $memberToken")
