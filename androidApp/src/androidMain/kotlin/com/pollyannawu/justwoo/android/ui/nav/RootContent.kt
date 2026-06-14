@@ -23,6 +23,7 @@ import com.pollyannawu.justwoo.android.ui.nav.tasks.TaskQuickStatusOverlay
 import com.pollyannawu.justwoo.android.ui.profile.ProfileEditScreen
 import com.pollyannawu.justwoo.android.ui.profile.ProfileViewScreen
 import com.pollyannawu.justwoo.android.ui.settlement.AddExpenseScreen
+import com.pollyannawu.justwoo.android.ui.settlement.CurrencyPickerScreen
 import com.pollyannawu.justwoo.android.ui.settlement.SettlementOverviewScreen
 import com.pollyannawu.justwoo.domain.usecase.auth.LogoutUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.LeaveHouseUseCase
@@ -99,7 +100,7 @@ fun RootContent(
                     )
 
                     is RootComponent.Child.Profile -> ProfileEditScreen(
-                        onClose = child.component::onClose,
+                        component = child.component,
                     )
 
                     is RootComponent.Child.HouseOnboarding -> HouseOnboardingContent(
@@ -107,7 +108,7 @@ fun RootContent(
                     )
 
                     is RootComponent.Child.HouseInfo -> HouseInfoScreen(
-                        onClose = child.component::onClose,
+                        component = child.component,
                     )
 
                     is RootComponent.Child.Settlement -> SettlementOverviewScreen(
@@ -115,6 +116,10 @@ fun RootContent(
                     )
 
                     is RootComponent.Child.AddExpense -> AddExpenseScreen(
+                        component = child.component,
+                    )
+
+                    is RootComponent.Child.CurrencyPicker -> CurrencyPickerScreen(
                         component = child.component,
                     )
                 }
