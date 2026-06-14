@@ -43,13 +43,14 @@ import com.pollyannawu.justwoo.android.ui.theme.JustWooColors
 import com.pollyannawu.justwoo.android.ui.theme.JustWooFontWeight
 import com.pollyannawu.justwoo.android.ui.theme.JustWooShapes
 import com.pollyannawu.justwoo.android.ui.theme.JustWooSpacing
+import com.pollyannawu.justwoo.android.ui.common.componentViewModelStoreOwner
 import com.pollyannawu.justwoo.ui.nav.profile.ProfileViewComponent
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun ProfileViewScreen(
     component: ProfileViewComponent,
-    viewModel: ProfileViewViewModel = koinViewModel(),
+    viewModel: ProfileViewViewModel = koinViewModel(viewModelStoreOwner = componentViewModelStoreOwner(component)),
 ) {
     val profile by viewModel.profile.collectAsState()
     val email by viewModel.email.collectAsState()

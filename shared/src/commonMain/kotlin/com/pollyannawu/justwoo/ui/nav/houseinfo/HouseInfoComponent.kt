@@ -2,7 +2,7 @@ package com.pollyannawu.justwoo.ui.nav.houseinfo
 
 import com.arkivanov.decompose.ComponentContext
 
-interface HouseInfoComponent {
+interface HouseInfoComponent : ComponentContext {
     fun onClose()
 }
 

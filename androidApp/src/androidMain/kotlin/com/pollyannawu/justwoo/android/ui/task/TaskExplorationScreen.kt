@@ -54,6 +54,8 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.daysUntil
 import kotlinx.datetime.toLocalDateTime
+import com.pollyannawu.justwoo.android.ui.common.componentViewModelStoreOwner
+import com.pollyannawu.justwoo.ui.nav.tasks.TaskListComponent
 import org.koin.androidx.compose.koinViewModel
 
 
@@ -61,16 +63,16 @@ import org.koin.androidx.compose.koinViewModel
 fun TaskExplorationScreen(
     currentUserId: Long,
     currentHouseId: Long,
-    onClose: () -> Unit,
+    component: TaskListComponent,
     onOpenProfile: () -> Unit,
-    viewModel: TaskExplorationViewModel = koinViewModel(),
+    viewModel: TaskExplorationViewModel = koinViewModel(viewModelStoreOwner = componentViewModelStoreOwner(component)),
 ) {
     LaunchedEffect(currentUserId) { viewModel.bind(currentUserId) }
     val state by viewModel.uiState.collectAsState()
 
     TaskExplorationContent(
         state = state,
-        onClose = onClose,
+        onClose = component::onClose,
         onOpenProfile = onOpenProfile,
         onAccept = { taskId -> viewModel.accept(currentHouseId, currentUserId, taskId) },
         onDecline = { taskId -> viewModel.decline(currentHouseId, currentUserId, taskId) }

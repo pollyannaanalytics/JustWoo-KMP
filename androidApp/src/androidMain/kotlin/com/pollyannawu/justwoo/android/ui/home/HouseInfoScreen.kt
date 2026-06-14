@@ -42,12 +42,14 @@ import com.pollyannawu.justwoo.core.House
 import com.pollyannawu.justwoo.core.HouseMember
 import com.pollyannawu.justwoo.core.MemberRole
 import kotlinx.datetime.Instant
+import com.pollyannawu.justwoo.android.ui.common.componentViewModelStoreOwner
+import com.pollyannawu.justwoo.ui.nav.houseinfo.HouseInfoComponent
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun HouseInfoScreen(
-    onClose: () -> Unit,
-    viewModel: HouseInfoViewModel = koinViewModel(),
+    component: HouseInfoComponent,
+    viewModel: HouseInfoViewModel = koinViewModel(viewModelStoreOwner = componentViewModelStoreOwner(component)),
 ) {
     val house by viewModel.house.collectAsState(initial = null)
     val currentUserId by viewModel.currentUserId.collectAsState(initial = null)
@@ -55,7 +57,7 @@ fun HouseInfoScreen(
     HouseInfoContent(
         house = house,
         currentUserId = currentUserId,
-        onClose = onClose,
+        onClose = component::onClose,
     )
 }
 
