@@ -25,23 +25,23 @@ interface TaskApiService {
 }
 
 class DefaultTaskApiService(
-    private val client: HttpClient,
+    private val ktorClient: HttpClient,
 ) : TaskApiService {
 
     override suspend fun getTasks(houseId: Long, page: Int): ApiResult<PageResponse<TaskResponse>> = safeApiCall(tag = "TaskApi.getTasks") {
-        client.get("/houses/$houseId/tasks") {
+        ktorClient.get("/houses/$houseId/tasks") {
             parameter("page", page)
         }.body()
     }
 
     override suspend fun createTask(request: CreateTaskRequest): ApiResult<TaskResponse> = safeApiCall(tag = "TaskApi.createTask") {
-        client.post("/houses/${request.houseId}/tasks") {
+        ktorClient.post("/houses/${request.houseId}/tasks") {
             setBody(request)
         }.body()
     }
 
     override suspend fun updateTask(houseId: Long, task: Task): ApiResult<TaskResponse> = safeApiCall(tag = "TaskApi.updateTask") {
-        client.patch("/houses/$houseId/tasks/${task.id}") {
+        ktorClient.patch("/houses/$houseId/tasks/${task.id}") {
             setBody(task)
         }.body()
     }
@@ -51,7 +51,7 @@ class DefaultTaskApiService(
         taskId: Long,
         assignee: TaskAssignee,
     ): ApiResult<TaskResponse> = safeApiCall(tag = "TaskApi.updateAssignStatus") {
-        client.patch("/houses/$houseId/tasks/$taskId/assignees/${assignee.userId}") {
+        ktorClient.patch("/houses/$houseId/tasks/$taskId/assignees/${assignee.userId}") {
             setBody(assignee.status)
         }.body()
     }
@@ -61,7 +61,7 @@ class DefaultTaskApiService(
         taskId: Long,
         status: TaskStatus,
     ): ApiResult<TaskResponse> = safeApiCall(tag = "TaskApi.updateStatus") {
-        client.patch("/houses/$houseId/tasks/$taskId/status") {
+        ktorClient.patch("/houses/$houseId/tasks/$taskId/status") {
             setBody(status)
         }.body()
     }

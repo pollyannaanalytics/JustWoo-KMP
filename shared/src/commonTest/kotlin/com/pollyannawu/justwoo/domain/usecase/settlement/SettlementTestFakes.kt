@@ -10,7 +10,6 @@ import com.pollyannawu.justwoo.core.dto.SettlementResponse
 import com.pollyannawu.justwoo.data.AuthRepository
 import com.pollyannawu.justwoo.data.HouseRepository
 import com.pollyannawu.justwoo.data.SettlementRepository
-import com.pollyannawu.justwoo.model.ApiResult
 import com.pollyannawu.justwoo.model.AuthDataResult
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -34,18 +33,18 @@ internal fun stubMember(userId: Long, houseId: Long = 1L) = HouseMember(
 )
 
 internal class FakeSettlementRepository(
-    var balance: ApiResult<HouseBalanceResponse> =
-        ApiResult.Success(HouseBalanceResponse(1L, "TWD", emptyList())),
-    var createFn: suspend (Long, CreateSettlementRequest) -> ApiResult<SettlementResponse> =
-        { _, _ -> ApiResult.Success(stubSettlementResponse()) },
+    var balance: Result<HouseBalanceResponse> =
+        Result.success(HouseBalanceResponse(1L, emptyList())),
+    var createFn: suspend (Long, CreateSettlementRequest) -> Result<SettlementResponse> =
+        { _, _ -> Result.success(stubSettlementResponse()) },
     private val settlementsFlow: Flow<List<Settlement>> = flowOf(emptyList()),
     val synced: MutableList<Long> = mutableListOf(),
     val created: MutableList<CreateSettlementRequest> = mutableListOf(),
 ) : SettlementRepository {
     override fun observeSettlements(houseId: Long): Flow<List<Settlement>> = settlementsFlow
     override suspend fun syncSettlements(houseId: Long) { synced += houseId }
-    override suspend fun getBalance(houseId: Long): ApiResult<HouseBalanceResponse> = balance
-    override suspend fun createSettlement(houseId: Long, request: CreateSettlementRequest): ApiResult<SettlementResponse> {
+    override suspend fun getBalance(houseId: Long): Result<HouseBalanceResponse> = balance
+    override suspend fun createSettlement(houseId: Long, request: CreateSettlementRequest): Result<SettlementResponse> {
         created += request
         return createFn(houseId, request)
     }

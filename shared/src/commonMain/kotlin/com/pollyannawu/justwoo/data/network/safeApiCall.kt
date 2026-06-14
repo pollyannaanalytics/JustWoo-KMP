@@ -73,7 +73,12 @@ internal fun Throwable.withServerMessage(): Throwable {
 
 /** Extracts the value of `"error"` from `{"error":"..."}` embedded in a Ktor exception message. */
 internal fun parseServerErrorMessage(raw: String): String? {
-    val start = raw.indexOf("Text: \"").takeIf { it >= 0 } ?: return null
-    val json = raw.substring(start + 7, raw.lastIndexOf('"'))
-    return Regex(""""error"\s*:\s*"([^"]+)"""").find(json)?.groupValues?.get(1)
+    // Ktor embeds the response body as: ... Text: "{...}"
+    val textStart = raw.indexOf("Text: \"").takeIf { it >= 0 } ?: return null
+    val bodyStart = textStart + 7
+    // Find the closing quote of the Text wrapper (last '"' in the string)
+    val bodyEnd = raw.lastIndexOf('"').takeIf { it > bodyStart } ?: return null
+    val json = raw.substring(bodyStart, bodyEnd)
+    // Match "error":"<value>" where value has no unescaped quotes (no inner \" needed now)
+    return Regex(""""error"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"""").find(json)?.groupValues?.get(1)
 }

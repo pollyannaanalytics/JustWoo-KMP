@@ -8,36 +8,33 @@ import com.pollyannawu.justwoo.data.network.safeApiCall
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
-import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 
 interface SettlementApiService {
     suspend fun getSettlements(houseId: Long): ApiResult<List<SettlementResponse>>
     suspend fun createSettlement(houseId: Long, request: CreateSettlementRequest): ApiResult<SettlementResponse>
-    suspend fun getBalance(houseId: Long, currency: String = "TWD"): ApiResult<HouseBalanceResponse>
+    suspend fun getBalance(houseId: Long): ApiResult<HouseBalanceResponse>
 }
 
 class DefaultSettlementApiService(
-    private val client: HttpClient,
+    private val ktorClient: HttpClient,
 ) : SettlementApiService {
 
     override suspend fun getSettlements(houseId: Long): ApiResult<List<SettlementResponse>> = safeApiCall(tag = "SettlementApi.getSettlements") {
-        client.get("/houses/$houseId/settlements").body()
+        ktorClient.get("/houses/$houseId/settlements").body()
     }
 
     override suspend fun createSettlement(
         houseId: Long,
         request: CreateSettlementRequest,
     ): ApiResult<SettlementResponse> = safeApiCall(tag = "SettlementApi.createSettlement") {
-        client.post("/houses/$houseId/settlements") {
+        ktorClient.post("/houses/$houseId/settlements") {
             setBody(request)
         }.body()
     }
 
-    override suspend fun getBalance(houseId: Long, currency: String): ApiResult<HouseBalanceResponse> = safeApiCall(tag = "SettlementApi.getBalance") {
-        client.get("/houses/$houseId/settlements/balance") {
-            parameter("currency", currency)
-        }.body()
+    override suspend fun getBalance(houseId: Long): ApiResult<HouseBalanceResponse> = safeApiCall(tag = "SettlementApi.getBalance") {
+        ktorClient.get("/houses/$houseId/settlements/balance").body()
     }
 }
