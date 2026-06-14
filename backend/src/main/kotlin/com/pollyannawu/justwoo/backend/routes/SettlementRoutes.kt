@@ -45,13 +45,17 @@ fun Route.settlementRoute() {
                 call.respondSettlementResult(settlementService.createSettlement(houseId, userId, request))
             }
 
-            // GET /houses/{houseId}/settlements/balance — 查看結算餘額（per-currency, no conversion）
+            // GET /houses/{houseId}/settlements/balance?currency=TWD — 查看結算餘額
             get("balance") {
                 val houseId = call.parameters["houseId"]?.toLongOrNull()
                     ?: return@get call.respond(HttpStatusCode.BadRequest, ERROR_MSG_HOUSE_ID_MISSING)
                 val userId = getUserId(call) ?: return@get call.respond(HttpStatusCode.Unauthorized)
+                // Default to TWD if not specified; service validates the code
+                val displayCurrencyCode = call.request.queryParameters["currency"] ?: "TWD"
 
-                call.respondSettlementResult(settlementService.getHouseBalance(houseId, userId))
+                call.respondSettlementResult(
+                    settlementService.getHouseBalance(houseId, userId, displayCurrencyCode)
+                )
             }
         }
     }
@@ -66,7 +70,7 @@ private suspend inline fun <reified T : Any> ApplicationCall.respondSettlementRe
                 is SettlementDataResult.Error.UserNotAllowed -> HttpStatusCode.Forbidden to "User ${result.id} is not a member"
                 is SettlementDataResult.Error.HouseNotFound -> HttpStatusCode.NotFound to "House not found"
                 is SettlementDataResult.Error.InvalidAmount -> HttpStatusCode.BadRequest to "Amount must be greater than zero"
-                is SettlementDataResult.Error.InvalidCurrency -> HttpStatusCode.BadRequest to "Unknown or unsupported currency code: ${result.code}"
+                is SettlementDataResult.Error.InvalidCurrency -> HttpStatusCode.BadRequest to "Unknown or unsupported currency code: \"${result.code}\""
             }
             respond(status, mapOf("error" to message))
         }

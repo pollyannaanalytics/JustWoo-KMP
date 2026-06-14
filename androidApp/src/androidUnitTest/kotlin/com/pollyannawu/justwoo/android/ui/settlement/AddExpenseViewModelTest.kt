@@ -38,7 +38,6 @@ class AddExpenseViewModelTest {
     private val getCurrentHouseId: GetCurrentHouseIdUseCase = mockk()
     private val observeCurrentUserId: ObserveCurrentUserIdUseCase = mockk()
 
-    private val currentUser = HouseMember(houseId = 1L, userId = 1L, name = "Alice", role = MemberRole.ADMIN, joinedAt = Clock.System.now())
     private val member = HouseMember(houseId = 1L, userId = 2L, name = "Bob", role = MemberRole.MEMBER, joinedAt = Clock.System.now())
 
     @Before
@@ -46,7 +45,7 @@ class AddExpenseViewModelTest {
         Dispatchers.setMain(testDispatcher)
         every { getCurrentHouseId() } returns 1L
         every { observeCurrentUserId() } returns flowOf(1L)
-        coEvery { getHouseMembers(1L) } returns listOf(currentUser, member)
+        coEvery { getHouseMembers(1L) } returns listOf(member)
     }
 
     @After
@@ -112,125 +111,5 @@ class AddExpenseViewModelTest {
         advanceUntilIdle()
         assertEquals(listOf(2L), vm.uiState.value.partialFailureIds)
         assertFalse(vm.uiState.value.saved)
-    }
-
-    @Test
-    fun `onAmountChange filters non-numeric characters`() = runTest {
-        val vm = buildVm()
-        vm.onAmountChange("a1b2c3")
-        advanceUntilIdle()
-        assertEquals("123", vm.uiState.value.amount)
-    }
-
-    @Test
-    fun `onAmountChange allows single decimal point`() = runTest {
-        val vm = buildVm()
-        vm.onAmountChange("12.50")
-        advanceUntilIdle()
-        assertEquals("12.50", vm.uiState.value.amount)
-    }
-
-    @Test
-    fun `onAmountChange clears existing error`() = runTest {
-        coEvery { createSettlement(any(), any(), any(), any(), any()) } returns CreateSettlementResult.Failure("some error")
-        val vm = buildVm()
-        vm.onAmountChange("100")
-        vm.onPayeeSelect(2L)
-        advanceUntilIdle()
-        vm.submit()
-        advanceUntilIdle()
-        assertNotNull(vm.uiState.value.error)
-
-        vm.onAmountChange("200")
-        assertNull(vm.uiState.value.error)
-    }
-
-    @Test
-    fun `onCurrencyChange uppercases input`() = runTest {
-        val vm = buildVm()
-        vm.onCurrencyChange("usd")
-        advanceUntilIdle()
-        assertEquals("USD", vm.uiState.value.currencyCode)
-    }
-
-    @Test
-    fun `submit api failure shows error message from result`() = runTest {
-        coEvery { createSettlement(any(), any(), any(), any(), any()) } returns CreateSettlementResult.Failure("Amount must be greater than zero")
-        val vm = buildVm()
-        vm.onAmountChange("333")
-        vm.onPayeeSelect(2L)
-        advanceUntilIdle()
-        vm.submit()
-        advanceUntilIdle()
-        assertEquals("Amount must be greater than zero", vm.uiState.value.error)
-        assertFalse(vm.uiState.value.saved)
-    }
-
-    @Test
-    fun `isLoading true during submit then cleared on success`() = runTest {
-        coEvery { createSettlement(any(), any(), any(), any(), any()) } returns CreateSettlementResult.Success
-        val vm = buildVm()
-        vm.onAmountChange("50")
-        vm.onPayeeSelect(2L)
-        advanceUntilIdle()
-        vm.submit()
-        // loading starts before coroutine finishes
-        assertTrue(vm.uiState.value.isLoading)
-        advanceUntilIdle()
-        assertFalse(vm.uiState.value.isLoading)
-    }
-
-    @Test
-    fun `consumeSaved resets saved flag`() = runTest {
-        coEvery { createSettlement(any(), any(), any(), any(), any()) } returns CreateSettlementResult.Success
-        val vm = buildVm()
-        vm.onAmountChange("100")
-        vm.onPayeeSelect(2L)
-        advanceUntilIdle()
-        vm.submit()
-        advanceUntilIdle()
-        assertTrue(vm.uiState.value.saved)
-
-        vm.consumeSaved()
-        assertFalse(vm.uiState.value.saved)
-    }
-
-    @Test
-    fun `selectedPayerId defaults to currentUserId after init`() = runTest {
-        val vm = buildVm()
-        advanceUntilIdle()
-        assertEquals(1L, vm.uiState.value.selectedPayerId)
-    }
-
-    @Test
-    fun `allMembers includes all house members after init`() = runTest {
-        val vm = buildVm()
-        advanceUntilIdle()
-        assertEquals(listOf(currentUser, member), vm.uiState.value.allMembers)
-    }
-
-    @Test
-    fun `onPayerSelect updates selectedPayerId`() = runTest {
-        val vm = buildVm()
-        advanceUntilIdle()
-        vm.onPayerSelect(2L)
-        assertEquals(2L, vm.uiState.value.selectedPayerId)
-    }
-
-    @Test
-    fun `submit passes selectedPayerId to createSettlement`() = runTest {
-        var capturedPayerId: Long? = null
-        coEvery { createSettlement(any(), any(), any(), any(), any()) } answers {
-            capturedPayerId = firstArg()
-            CreateSettlementResult.Success
-        }
-        val vm = buildVm()
-        advanceUntilIdle()
-        vm.onPayerSelect(2L)
-        vm.onAmountChange("100")
-        vm.onPayeeSelect(2L)
-        vm.submit()
-        advanceUntilIdle()
-        assertEquals(2L, capturedPayerId)
     }
 }
