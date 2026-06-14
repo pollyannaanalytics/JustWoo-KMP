@@ -193,13 +193,13 @@ class TaskServiceTest {
     }
 
     @Test
-    fun `updateTaskContent returns InvalidCurrency for malformed currency`() = runTest {
+    fun `updateTaskContent returns InvalidCurrency for unknown currency`() = runTest {
         coEvery { houseRepo.isMember(userId, houseId) } returns true
 
-        val result = service.updateTaskContent(houseId, userId, fakeTask(price = 100.0, currencyCode = "xyz"))  // lowercase — invalid format
+        val result = service.updateTaskContent(houseId, userId, fakeTask(price = 100.0, currencyCode = "XYZ"))
 
         assertInstanceOf(TaskDataResult.Error.InvalidCurrency::class.java, result)
-        assertEquals("xyz", (result as TaskDataResult.Error.InvalidCurrency).code)
+        assertEquals("XYZ", (result as TaskDataResult.Error.InvalidCurrency).code)
     }
 
     @Test

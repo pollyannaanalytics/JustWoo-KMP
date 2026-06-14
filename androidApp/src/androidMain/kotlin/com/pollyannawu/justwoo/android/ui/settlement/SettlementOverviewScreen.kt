@@ -42,13 +42,12 @@ import com.pollyannawu.justwoo.core.dto.BalanceEntry
 import com.pollyannawu.justwoo.ui.nav.settlement.SettlementComponent
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import com.pollyannawu.justwoo.android.ui.common.componentViewModelStoreOwner
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun SettlementOverviewScreen(
     component: SettlementComponent,
-    viewModel: SettlementOverviewViewModel = koinViewModel(viewModelStoreOwner = componentViewModelStoreOwner(component)),
+    viewModel: SettlementOverviewViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
 

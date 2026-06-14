@@ -60,7 +60,7 @@ private fun TaskListRoute(
     TaskExplorationScreen(
         currentUserId = currentUserId,
         currentHouseId = currentHouseId,
-        component = component,
+        onClose = component::onClose,
         onOpenProfile = actions.onProfileClick,
     )
 }
