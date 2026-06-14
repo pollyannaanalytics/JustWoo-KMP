@@ -25,14 +25,13 @@ import com.pollyannawu.justwoo.android.ui.theme.JustWooColors
 import com.pollyannawu.justwoo.android.ui.theme.JustWooFontWeight
 import com.pollyannawu.justwoo.android.ui.theme.JustWooSpacing
 import com.pollyannawu.justwoo.design.DesignTokens
-import com.pollyannawu.justwoo.android.ui.common.componentViewModelStoreOwner
 import com.pollyannawu.justwoo.ui.nav.house.HouseOnboardingComponent
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun JoinHouseScreen(
     component: HouseOnboardingComponent,
-    viewModel: JoinHouseViewModel = koinViewModel(viewModelStoreOwner = componentViewModelStoreOwner(component)),
+    viewModel: JoinHouseViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
 
