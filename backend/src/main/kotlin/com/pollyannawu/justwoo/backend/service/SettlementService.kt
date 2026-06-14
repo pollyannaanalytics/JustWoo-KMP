@@ -6,10 +6,8 @@ import com.pollyannawu.justwoo.backend.repositories.SettlementRepository
 import com.pollyannawu.justwoo.backend.utils.CurrencyConverter
 import com.pollyannawu.justwoo.backend.utils.UnknownCurrencyException
 import com.pollyannawu.justwoo.backend.utils.dataresult.SettlementDataResult
-
 import com.pollyannawu.justwoo.core.Profile
 import com.pollyannawu.justwoo.core.Settlement
-import com.pollyannawu.justwoo.core.Task
 import com.pollyannawu.justwoo.core.dto.BalanceEntry
 import com.pollyannawu.justwoo.core.dto.CreateSettlementRequest
 import com.pollyannawu.justwoo.core.dto.HouseBalanceResponse
@@ -31,10 +29,9 @@ interface SettlementService {
     suspend fun getHouseBalance(
         houseId: Long,
         requesterId: Long,
+        displayCurrencyCode: String
     ): SettlementDataResult<HouseBalanceResponse>
 }
-
-private data class DebtPair(val debtorId: Long, val creditorId: Long)
 
 internal class DefaultSettlementService(
     private val houseRepo: HouseRepository,
@@ -96,73 +93,68 @@ internal class DefaultSettlementService(
     override suspend fun getHouseBalance(
         houseId: Long,
         requesterId: Long,
+        displayCurrencyCode: String
     ): SettlementDataResult<HouseBalanceResponse> {
         if (!houseRepo.isMember(requesterId, houseId))
             return SettlementDataResult.Error.UserNotAllowed(requesterId)
+        try {
+            CurrencyConverter.validate(displayCurrencyCode)
+        } catch (_: UnknownCurrencyException) {
+            return SettlementDataResult.Error.InvalidCurrency(displayCurrencyCode)
+        }
 
         return try {
-            val debts = buildDebtMap(settlementRepo.getTasksWithPrice(houseId))
-            val payments = buildPaymentMap(settlementRepo.getSettlements(houseId))
-            val net = netBalance(debts, payments)
+            val tasks = settlementRepo.getTasksWithPrice(houseId)
+            val net = mutableMapOf<Pair<Long, Long>, Double>()
 
-            val userIds = net.keys.flatMap { listOf(it.debtorId, it.creditorId) }.distinct()
-            val profiles = profileRepo.getProfiles(userIds).associateBy { it.id }
+            for (task in tasks) {
+                val price = task.price ?: continue
+                val code = task.currencyCode ?: continue
+                val executorId = task.executorId.takeIf { it != 0L } ?: continue
+                if (executorId == task.ownerId) continue
+                // UnknownCurrencyException here means bad data in DB — let it bubble up
+                val amountTwd = CurrencyConverter.toTwd(price, code)
+                val key = Pair(executorId, task.ownerId)
+                net[key] = (net[key] ?: 0.0) + amountTwd
+            }
 
-            val balances = net.flatMap { (pair, amountByCurrency) ->
-                amountByCurrency.map { (currencyCode, amount) ->
-                    BalanceEntry(
-                        userId = pair.debtorId,
-                        userName = profiles[pair.debtorId]?.name ?: "",
-                        counterpartId = pair.creditorId,
-                        counterpartName = profiles[pair.creditorId]?.name ?: "",
-                        netAmount = amount,
-                        currencyCode = currencyCode,
-                    )
+            for (s in settlementRepo.getSettlements(houseId)) {
+                val amountTwd = CurrencyConverter.toTwd(s.amount, s.currencyCode)
+                val key = Pair(s.payerId, s.payeeId)
+                net[key] = (net[key] ?: 0.0) - amountTwd
+                val current = net[key]!!
+                if (current < 0) {
+                    net.remove(key)
+                    val reverseKey = Pair(s.payeeId, s.payerId)
+                    net[reverseKey] = (net[reverseKey] ?: 0.0) + (-current)
                 }
             }
 
-            SettlementDataResult.Success(HouseBalanceResponse(houseId, balances))
+            net.entries.removeIf { it.value < 0.01 }
+
+            val userIds = net.keys.flatMap { listOf(it.first, it.second) }.distinct()
+            val profiles = profileRepo.getProfiles(userIds).associateBy { it.id }
+
+            val balances = net.map { (pair, amountTwd) ->
+                val (debtorId, creditorId) = pair
+                val displayAmount = CurrencyConverter.convert(amountTwd, "TWD", displayCurrencyCode)
+                BalanceEntry(
+                    userId = debtorId,
+                    userName = profiles[debtorId]?.name ?: "",
+                    counterpartId = creditorId,
+                    counterpartName = profiles[creditorId]?.name ?: "",
+                    netAmountTwd = amountTwd,
+                    netAmount = displayAmount,
+                    currencyCode = displayCurrencyCode
+                )
+            }
+
+            SettlementDataResult.Success(HouseBalanceResponse(houseId, displayCurrencyCode, balances))
+        } catch (e: UnknownCurrencyException) {
+            SettlementDataResult.Error.InvalidCurrency(e.message ?: "")
         } catch (e: Exception) {
             SettlementDataResult.Error.DatabaseError(e.message ?: "Unknown error")
         }
-    }
-
-    // executor owes owner for each priced task they completed for someone else
-    private fun buildDebtMap(tasks: List<Task>): Map<DebtPair, Map<String, Double>> {
-        val debts = mutableMapOf<DebtPair, MutableMap<String, Double>>()
-        for (task in tasks) {
-            val price = task.price ?: continue
-            val code = task.currencyCode ?: continue
-            val executorId = task.executorId.takeIf { it != 0L } ?: continue
-            if (executorId == task.ownerId) continue
-            debts.getOrPut(DebtPair(executorId, task.ownerId)) { mutableMapOf() }.merge(code, price, Double::plus)
-        }
-        return debts
-    }
-
-    // total paid per (payer, payee), keyed by currency
-    private fun buildPaymentMap(settlements: List<Settlement>): Map<DebtPair, Map<String, Double>> {
-        val payments = mutableMapOf<DebtPair, MutableMap<String, Double>>()
-        for (s in settlements) {
-            payments.getOrPut(DebtPair(s.payerId, s.payeeId)) { mutableMapOf() }
-                .merge(s.currencyCode, s.amount, Double::plus)
-        }
-        return payments
-    }
-
-    // remaining debt = total owed − total paid; drops settled or overpaid pairs
-    private fun netBalance(
-        debts: Map<DebtPair, Map<String, Double>>,
-        payments: Map<DebtPair, Map<String, Double>>,
-    ): Map<DebtPair, Map<String, Double>> {
-        val result = mutableMapOf<DebtPair, MutableMap<String, Double>>()
-        for ((pair, amountByCurrency) in debts) {
-            for ((currencyCode, debt) in amountByCurrency) {
-                val remaining = debt - (payments[pair]?.get(currencyCode) ?: 0.0)
-                if (remaining > 0.01) result.getOrPut(pair) { mutableMapOf() }[currencyCode] = remaining
-            }
-        }
-        return result
     }
 
     private fun Settlement.toResponse(profiles: Map<Long, Profile>): SettlementResponse =
