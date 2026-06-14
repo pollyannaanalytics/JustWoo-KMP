@@ -186,19 +186,9 @@ class SettlementServiceTest {
     fun `getHouseBalance returns UserNotAllowed for non-member`() = runTest {
         coEvery { houseRepo.isMember(requesterId, houseId) } returns false
 
-        val result = service.getHouseBalance(houseId, requesterId, "TWD")
+        val result = service.getHouseBalance(houseId, requesterId)
 
         assertInstanceOf(SettlementDataResult.Error.UserNotAllowed::class.java, result)
-    }
-
-    @Test
-    fun `getHouseBalance returns InvalidCurrency for unknown display currency`() = runTest {
-        coEvery { houseRepo.isMember(requesterId, houseId) } returns true
-
-        val result = service.getHouseBalance(houseId, requesterId, "BADCODE")
-
-        assertInstanceOf(SettlementDataResult.Error.InvalidCurrency::class.java, result)
-        assertEquals("BADCODE", (result as SettlementDataResult.Error.InvalidCurrency).code)
     }
 
     @Test
@@ -210,7 +200,7 @@ class SettlementServiceTest {
         coEvery { settlementRepo.getTasksWithPrice(houseId) } returns listOf(task)
         coEvery { settlementRepo.getSettlements(houseId) } returns emptyList()
 
-        val result = service.getHouseBalance(houseId, requesterId, "TWD")
+        val result = service.getHouseBalance(houseId, requesterId)
 
         assertInstanceOf(SettlementDataResult.Success::class.java, result)
         val balance = (result as SettlementDataResult.Success).data
@@ -231,7 +221,7 @@ class SettlementServiceTest {
         coEvery { settlementRepo.getTasksWithPrice(houseId) } returns listOf(task)
         coEvery { settlementRepo.getSettlements(houseId) } returns listOf(settlement)
 
-        val result = service.getHouseBalance(houseId, requesterId, "TWD")
+        val result = service.getHouseBalance(houseId, requesterId)
 
         assertInstanceOf(SettlementDataResult.Success::class.java, result)
         val entry = (result as SettlementDataResult.Success).data.balances.first()
@@ -247,27 +237,26 @@ class SettlementServiceTest {
         coEvery { settlementRepo.getTasksWithPrice(houseId) } returns listOf(task)
         coEvery { settlementRepo.getSettlements(houseId) } returns listOf(settlement)
 
-        val result = service.getHouseBalance(houseId, requesterId, "TWD")
+        val result = service.getHouseBalance(houseId, requesterId)
 
         assertInstanceOf(SettlementDataResult.Success::class.java, result)
         assertTrue((result as SettlementDataResult.Success).data.balances.isEmpty())
     }
 
     @Test
-    fun `getHouseBalance converts display currency correctly`() = runTest {
-        // 32 TWD task → display in USD → expect ≈1 USD
-        val task = fakeTask(ownerId = payeeId, executorId = payerId, price = 32.0, currencyCode = "TWD")
+    fun `getHouseBalance preserves original currency per entry`() = runTest {
+        val task = fakeTask(ownerId = payeeId, executorId = payerId, price = 100.0, currencyCode = "USD")
 
         coEvery { houseRepo.isMember(requesterId, houseId) } returns true
         coEvery { settlementRepo.getTasksWithPrice(houseId) } returns listOf(task)
         coEvery { settlementRepo.getSettlements(houseId) } returns emptyList()
 
-        val result = service.getHouseBalance(houseId, requesterId, "USD")
+        val result = service.getHouseBalance(houseId, requesterId)
 
         assertInstanceOf(SettlementDataResult.Success::class.java, result)
         val entry = (result as SettlementDataResult.Success).data.balances.first()
         assertEquals("USD", entry.currencyCode)
-        assertEquals(1.0, entry.netAmount, 0.01)
+        assertEquals(100.0, entry.netAmount, 0.01)
     }
 
     @Test
@@ -293,7 +282,7 @@ class SettlementServiceTest {
         coEvery { settlementRepo.getTasksWithPrice(houseId) } returns listOf(taskNoExecutor)
         coEvery { settlementRepo.getSettlements(houseId) } returns emptyList()
 
-        val result = service.getHouseBalance(houseId, requesterId, "TWD")
+        val result = service.getHouseBalance(houseId, requesterId)
 
         assertInstanceOf(SettlementDataResult.Success::class.java, result)
         assertTrue((result as SettlementDataResult.Success).data.balances.isEmpty())
