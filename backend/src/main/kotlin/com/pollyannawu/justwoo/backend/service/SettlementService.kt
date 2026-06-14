@@ -150,20 +150,38 @@ internal class DefaultSettlementService(
         return payments
     }
 
-    // remaining debt = total owed − total paid; drops settled or overpaid pairs
+    // Collapse bilateral debts and payments into one canonical net entry per (pair, currency).
+    // canonical(A,B) = DebtPair with smaller ID as debtor; the other direction is the reverse.
     private fun netBalance(
         debts: Map<DebtPair, Map<String, Double>>,
         payments: Map<DebtPair, Map<String, Double>>,
     ): Map<DebtPair, Map<String, Double>> {
+        val canonicalPairs = (debts.keys + payments.keys).map { canonical(it) }.toSet()
         val result = mutableMapOf<DebtPair, MutableMap<String, Double>>()
-        for ((pair, amountByCurrency) in debts) {
-            for ((currencyCode, debt) in amountByCurrency) {
-                val remaining = debt - (payments[pair]?.get(currencyCode) ?: 0.0)
-                if (remaining > 0.01) result.getOrPut(pair) { mutableMapOf() }[currencyCode] = remaining
+
+        for (pair in canonicalPairs) {
+            val reverse = DebtPair(pair.creditorId, pair.debtorId)
+            val currencies = setOf(
+                debts[pair]?.keys, debts[reverse]?.keys,
+                payments[pair]?.keys, payments[reverse]?.keys,
+            ).filterNotNull().flatten().toSet()
+
+            for (currency in currencies) {
+                val netDebt = (debts[pair]?.get(currency) ?: 0.0) - (debts[reverse]?.get(currency) ?: 0.0)
+                // Any payment between A and B (either direction) reduces the outstanding balance
+                val totalPaid = (payments[pair]?.get(currency) ?: 0.0) + (payments[reverse]?.get(currency) ?: 0.0)
+                val remaining = netDebt - totalPaid
+                when {
+                    remaining > 0.01 -> result.getOrPut(pair) { mutableMapOf() }[currency] = remaining
+                    remaining < -0.01 -> result.getOrPut(reverse) { mutableMapOf() }[currency] = -remaining
+                }
             }
         }
         return result
     }
+
+    private fun canonical(pair: DebtPair): DebtPair =
+        if (pair.debtorId <= pair.creditorId) pair else DebtPair(pair.creditorId, pair.debtorId)
 
     private fun Settlement.toResponse(profiles: Map<Long, Profile>): SettlementResponse =
         SettlementResponse(

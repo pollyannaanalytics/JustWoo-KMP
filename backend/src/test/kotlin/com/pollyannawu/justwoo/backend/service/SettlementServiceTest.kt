@@ -261,6 +261,73 @@ class SettlementServiceTest {
     }
 
     @Test
+    fun `getHouseBalance collapses mutual task debts into single net entry`() = runTest {
+        // Alice (payerId=10) executed Bob's task → Alice owes Bob 100 TWD
+        // Bob (payeeId=20) executed Alice's task → Bob owes Alice 60 TWD
+        // Net: Alice owes Bob 40 TWD (one entry, not two)
+        val aliceOwesBob = fakeTask(ownerId = payeeId, executorId = payerId, price = 100.0, currencyCode = "TWD")
+        val bobOwesAlice = fakeTask(ownerId = payerId, executorId = payeeId, price = 60.0, currencyCode = "TWD")
+
+        coEvery { houseRepo.isMember(requesterId, houseId) } returns true
+        coEvery { settlementRepo.getTasksWithPrice(houseId) } returns listOf(aliceOwesBob, bobOwesAlice)
+        coEvery { settlementRepo.getSettlements(houseId) } returns emptyList()
+
+        val result = service.getHouseBalance(houseId, requesterId)
+
+        assertInstanceOf(SettlementDataResult.Success::class.java, result)
+        val balances = (result as SettlementDataResult.Success).data.balances
+        assertEquals(1, balances.size)
+        val entry = balances.first()
+        assertEquals(payerId, entry.userId)        // Alice (net debtor)
+        assertEquals(payeeId, entry.counterpartId) // Bob (net creditor)
+        assertEquals(40.0, entry.netAmount, 0.01)
+    }
+
+    @Test
+    fun `getHouseBalance flips direction when reverse debt is larger`() = runTest {
+        // Alice owes Bob 30, Bob owes Alice 80 → Bob owes Alice 50
+        val aliceOwesBob = fakeTask(ownerId = payeeId, executorId = payerId, price = 30.0, currencyCode = "TWD")
+        val bobOwesAlice = fakeTask(ownerId = payerId, executorId = payeeId, price = 80.0, currencyCode = "TWD")
+
+        coEvery { houseRepo.isMember(requesterId, houseId) } returns true
+        coEvery { settlementRepo.getTasksWithPrice(houseId) } returns listOf(aliceOwesBob, bobOwesAlice)
+        coEvery { settlementRepo.getSettlements(houseId) } returns emptyList()
+
+        val result = service.getHouseBalance(houseId, requesterId)
+
+        assertInstanceOf(SettlementDataResult.Success::class.java, result)
+        val balances = (result as SettlementDataResult.Success).data.balances
+        assertEquals(1, balances.size)
+        val entry = balances.first()
+        assertEquals(payeeId, entry.userId)        // Bob (net debtor)
+        assertEquals(payerId, entry.counterpartId) // Alice (net creditor)
+        assertEquals(50.0, entry.netAmount, 0.01)
+    }
+
+    @Test
+    fun `getHouseBalance collapses mutual payments against task debts`() = runTest {
+        // Alice owes Bob 100 from task, Bob paid Alice 30 (reversed settlement) → Alice owes Bob 70
+        val task = fakeTask(ownerId = payeeId, executorId = payerId, price = 100.0, currencyCode = "TWD")
+        // Bob (payeeId=20) pays Alice (payerId=10) 30 TWD
+        val reversePayment = Settlement(
+            id = 2L, houseId = houseId,
+            payerId = payeeId, payeeId = payerId,
+            amount = 30.0, currencyCode = "TWD", note = "", createTime = now
+        )
+
+        coEvery { houseRepo.isMember(requesterId, houseId) } returns true
+        coEvery { settlementRepo.getTasksWithPrice(houseId) } returns listOf(task)
+        coEvery { settlementRepo.getSettlements(houseId) } returns listOf(reversePayment)
+
+        val result = service.getHouseBalance(houseId, requesterId)
+
+        assertInstanceOf(SettlementDataResult.Success::class.java, result)
+        val entry = (result as SettlementDataResult.Success).data.balances.first()
+        assertEquals(payerId, entry.userId)
+        assertEquals(70.0, entry.netAmount, 0.01)
+    }
+
+    @Test
     fun `getHouseBalance skips tasks without executorId`() = runTest {
         val taskNoExecutor = Task(
             id = 1L,
