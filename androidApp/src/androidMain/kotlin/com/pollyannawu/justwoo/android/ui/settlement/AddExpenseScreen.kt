@@ -1,6 +1,8 @@
 package com.pollyannawu.justwoo.android.ui.settlement
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -15,6 +17,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -22,7 +25,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import com.pollyannawu.justwoo.android.ui.common.JustWooPrimaryButton
 import com.pollyannawu.justwoo.android.ui.common.JustWooTextField
+import com.pollyannawu.justwoo.android.ui.common.componentViewModelStoreOwner
 import com.pollyannawu.justwoo.android.ui.theme.JustWooColors
 import com.pollyannawu.justwoo.android.ui.theme.JustWooFontWeight
 import com.pollyannawu.justwoo.android.ui.theme.JustWooSpacing
@@ -47,7 +51,7 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun AddExpenseScreen(
     component: AddExpenseComponent,
-    viewModel: AddExpenseViewModel = koinViewModel(),
+    viewModel: AddExpenseViewModel = koinViewModel(viewModelStoreOwner = componentViewModelStoreOwner(component)),
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -101,12 +105,58 @@ fun AddExpenseScreen(
             item { Text("Currency", fontWeight = JustWooFontWeight.SemiBold) }
             item { Spacer(Modifier.height(JustWooSpacing.Small)) }
             item {
-                JustWooTextField(
-                    value = state.currencyCode,
-                    onValueChange = viewModel::onCurrencyChange,
-                    placeholder = "TWD",
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                Box {
+                    OutlinedTextField(
+                        value = state.currencyCode,
+                        onValueChange = {},
+                        readOnly = true,
+                        trailingIcon = {
+                            Icon(Icons.Default.KeyboardArrowRight, contentDescription = null, tint = JustWooColors.TextSecondary)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable { component.onOpenCurrencyPicker { code -> viewModel.onCurrencyChange(code) } },
+                    )
+                }
+            }
+
+            item { Spacer(Modifier.height(JustWooSpacing.Default)) }
+            item { Text("Paid by", fontWeight = JustWooFontWeight.SemiBold) }
+            item { Spacer(Modifier.height(JustWooSpacing.Small)) }
+            item {
+                var expanded by remember { mutableStateOf(false) }
+                val selectedLabel = state.allMembers
+                    .firstOrNull { it.userId == state.selectedPayerId }
+                    ?.let { m ->
+                        val displayName = m.name.ifBlank { "User #${m.userId}" }
+                        if (m.userId == state.currentUserId) "You ($displayName)" else displayName
+                    }
+                    ?: "..."
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = it },
+                ) {
+                    OutlinedTextField(
+                        value = selectedLabel,
+                        onValueChange = {},
+                        readOnly = true,
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+                        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+                    )
+                    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        state.allMembers.forEach { member ->
+                            val displayName = member.name.ifBlank { "User #${member.userId}" }
+                            val label = if (member.userId == state.currentUserId) "You ($displayName)" else displayName
+                            DropdownMenuItem(
+                                text = { Text(label) },
+                                onClick = { viewModel.onPayerSelect(member.userId); expanded = false },
+                            )
+                        }
+                    }
+                }
             }
 
             item { Spacer(Modifier.height(JustWooSpacing.Default)) }
@@ -116,7 +166,7 @@ fun AddExpenseScreen(
                 var expanded by remember { mutableStateOf(false) }
                 val selectedLabel = state.members
                     .firstOrNull { it.userId == state.selectedPayeeId }
-                    ?.let { it.name.ifBlank { "Member #${it.userId}" } }
+                    ?.name
                     ?: "House (split equally)"
 
                 ExposedDropdownMenuBox(
@@ -130,7 +180,7 @@ fun AddExpenseScreen(
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
                     )
                     ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                         DropdownMenuItem(
@@ -139,7 +189,7 @@ fun AddExpenseScreen(
                         )
                         state.members.forEach { member ->
                             DropdownMenuItem(
-                                text = { Text(member.name.ifBlank { "Member #${member.userId}" }) },
+                                text = { Text(member.name.ifBlank { "User #${member.userId}" }) },
                                 onClick = { viewModel.onPayeeSelect(member.userId); expanded = false },
                             )
                         }

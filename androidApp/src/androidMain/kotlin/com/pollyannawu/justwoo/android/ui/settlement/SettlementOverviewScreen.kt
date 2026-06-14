@@ -45,6 +45,7 @@ import com.pollyannawu.justwoo.core.dto.BalanceEntry
 import com.pollyannawu.justwoo.ui.nav.settlement.SettlementComponent
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import com.pollyannawu.justwoo.android.ui.common.componentViewModelStoreOwner
 import org.koin.androidx.compose.koinViewModel
 
 private val MemberColorPalette = listOf(
@@ -64,7 +65,7 @@ private fun memberBgColor(counterpartId: Long): Color =
 @Composable
 fun SettlementOverviewScreen(
     component: SettlementComponent,
-    viewModel: SettlementOverviewViewModel = koinViewModel(),
+    viewModel: SettlementOverviewViewModel = koinViewModel(viewModelStoreOwner = componentViewModelStoreOwner(component)),
 ) {
     val state by viewModel.uiState.collectAsState()
 

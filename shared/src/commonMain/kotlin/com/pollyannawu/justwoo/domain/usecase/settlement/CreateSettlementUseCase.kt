@@ -57,8 +57,8 @@ class CreateSettlementUseCase(
         currencyCode: String,
         note: String,
     ): CreateSettlementResult {
-        val members = getHouseMembers(houseId)
-        if (members.isEmpty()) return CreateSettlementResult.Failure("No active house")
+        val members = getHouseMembers(houseId).filter { it.userId != payerId }
+        if (members.isEmpty()) return CreateSettlementResult.Success
 
         val splitAmount = (amount / members.size * 100).roundToInt() / 100.0
         val remainder = (amount * 100).roundToInt() - (splitAmount * 100).roundToInt() * members.size
