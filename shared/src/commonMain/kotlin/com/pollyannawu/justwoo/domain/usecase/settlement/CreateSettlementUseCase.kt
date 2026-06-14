@@ -58,14 +58,15 @@ class CreateSettlementUseCase(
         note: String,
     ): CreateSettlementResult {
         val members = getHouseMembers(houseId)
-        if (members.isEmpty()) return CreateSettlementResult.Failure("No active house")
+        val otherMembers = members.filter { it.userId != payerId }
+        if (otherMembers.isEmpty()) return CreateSettlementResult.Success
 
-        val splitAmount = (amount / members.size * 100).roundToInt() / 100.0
-        val remainder = (amount * 100).roundToInt() - (splitAmount * 100).roundToInt() * members.size
+        val splitAmount = (amount / otherMembers.size * 100).roundToInt() / 100.0
+        val remainder = (amount * 100).roundToInt() - (splitAmount * 100).roundToInt() * otherMembers.size
 
         val failedNames = mutableListOf<Long>()
-        members.forEachIndexed { index, member ->
-            val memberAmount = if (index == members.lastIndex) {
+        otherMembers.forEachIndexed { index, member ->
+            val memberAmount = if (index == otherMembers.lastIndex) {
                 splitAmount + remainder / 100.0
             } else {
                 splitAmount
