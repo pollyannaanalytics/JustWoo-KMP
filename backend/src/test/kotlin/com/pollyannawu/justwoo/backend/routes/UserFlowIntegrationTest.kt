@@ -234,18 +234,17 @@ class UserFlowIntegrationTest {
         assertEquals(100.0, settlement.amount)
         assertEquals("TWD", settlement.currencyCode)
 
-        // Check balance — member still owes admin, displayed in USD
-        val balanceResponse = client.get("/houses/${house.id}/settlements/balance?currency=USD") {
+        // Check balance — member still owes admin in original currency (TWD)
+        val balanceResponse = client.get("/houses/${house.id}/settlements/balance") {
             header(HttpHeaders.Authorization, "Bearer $adminToken")
         }
         assertEquals(HttpStatusCode.OK, balanceResponse.status, "getBalance failed: ${balanceResponse.bodyAsText()}")
 
         val balanceJson = Json.parseToJsonElement(balanceResponse.bodyAsText()).jsonObject
-        assertEquals("USD", balanceJson["displayCurrencyCode"]?.jsonPrimitive?.content)
         val balances = balanceJson["balances"]?.let {
             Json.decodeFromString<List<kotlinx.serialization.json.JsonElement>>(it.toString())
         }
-        // After partial payment of 100 TWD, member still owes ~220 TWD ≈ 6.875 USD
+        // After partial payment of 100 TWD, member still owes 220 TWD
         assertTrue(balances?.isNotEmpty() == true, "Should have outstanding balance")
     }
 }
