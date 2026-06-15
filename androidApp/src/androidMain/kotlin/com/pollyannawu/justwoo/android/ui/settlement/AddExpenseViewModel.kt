@@ -25,9 +25,11 @@ class AddExpenseViewModel(
     data class UiState(
         val amount: String = "",
         val currencyCode: String = "TWD",
+        val selectedPayerId: Long? = null,
         val selectedPayeeId: Long? = null,
         val note: String = "",
-        val members: List<HouseMember> = emptyList(),
+        val allMembers: List<HouseMember> = emptyList(),
+        val payeeMembers: List<HouseMember> = emptyList(),
         val isLoading: Boolean = false,
         val error: String? = null,
         val partialFailureIds: List<Long> = emptyList(),
@@ -40,11 +42,20 @@ class AddExpenseViewModel(
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
-    init {
+    init { loadMembers() }
+
+    private fun loadMembers() {
         viewModelScope.launch {
             val houseId = getCurrentHouseId() ?: return@launch
             val currentUserId = observeCurrentUserId().first()
-            _uiState.update { it.copy(members = getHouseMembers(houseId).filter { m -> m.userId != currentUserId }) }
+            val all = getHouseMembers(houseId)
+            _uiState.update {
+                it.copy(
+                    allMembers = all,
+                    payeeMembers = all.filter { m -> m.userId != currentUserId },
+                    selectedPayerId = currentUserId,
+                )
+            }
         }
     }
 
@@ -54,6 +65,7 @@ class AddExpenseViewModel(
         _uiState.update { it.copy(amount = filtered, error = null) }
     }
     fun onCurrencyChange(v: String) = _uiState.update { it.copy(currencyCode = v.uppercase()) }
+    fun onPayerSelect(payerId: Long?) = _uiState.update { it.copy(selectedPayerId = payerId) }
     fun onPayeeSelect(payeeId: Long?) = _uiState.update { it.copy(selectedPayeeId = payeeId) }
     fun onNoteChange(v: String) = _uiState.update { it.copy(note = v) }
 
@@ -69,7 +81,7 @@ class AddExpenseViewModel(
 
         _uiState.update { it.copy(isLoading = true, error = null, partialFailureIds = emptyList()) }
         viewModelScope.launch {
-            val payerId = observeCurrentUserId().first() ?: run {
+            val payerId = s.selectedPayerId ?: observeCurrentUserId().first() ?: run {
                 _uiState.update { it.copy(isLoading = false, error = "Not signed in") }
                 return@launch
             }

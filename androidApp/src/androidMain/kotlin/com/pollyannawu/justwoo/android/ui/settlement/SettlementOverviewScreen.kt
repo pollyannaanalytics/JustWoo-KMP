@@ -142,7 +142,7 @@ fun SettlementOverviewScreen(
                     }
                 } else {
                     items(state.settlements, key = { it.id }) { settlement ->
-                        SettlementHistoryItem(settlement)
+                        SettlementHistoryItem(settlement, currentUserId = state.currentUserId)
                     }
                 }
 
@@ -297,20 +297,38 @@ private data class BalanceRowStyle(
 )
 
 @Composable
-private fun SettlementHistoryItem(settlement: Settlement) {
+private fun SettlementHistoryItem(settlement: Settlement, currentUserId: Long?) {
     val date = settlement.createTime.toLocalDateTime(TimeZone.currentSystemDefault()).date
+
+    val isPayer = currentUserId != null && settlement.payerId == currentUserId
+    val isPayee = currentUserId != null && settlement.payeeId == currentUserId
+
+    val bgColor = when {
+        isPayer -> JustWooColors.UrgencyRedBg
+        isPayee -> JustWooColors.UrgencyGreenBg
+        else -> JustWooColors.CreamSurface
+    }
+    val amountColor = when {
+        isPayer -> JustWooColors.UrgencyRed
+        isPayee -> JustWooColors.UrgencyGreen
+        else -> JustWooColors.TextPrimary
+    }
+
+    val payerLabel = if (isPayer) "You" else "#${settlement.payerId}"
+    val payeeLabel = if (isPayee) "You" else "#${settlement.payeeId}"
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(JustWooShapes.Medium)
-            .background(JustWooColors.CreamSurface)
+            .background(bgColor)
             .padding(horizontal = JustWooSpacing.Default, vertical = JustWooSpacing.Default),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                "Payer #${settlement.payerId} → Payee #${settlement.payeeId}",
+                "$payerLabel → $payeeLabel",
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = JustWooFontWeight.Medium,
                 color = JustWooColors.TextPrimary,
@@ -324,7 +342,7 @@ private fun SettlementHistoryItem(settlement: Settlement) {
             "${String.format("%.2f", settlement.amount)} ${settlement.currencyCode}",
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = JustWooFontWeight.Bold,
-            color = JustWooColors.TextPrimary,
+            color = amountColor,
         )
     }
 }

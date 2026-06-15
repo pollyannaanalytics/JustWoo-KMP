@@ -33,23 +33,27 @@ class SettlementOverviewViewModel(
         val balanceError: String? = null,
         val oweSummary: List<CurrencySummary> = emptyList(),
         val owedSummary: List<CurrencySummary> = emptyList(),
+        val currentUserId: Long? = null,
     )
 
     private val _isBalanceLoading = MutableStateFlow(true)
     private val _balanceError = MutableStateFlow<String?>(null)
     private val _balanceEntries = MutableStateFlow<List<BalanceEntry>>(emptyList())
+    private val _currentUserId = MutableStateFlow<Long?>(null)
 
     val uiState: StateFlow<UiState> = combine(
         observeSettlements(),
         _balanceEntries,
         _isBalanceLoading,
         _balanceError,
-    ) { settlements, entries, loading, error ->
+        _currentUserId,
+    ) { settlements, entries, loading, error, currentUserId ->
         UiState(
             settlements = settlements,
             balanceEntries = entries,
             isBalanceLoading = loading,
             balanceError = error,
+            currentUserId = currentUserId,
             oweSummary = entries
                 .filter { it.netAmount > 0.0 }
                 .groupBy { it.currencyCode }
@@ -78,6 +82,7 @@ class SettlementOverviewViewModel(
                 onSuccess = { data ->
                     val currentUserId = observeCurrentUserId().first()
                         ?: run { _isBalanceLoading.value = false; return@launch }
+                    _currentUserId.value = currentUserId
                     val debts = data.balances.filter { it.userId == currentUserId }
                     val owed = data.balances
                         .filter { it.counterpartId == currentUserId }
@@ -90,7 +95,7 @@ class SettlementOverviewViewModel(
                                 netAmount = -entry.netAmount,
                             )
                         }
-                    _balanceEntries.value = debts + owed
+                    _balanceEntries.value = (debts + owed).filter { it.userId != it.counterpartId }
                     _isBalanceLoading.value = false
                 },
                 onFailure = { e ->

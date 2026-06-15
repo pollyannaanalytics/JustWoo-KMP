@@ -35,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
+import com.pollyannawu.justwoo.android.ui.common.ComponentViewModelStoreOwner
 import com.pollyannawu.justwoo.android.ui.common.JustWooPrimaryButton
 import com.pollyannawu.justwoo.android.ui.common.JustWooTextField
 import com.pollyannawu.justwoo.android.ui.theme.JustWooColors
@@ -47,7 +48,9 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun AddExpenseScreen(
     component: AddExpenseComponent,
-    viewModel: AddExpenseViewModel = koinViewModel(),
+    viewModel: AddExpenseViewModel = koinViewModel(
+        viewModelStoreOwner = remember(component) { ComponentViewModelStoreOwner(component) },
+    ),
 ) {
     val state by viewModel.uiState.collectAsState()
 
@@ -110,11 +113,45 @@ fun AddExpenseScreen(
             }
 
             item { Spacer(Modifier.height(JustWooSpacing.Default)) }
+            item { Text("Paid by", fontWeight = JustWooFontWeight.SemiBold) }
+            item { Spacer(Modifier.height(JustWooSpacing.Small)) }
+            item {
+                var expanded by remember { mutableStateOf(false) }
+                val selectedLabel = state.allMembers
+                    .firstOrNull { it.userId == state.selectedPayerId }
+                    ?.let { it.name.ifBlank { "Member #${it.userId}" } }
+                    ?: "Me"
+
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = it },
+                ) {
+                    OutlinedTextField(
+                        value = selectedLabel,
+                        onValueChange = {},
+                        readOnly = true,
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                    )
+                    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        state.allMembers.forEach { member ->
+                            DropdownMenuItem(
+                                text = { Text(member.name.ifBlank { "Member #${member.userId}" }) },
+                                onClick = { viewModel.onPayerSelect(member.userId); expanded = false },
+                            )
+                        }
+                    }
+                }
+            }
+
+            item { Spacer(Modifier.height(JustWooSpacing.Default)) }
             item { Text("Payee", fontWeight = JustWooFontWeight.SemiBold) }
             item { Spacer(Modifier.height(JustWooSpacing.Small)) }
             item {
                 var expanded by remember { mutableStateOf(false) }
-                val selectedLabel = state.members
+                val selectedLabel = state.payeeMembers
                     .firstOrNull { it.userId == state.selectedPayeeId }
                     ?.let { it.name.ifBlank { "Member #${it.userId}" } }
                     ?: "House (split equally)"
@@ -137,7 +174,7 @@ fun AddExpenseScreen(
                             text = { Text("House (split equally)") },
                             onClick = { viewModel.onPayeeSelect(null); expanded = false },
                         )
-                        state.members.forEach { member ->
+                        state.payeeMembers.forEach { member ->
                             DropdownMenuItem(
                                 text = { Text(member.name.ifBlank { "Member #${member.userId}" }) },
                                 onClick = { viewModel.onPayeeSelect(member.userId); expanded = false },
@@ -145,10 +182,10 @@ fun AddExpenseScreen(
                         }
                     }
                 }
-                if (state.selectedPayeeId == null && state.members.size > 1) {
+                if (state.selectedPayeeId == null && state.payeeMembers.size > 1) {
                     Spacer(Modifier.height(JustWooSpacing.XSmall))
                     Text(
-                        "Amount will be split equally among ${state.members.size} members",
+                        "Amount will be split equally among ${state.payeeMembers.size} members",
                         style = MaterialTheme.typography.bodySmall,
                         color = JustWooColors.TextSecondary,
                     )
