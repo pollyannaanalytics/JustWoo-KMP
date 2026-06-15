@@ -2,7 +2,7 @@ package com.pollyannawu.justwoo.ui.nav.settlement
 
 import com.arkivanov.decompose.ComponentContext
 
-interface AddExpenseComponent {
+interface AddExpenseComponent : ComponentContext {
     fun onClose()
     fun onSaved()
 }
