@@ -4,6 +4,7 @@ import com.pollyannawu.justwoo.core.Settlement
 import com.pollyannawu.justwoo.core.dto.CreateSettlementRequest
 import com.pollyannawu.justwoo.core.dto.HouseBalanceResponse
 import com.pollyannawu.justwoo.core.dto.SettlementResponse
+import com.pollyannawu.justwoo.core.dto.UpdateSettlementRequest
 import kotlinx.coroutines.flow.Flow
 
 interface SettlementRepository {
@@ -11,4 +12,6 @@ interface SettlementRepository {
     suspend fun syncSettlements(houseId: Long)
     suspend fun getBalance(houseId: Long): Result<HouseBalanceResponse>
     suspend fun createSettlement(houseId: Long, request: CreateSettlementRequest): Result<SettlementResponse>
+    suspend fun updateSettlement(houseId: Long, settlementId: Long, request: UpdateSettlementRequest): Result<SettlementResponse>
+    suspend fun getSettlementById(id: Long): Settlement?
 }

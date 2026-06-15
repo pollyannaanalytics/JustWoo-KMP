@@ -13,6 +13,16 @@ data class CreateSettlementRequest(
 )
 
 @Serializable
+data class UpdateSettlementRequest(
+    val payerId: Long,
+    val payeeId: Long,
+    val amount: Double,
+    // ISO 4217 currency code, e.g. "TWD", "USD"
+    val currencyCode: String,
+    val note: String = ""
+)
+
+@Serializable
 data class SettlementResponse(
     val id: Long,
     val houseId: Long,

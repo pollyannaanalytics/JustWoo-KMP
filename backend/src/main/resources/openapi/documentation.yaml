@@ -23,6 +23,8 @@ tags:
     description: Task creation, assignment, and status management
   - name: Profiles
     description: User profile management
+  - name: Settlements
+    description: Settlement payments between house members
 
 paths:
   # ── Auth ──────────────────────────────────────────────
@@ -411,6 +413,48 @@ paths:
           description: User is not a house member
         "404":
           description: Task not found
+
+  # ── Settlements ───────────────────────────────────────
+  /houses/{houseId}/settlements/{settlementId}:
+    put:
+      tags: [Settlements]
+      summary: Update a settlement
+      description: >-
+        Mutates an existing settlement's payer, payee, amount, currency, and note.
+        Allowed only for the original payer or a house ADMIN, with no time limit.
+      operationId: updateSettlement
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/houseId"
+        - name: settlementId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: Settlement ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSettlementRequest"
+      responses:
+        "200":
+          description: Settlement updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SettlementResponse"
+        "400":
+          description: Invalid amount, currency, or self-payment
+        "401":
+          description: Unauthorized
+        "403":
+          description: Requester is neither the original payer nor a house ADMIN
+        "404":
+          description: Settlement not found
 
   # ── Profiles ──────────────────────────────────────────
   /profiles:
@@ -898,6 +942,56 @@ components:
           type: integer
         isLast:
           type: boolean
+
+    # ── Settlements ──
+    UpdateSettlementRequest:
+      type: object
+      required: [payerId, payeeId, amount, currencyCode]
+      properties:
+        payerId:
+          type: integer
+          format: int64
+        payeeId:
+          type: integer
+          format: int64
+        amount:
+          type: number
+          format: double
+        currencyCode:
+          type: string
+          description: ISO 4217 currency code, e.g. "TWD", "USD"
+        note:
+          type: string
+
+    SettlementResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        houseId:
+          type: integer
+          format: int64
+        payerId:
+          type: integer
+          format: int64
+        payerName:
+          type: string
+        payeeId:
+          type: integer
+          format: int64
+        payeeName:
+          type: string
+        amount:
+          type: number
+          format: double
+        currencyCode:
+          type: string
+        note:
+          type: string
+        createTime:
+          type: string
+          format: date-time
 
     ErrorResponse:
       type: object

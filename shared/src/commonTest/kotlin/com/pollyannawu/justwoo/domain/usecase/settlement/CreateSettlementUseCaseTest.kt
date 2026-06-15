@@ -25,7 +25,7 @@ class CreateSettlementUseCaseTest {
     @Test
     fun `no active house returns Failure`() = runTest {
         val (useCase, _) = makeUseCase(houseId = null)
-        val result = useCase(payerId = 1L, payeeId = 2L, amount = 100.0, currencyCode = "TWD", note = "")
+        val result = useCase(payerId = 1L, payeeIds = setOf(2L), amount = 100.0, currencyCode = "TWD", note = "")
         assertTrue(result is CreateSettlementResult.Failure)
         assertEquals("No active house", (result as CreateSettlementResult.Failure).message)
     }
@@ -33,14 +33,14 @@ class CreateSettlementUseCaseTest {
     @Test
     fun `single payee success returns Success`() = runTest {
         val (useCase, _) = makeUseCase()
-        val result = useCase(payerId = 1L, payeeId = 2L, amount = 333.0, currencyCode = "TWD", note = "")
+        val result = useCase(payerId = 1L, payeeIds = setOf(2L), amount = 333.0, currencyCode = "TWD", note = "")
         assertTrue(result is CreateSettlementResult.Success)
     }
 
     @Test
     fun `single payee creates settlement with correct fields`() = runTest {
         val (useCase, repo) = makeUseCase()
-        useCase(payerId = 1L, payeeId = 2L, amount = 99.0, currencyCode = "USD", note = "dinner")
+        useCase(payerId = 1L, payeeIds = setOf(2L), amount = 99.0, currencyCode = "USD", note = "dinner")
         assertEquals(1, repo.created.size)
         val req = repo.created[0]
         assertEquals(1L, req.payerId)
@@ -56,7 +56,7 @@ class CreateSettlementUseCaseTest {
             createFn = { _, _ -> Result.failure(Exception("Amount must be greater than zero")) }
         )
         val (useCase, _) = makeUseCase(repo = repo)
-        val result = useCase(payerId = 1L, payeeId = 2L, amount = 100.0, currencyCode = "TWD", note = "")
+        val result = useCase(payerId = 1L, payeeIds = setOf(2L), amount = 100.0, currencyCode = "TWD", note = "")
         assertTrue(result is CreateSettlementResult.Failure)
         assertEquals("Amount must be greater than zero", (result as CreateSettlementResult.Failure).message)
     }
@@ -68,7 +68,7 @@ class CreateSettlementUseCaseTest {
             members = listOf(stubMember(userId = 1L)),
             repo = repo,
         )
-        val result = useCase(payerId = 1L, payeeId = null, amount = 100.0, currencyCode = "TWD", note = "")
+        val result = useCase(payerId = 1L, payeeIds = emptySet(), amount = 100.0, currencyCode = "TWD", note = "")
         assertTrue(result is CreateSettlementResult.Success)
         assertTrue(repo.created.isEmpty())
     }
@@ -80,7 +80,7 @@ class CreateSettlementUseCaseTest {
             members = listOf(stubMember(1L), stubMember(2L)),
             repo = repo,
         )
-        val result = useCase(payerId = 1L, payeeId = null, amount = 90.0, currencyCode = "TWD", note = "")
+        val result = useCase(payerId = 1L, payeeIds = emptySet(), amount = 90.0, currencyCode = "TWD", note = "")
         assertTrue(result is CreateSettlementResult.Success)
         assertEquals(1, repo.created.size)
         assertEquals(90.0, repo.created[0].amount)
@@ -94,7 +94,7 @@ class CreateSettlementUseCaseTest {
             members = listOf(stubMember(1L), stubMember(2L), stubMember(3L)),
             repo = repo,
         )
-        useCase(payerId = 1L, payeeId = null, amount = 60.0, currencyCode = "TWD", note = "")
+        useCase(payerId = 1L, payeeIds = emptySet(), amount = 60.0, currencyCode = "TWD", note = "")
         assertEquals(2, repo.created.size)
         assertEquals(30.0, repo.created[0].amount)
         assertEquals(30.0, repo.created[1].amount)
@@ -108,7 +108,7 @@ class CreateSettlementUseCaseTest {
             members = listOf(stubMember(1L), stubMember(2L), stubMember(3L), stubMember(4L)),
             repo = repo,
         )
-        useCase(payerId = 1L, payeeId = null, amount = 10.0, currencyCode = "TWD", note = "")
+        useCase(payerId = 1L, payeeIds = emptySet(), amount = 10.0, currencyCode = "TWD", note = "")
         assertEquals(3, repo.created.size)
         assertEquals(3.33, repo.created[0].amount, 0.005)
         assertEquals(3.33, repo.created[1].amount, 0.005)
@@ -122,7 +122,7 @@ class CreateSettlementUseCaseTest {
             members = listOf(stubMember(1L), stubMember(2L), stubMember(3L), stubMember(4L)),
             repo = repo,
         )
-        useCase(payerId = 1L, payeeId = null, amount = 10.0, currencyCode = "TWD", note = "")
+        useCase(payerId = 1L, payeeIds = emptySet(), amount = 10.0, currencyCode = "TWD", note = "")
         val total = repo.created.sumOf { it.amount }
         assertEquals(10.0, total, 0.001)
     }
@@ -140,9 +140,52 @@ class CreateSettlementUseCaseTest {
             members = listOf(stubMember(1L), stubMember(2L), stubMember(3L)),
             repo = repo,
         )
-        val result = useCase(payerId = 1L, payeeId = null, amount = 20.0, currencyCode = "TWD", note = "")
+        val result = useCase(payerId = 1L, payeeIds = emptySet(), amount = 20.0, currencyCode = "TWD", note = "")
         assertTrue(result is CreateSettlementResult.PartialFailure)
         assertEquals(listOf(2L), (result as CreateSettlementResult.PartialFailure).failedMemberIds)
+    }
+
+    // ── multi-select payees (subset split) ──────────────────────────────────
+
+    @Test
+    fun `selecting a subset of members splits amount only among those members`() = runTest {
+        val repo = FakeSettlementRepository()
+        val (useCase, _) = makeUseCase(
+            members = listOf(stubMember(1L), stubMember(2L), stubMember(3L), stubMember(4L)),
+            repo = repo,
+        )
+        val result = useCase(payerId = 1L, payeeIds = setOf(2L, 3L), amount = 100.0, currencyCode = "TWD", note = "")
+        assertTrue(result is CreateSettlementResult.Success)
+        assertEquals(2, repo.created.size)
+        assertEquals(setOf(2L, 3L), repo.created.map { it.payeeId }.toSet())
+        assertEquals(100.0, repo.created.sumOf { it.amount }, 0.001)
+    }
+
+    @Test
+    fun `selecting every other member behaves like split equally`() = runTest {
+        val repo = FakeSettlementRepository()
+        val (useCase, _) = makeUseCase(
+            members = listOf(stubMember(1L), stubMember(2L), stubMember(3L)),
+            repo = repo,
+        )
+        val result = useCase(payerId = 1L, payeeIds = setOf(2L, 3L), amount = 60.0, currencyCode = "TWD", note = "")
+        assertTrue(result is CreateSettlementResult.Success)
+        assertEquals(2, repo.created.size)
+        assertEquals(30.0, repo.created[0].amount)
+        assertEquals(30.0, repo.created[1].amount)
+    }
+
+    @Test
+    fun `payerId in payeeIds is ignored`() = runTest {
+        val repo = FakeSettlementRepository()
+        val (useCase, _) = makeUseCase(
+            members = listOf(stubMember(1L), stubMember(2L), stubMember(3L)),
+            repo = repo,
+        )
+        useCase(payerId = 1L, payeeIds = setOf(1L, 2L), amount = 50.0, currencyCode = "TWD", note = "")
+        assertEquals(1, repo.created.size)
+        assertEquals(2L, repo.created[0].payeeId)
+        assertEquals(50.0, repo.created[0].amount)
     }
 
     @Test
@@ -154,7 +197,7 @@ class CreateSettlementUseCaseTest {
             members = listOf(stubMember(1L), stubMember(2L), stubMember(3L)),
             repo = repo,
         )
-        val result = useCase(payerId = 1L, payeeId = null, amount = 20.0, currencyCode = "TWD", note = "")
+        val result = useCase(payerId = 1L, payeeIds = emptySet(), amount = 20.0, currencyCode = "TWD", note = "")
         assertTrue(result is CreateSettlementResult.PartialFailure)
         assertEquals(listOf(2L, 3L), (result as CreateSettlementResult.PartialFailure).failedMemberIds)
     }

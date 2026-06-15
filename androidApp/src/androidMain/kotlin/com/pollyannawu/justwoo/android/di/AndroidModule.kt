@@ -53,8 +53,10 @@ import com.pollyannawu.justwoo.domain.usecase.house.SubmitJoinRequestUseCase
 import com.pollyannawu.justwoo.domain.usecase.settlement.CreateSettlementUseCase
 import com.pollyannawu.justwoo.domain.usecase.settlement.DefaultGetHouseBalanceUseCase
 import com.pollyannawu.justwoo.domain.usecase.settlement.GetHouseBalanceUseCase
+import com.pollyannawu.justwoo.domain.usecase.settlement.GetSettlementByIdUseCase
 import com.pollyannawu.justwoo.domain.usecase.settlement.ObserveSettlementsUseCase
 import com.pollyannawu.justwoo.domain.usecase.settlement.SyncSettlementsUseCase
+import com.pollyannawu.justwoo.domain.usecase.settlement.UpdateSettlementUseCase
 import com.pollyannawu.justwoo.domain.usecase.task.CreateTaskUseCase
 import com.pollyannawu.justwoo.domain.usecase.task.FilterPendingTasksForUserUseCase
 import com.pollyannawu.justwoo.domain.usecase.task.FilterTasksInWindowUseCase
@@ -144,6 +146,8 @@ val androidModule = module {
     factory { SyncSettlementsUseCase(get(), get()) }
     factory<GetHouseBalanceUseCase> { DefaultGetHouseBalanceUseCase(get(), get()) }
     factory { CreateSettlementUseCase(get<SettlementRepository>(), get(), get()) }
+    factory { GetSettlementByIdUseCase(get()) }
+    factory { UpdateSettlementUseCase(get<SettlementRepository>(), get()) }
 
     viewModel { MainViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { SignInViewModel(get()) }
@@ -159,5 +163,5 @@ val androidModule = module {
     viewModel { PendingRequestsViewModel(get(), get(), get(), get()) }
     viewModel { HouseInfoViewModel(get(), get()) }
     viewModel { SettlementOverviewViewModel(get(), get(), get(), get()) }
-    viewModel { AddExpenseViewModel(get(), get(), get(), get()) }
+    viewModel { AddExpenseViewModel(get(), get(), get(), get(), get(), get()) }
 }

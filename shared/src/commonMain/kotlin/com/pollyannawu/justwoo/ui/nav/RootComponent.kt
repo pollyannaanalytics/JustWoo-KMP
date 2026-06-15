@@ -52,6 +52,7 @@ interface RootComponent {
     fun onHouseInfoClick()
     fun onSettlementClick()
     fun onAddExpenseClick()
+    fun onEditExpenseClick(settlementId: Long)
     fun onSessionChanged(isAuthenticated: Boolean)
     fun onCheckingHouse()
     fun onHouseOnboardingRequired()
@@ -172,7 +173,11 @@ class DefaultRootComponent(
     }
 
     override fun onAddExpenseClick() {
-        navigation.push(Config.AddExpense)
+        navigation.push(Config.AddExpense())
+    }
+
+    override fun onEditExpenseClick(settlementId: Long) {
+        navigation.push(Config.AddExpense(settlementId = settlementId))
     }
 
     private fun createChild(
@@ -232,13 +237,15 @@ class DefaultRootComponent(
             DefaultSettlementComponent(
                 componentContext = childContext,
                 onFinished = { navigation.pop() },
-                onNavigateToAddExpense = { navigation.push(Config.AddExpense) },
+                onNavigateToAddExpense = { navigation.push(Config.AddExpense()) },
+                onNavigateToEditExpense = { settlementId -> navigation.push(Config.AddExpense(settlementId = settlementId)) },
             ),
         )
 
-        Config.AddExpense -> RootComponent.Child.AddExpense(
+        is Config.AddExpense -> RootComponent.Child.AddExpense(
             DefaultAddExpenseComponent(
                 componentContext = childContext,
+                editingSettlementId = config.settlementId,
                 onFinished = { navigation.pop() },
                 onExpenseSaved = { navigation.pop() },
                 onNavigateToCurrencyPicker = { callback ->
@@ -293,7 +300,7 @@ class DefaultRootComponent(
         @Serializable
         data object Settlement : Config
         @Serializable
-        data object AddExpense : Config
+        data class AddExpense(val settlementId: Long? = null) : Config
         @Serializable
         data object CurrencyPicker : Config
     }

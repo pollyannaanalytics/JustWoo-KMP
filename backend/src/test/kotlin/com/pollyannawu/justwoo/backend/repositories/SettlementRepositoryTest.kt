@@ -133,6 +133,40 @@ class SettlementRepositoryTest : BaseRepositoryTest() {
     }
 
     @Test
+    fun `getSettlementById returns settlement scoped to house`() = runTest {
+        val payer = insertUser("gsbi-payer@test.com")
+        val payee = insertUser("gsbi-payee@test.com")
+
+        val created = repository.createSettlement(buildSettlement(houseId = 40L, payerId = payer, payeeId = payee, amount = 75.0))
+
+        val found = repository.getSettlementById(houseId = 40L, settlementId = created.id)
+        assertEquals(created.id, found?.id)
+
+        val notFound = repository.getSettlementById(houseId = 41L, settlementId = created.id)
+        assertEquals(null, notFound)
+    }
+
+    @Test
+    fun `updateSettlement persists new values and preserves id and createTime`() = runTest {
+        val payer = insertUser("us-payer@test.com")
+        val payee = insertUser("us-payee@test.com")
+        val newPayee = insertUser("us-new-payee@test.com")
+
+        val created = repository.createSettlement(buildSettlement(houseId = 50L, payerId = payer, payeeId = payee, amount = 100.0))
+
+        val updated = repository.updateSettlement(
+            created.copy(payeeId = newPayee, amount = 250.0, currencyCode = "USD", note = "edited"),
+        )
+
+        assertEquals(created.id, updated.id)
+        assertEquals(created.createTime, updated.createTime)
+        assertEquals(newPayee, updated.payeeId)
+        assertEquals(250.0, updated.amount)
+        assertEquals("USD", updated.currencyCode)
+        assertEquals("edited", updated.note)
+    }
+
+    @Test
     fun `getSettlements returns settlements ordered by createTime`() = runTest {
         val u1 = insertUser("order-u1@test.com")
         val u2 = insertUser("order-u2@test.com")

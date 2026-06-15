@@ -7,6 +7,7 @@ import com.pollyannawu.justwoo.core.Settlement
 import com.pollyannawu.justwoo.core.dto.CreateSettlementRequest
 import com.pollyannawu.justwoo.core.dto.HouseBalanceResponse
 import com.pollyannawu.justwoo.core.dto.SettlementResponse
+import com.pollyannawu.justwoo.core.dto.UpdateSettlementRequest
 import com.pollyannawu.justwoo.data.AuthRepository
 import com.pollyannawu.justwoo.data.HouseRepository
 import com.pollyannawu.justwoo.data.SettlementRepository
@@ -37,9 +38,13 @@ internal class FakeSettlementRepository(
         Result.success(HouseBalanceResponse(1L, emptyList())),
     var createFn: suspend (Long, CreateSettlementRequest) -> Result<SettlementResponse> =
         { _, _ -> Result.success(stubSettlementResponse()) },
+    var updateFn: suspend (Long, Long, UpdateSettlementRequest) -> Result<SettlementResponse> =
+        { _, _, _ -> Result.success(stubSettlementResponse()) },
+    var settlementById: Settlement? = stubSettlement(),
     private val settlementsFlow: Flow<List<Settlement>> = flowOf(emptyList()),
     val synced: MutableList<Long> = mutableListOf(),
     val created: MutableList<CreateSettlementRequest> = mutableListOf(),
+    val updated: MutableList<UpdateSettlementRequest> = mutableListOf(),
 ) : SettlementRepository {
     override fun observeSettlements(houseId: Long): Flow<List<Settlement>> = settlementsFlow
     override suspend fun syncSettlements(houseId: Long) { synced += houseId }
@@ -48,6 +53,11 @@ internal class FakeSettlementRepository(
         created += request
         return createFn(houseId, request)
     }
+    override suspend fun updateSettlement(houseId: Long, settlementId: Long, request: UpdateSettlementRequest): Result<SettlementResponse> {
+        updated += request
+        return updateFn(houseId, settlementId, request)
+    }
+    override suspend fun getSettlementById(id: Long): Settlement? = settlementById
 }
 
 internal class StubAuthRepository(private val houseId: Long? = 1L) : AuthRepository {
