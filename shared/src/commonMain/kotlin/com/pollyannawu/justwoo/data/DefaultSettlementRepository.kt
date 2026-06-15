@@ -4,6 +4,7 @@ import com.pollyannawu.justwoo.core.Settlement
 import com.pollyannawu.justwoo.core.dto.CreateSettlementRequest
 import com.pollyannawu.justwoo.core.dto.HouseBalanceResponse
 import com.pollyannawu.justwoo.core.dto.SettlementResponse
+import com.pollyannawu.justwoo.core.dto.UpdateSettlementRequest
 import com.pollyannawu.justwoo.data.datasource.SettlementDataSource
 import com.pollyannawu.justwoo.data.network.service.SettlementApiService
 import com.pollyannawu.justwoo.model.ApiResult
@@ -35,6 +36,17 @@ class DefaultSettlementRepository(
         }
         return apiResult.toResult()
     }
+
+    override suspend fun updateSettlement(houseId: Long, settlementId: Long, request: UpdateSettlementRequest): Result<SettlementResponse> {
+        val apiResult = settlementApiService.updateSettlement(houseId, settlementId, request)
+        if (apiResult is ApiResult.Success) {
+            settlementDataSource.saveSettlement(apiResult.data.toDomain())
+        }
+        return apiResult.toResult()
+    }
+
+    override suspend fun getSettlementById(id: Long): Settlement? =
+        settlementDataSource.getSettlementById(id)
 }
 
 private fun <T> ApiResult<T>.toResult(): Result<T> = when (this) {

@@ -15,9 +15,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -56,6 +58,11 @@ fun AddExpenseScreen(
     ),
 ) {
     val state by viewModel.uiState.collectAsState()
+    val isEditing = component.editingSettlementId != null
+
+    LaunchedEffect(Unit) {
+        viewModel.bind(component.editingSettlementId)
+    }
 
     LaunchedEffect(state.saved) {
         if (state.saved) {
@@ -79,7 +86,7 @@ fun AddExpenseScreen(
                 Icon(Icons.Default.ChevronLeft, contentDescription = "Back", tint = JustWooColors.TextPrimary)
             }
             Text(
-                text = "Add Expense",
+                text = if (isEditing) "Edit Expense" else "Add Expense",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = JustWooFontWeight.Bold,
             )
@@ -164,46 +171,69 @@ fun AddExpenseScreen(
             item { Spacer(Modifier.height(JustWooSpacing.Default)) }
             item { Text("Payee", fontWeight = JustWooFontWeight.SemiBold) }
             item { Spacer(Modifier.height(JustWooSpacing.Small)) }
-            item {
-                var expanded by remember { mutableStateOf(false) }
-                val selectedLabel = state.payeeMembers
-                    .firstOrNull { it.userId == state.selectedPayeeId }
-                    ?.name
-                    ?: "House (split equally)"
+            if (isEditing) {
+                item {
+                    var expanded by remember { mutableStateOf(false) }
+                    val editPayeeCandidates = state.allMembers.filter { it.userId != state.selectedPayerId }
+                    val selectedLabel = editPayeeCandidates
+                        .firstOrNull { it.userId == state.selectedPayeeId }
+                        ?.name
+                        ?: "Select payee"
 
-                ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = it },
-                ) {
-                    OutlinedTextField(
-                        value = selectedLabel,
-                        onValueChange = {},
-                        readOnly = true,
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
-                    )
-                    ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                        DropdownMenuItem(
-                            text = { Text("House (split equally)") },
-                            onClick = { viewModel.onPayeeSelect(null); expanded = false },
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = { expanded = it },
+                    ) {
+                        OutlinedTextField(
+                            value = selectedLabel,
+                            onValueChange = {},
+                            readOnly = true,
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
                         )
-                        state.payeeMembers.forEach { member ->
-                            DropdownMenuItem(
-                                text = { Text(member.name.ifBlank { "User #${member.userId}" }) },
-                                onClick = { viewModel.onPayeeSelect(member.userId); expanded = false },
-                            )
+                        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                            editPayeeCandidates.forEach { member ->
+                                DropdownMenuItem(
+                                    text = { Text(member.name.ifBlank { "User #${member.userId}" }) },
+                                    onClick = { viewModel.onEditPayeeSelect(member.userId); expanded = false },
+                                )
+                            }
                         }
                     }
                 }
-                if (state.selectedPayeeId == null && state.payeeMembers.size > 1) {
-                    Spacer(Modifier.height(JustWooSpacing.XSmall))
-                    Text(
-                        "Amount will be split equally among ${state.payeeMembers.size} members",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = JustWooColors.TextSecondary,
-                    )
+            } else {
+                items(state.payeeMembers) { member ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { viewModel.onPayeeToggle(member.userId) },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Checkbox(
+                            checked = member.userId in state.selectedPayeeIds,
+                            onCheckedChange = { viewModel.onPayeeToggle(member.userId) },
+                        )
+                        Text(member.name.ifBlank { "User #${member.userId}" })
+                    }
+                }
+                item {
+                    if (state.selectedPayeeIds.isEmpty() && state.payeeMembers.size > 1) {
+                        Spacer(Modifier.height(JustWooSpacing.XSmall))
+                        Text(
+                            "Amount will be split equally among ${state.payeeMembers.size} members",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = JustWooColors.TextSecondary,
+                        )
+                    } else if (state.selectedPayeeIds.size > 1) {
+                        Spacer(Modifier.height(JustWooSpacing.XSmall))
+                        Text(
+                            "Amount will be split equally among ${state.selectedPayeeIds.size} selected members",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = JustWooColors.TextSecondary,
+                        )
+                    }
                 }
             }
 
@@ -234,7 +264,7 @@ fun AddExpenseScreen(
             item { Spacer(Modifier.height(JustWooSpacing.Large)) }
             item {
                 JustWooPrimaryButton(
-                    text = if (state.isLoading) "Saving…" else "Save",
+                    text = if (state.isLoading) "Saving…" else if (isEditing) "Save Changes" else "Save",
                     onClick = viewModel::submit,
                     enabled = state.canSubmit,
                     modifier = Modifier.fillMaxWidth(),

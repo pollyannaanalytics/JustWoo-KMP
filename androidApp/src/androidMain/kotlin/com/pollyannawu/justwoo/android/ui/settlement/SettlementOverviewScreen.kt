@@ -1,6 +1,7 @@
 package com.pollyannawu.justwoo.android.ui.settlement
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -143,7 +144,11 @@ fun SettlementOverviewScreen(
                     }
                 } else {
                     items(state.settlements, key = { it.id }) { settlement ->
-                        SettlementHistoryItem(settlement, currentUserId = state.currentUserId)
+                        SettlementHistoryItem(
+                            settlement = settlement,
+                            currentUserId = state.currentUserId,
+                            onClick = { component.onEditSettlement(settlement.id) },
+                        )
                     }
                 }
 
@@ -298,20 +303,20 @@ private data class BalanceRowStyle(
 )
 
 @Composable
-private fun SettlementHistoryItem(settlement: Settlement, currentUserId: Long?) {
+private fun SettlementHistoryItem(settlement: Settlement, currentUserId: Long?, onClick: () -> Unit) {
     val date = settlement.createTime.toLocalDateTime(TimeZone.currentSystemDefault()).date
 
     val isPayer = currentUserId != null && settlement.payerId == currentUserId
     val isPayee = currentUserId != null && settlement.payeeId == currentUserId
 
     val bgColor = when {
-        isPayer -> JustWooColors.UrgencyRedBg
-        isPayee -> JustWooColors.UrgencyGreenBg
+        isPayer -> JustWooColors.UrgencyGreenBg
+        isPayee -> JustWooColors.UrgencyRedBg
         else -> JustWooColors.CreamSurface
     }
     val amountColor = when {
-        isPayer -> JustWooColors.UrgencyRed
-        isPayee -> JustWooColors.UrgencyGreen
+        isPayer -> JustWooColors.UrgencyGreen
+        isPayee -> JustWooColors.UrgencyRed
         else -> JustWooColors.TextPrimary
     }
 
@@ -322,6 +327,7 @@ private fun SettlementHistoryItem(settlement: Settlement, currentUserId: Long?) 
         modifier = Modifier
             .fillMaxWidth()
             .clip(JustWooShapes.Medium)
+            .clickable(onClick = onClick)
             .background(bgColor)
             .padding(horizontal = JustWooSpacing.Default, vertical = JustWooSpacing.Default),
         horizontalArrangement = Arrangement.SpaceBetween,

@@ -8,12 +8,15 @@ import com.pollyannawu.justwoo.core.Task
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.update
 import org.slf4j.LoggerFactory
 
 interface SettlementRepository {
     suspend fun createSettlement(settlement: Settlement): Settlement
     suspend fun getSettlements(houseId: Long): List<Settlement>
     suspend fun getTasksWithPrice(houseId: Long): List<Task>
+    suspend fun getSettlementById(houseId: Long, settlementId: Long): Settlement?
+    suspend fun updateSettlement(settlement: Settlement): Settlement
 }
 
 internal class DefaultSettlementRepository : SettlementRepository {
@@ -37,5 +40,23 @@ internal class DefaultSettlementRepository : SettlementRepository {
         Tasks.selectAll()
             .where { (Tasks.houseId eq houseId) and Tasks.price.isNotNull() }
             .map { Tasks.toDomain(it) }
+    }
+
+    override suspend fun getSettlementById(houseId: Long, settlementId: Long): Settlement? = dbQuery {
+        Settlements.selectAll()
+            .where { (Settlements.id eq settlementId) and (Settlements.houseId eq houseId) }
+            .singleOrNull()?.let { Settlements.toDomain(it) }
+    }
+
+    override suspend fun updateSettlement(settlement: Settlement): Settlement = dbQuery {
+        log.trace("updateSettlement id={}", settlement.id)
+        Settlements.update(where = { Settlements.id eq settlement.id }) {
+            it[payerId] = settlement.payerId
+            it[payeeId] = settlement.payeeId
+            it[amount] = settlement.amount
+            it[currencyCode] = settlement.currencyCode
+            it[note] = settlement.note
+        }
+        Settlements.selectAll().where { Settlements.id eq settlement.id }.single().let { Settlements.toDomain(it) }
     }
 }
