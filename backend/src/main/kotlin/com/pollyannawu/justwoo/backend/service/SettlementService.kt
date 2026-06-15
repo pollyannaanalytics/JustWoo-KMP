@@ -101,9 +101,11 @@ internal class DefaultSettlementService(
             return SettlementDataResult.Error.UserNotAllowed(requesterId)
 
         return try {
-            val debts = buildDebtMap(settlementRepo.getTasksWithPrice(houseId))
-            val payments = buildPaymentMap(settlementRepo.getSettlements(houseId))
-            val net = netBalance(debts, payments)
+            val debts = buildDebtMap(
+                settlementRepo.getTasksWithPrice(houseId),
+                settlementRepo.getSettlements(houseId),
+            )
+            val net = netBalance(debts)
 
             val userIds = net.keys.flatMap { listOf(it.debtorId, it.creditorId) }.distinct()
             val profiles = profileRepo.getProfiles(userIds).associateBy { it.id }
@@ -127,56 +129,50 @@ internal class DefaultSettlementService(
         }
     }
 
-    // each non-owner assignee owes the owner their equal share of the task price
-    private fun buildDebtMap(tasks: List<Task>): Map<DebtPair, Map<String, Double>> {
+    // Builds a combined debt map from two sources:
+    // - tasks: each non-owner assignee owes owner their share (price / total assignees including owner)
+    // - settlements: payeeId (beneficiary) owes payerId (expense payer/creditor)
+    //
+    // Settlements are expense records, not cash-payment records. Recording a settlement in the
+    // opposite direction (payeeId=former creditor, payerId=former debtor) is how you reduce a balance.
+    private fun buildDebtMap(tasks: List<Task>, settlements: List<Settlement>): Map<DebtPair, Map<String, Double>> {
         val debts = mutableMapOf<DebtPair, MutableMap<String, Double>>()
+
         for (task in tasks) {
             val price = task.price ?: continue
             val code = task.currencyCode ?: continue
-            val nonOwnerAssignees = task.assignees.map { it.userId }.filter { it != task.ownerId }
-            if (nonOwnerAssignees.isEmpty()) continue
-            val share = price / nonOwnerAssignees.size
-            for (assigneeId in nonOwnerAssignees) {
+            val allAssignees = task.assignees.map { it.userId }
+            if (allAssignees.isEmpty()) continue
+            val share = price / allAssignees.size
+            for (assigneeId in allAssignees.filter { it != task.ownerId }) {
                 debts.getOrPut(DebtPair(assigneeId, task.ownerId)) { mutableMapOf() }.merge(code, share, Double::plus)
             }
         }
+
+        for (s in settlements) {
+            debts.getOrPut(DebtPair(s.payeeId, s.payerId)) { mutableMapOf() }
+                .merge(s.currencyCode, s.amount, Double::plus)
+        }
+
         return debts
     }
 
-    // total paid per (payer, payee), keyed by currency
-    private fun buildPaymentMap(settlements: List<Settlement>): Map<DebtPair, Map<String, Double>> {
-        val payments = mutableMapOf<DebtPair, MutableMap<String, Double>>()
-        for (s in settlements) {
-            payments.getOrPut(DebtPair(s.payerId, s.payeeId)) { mutableMapOf() }
-                .merge(s.currencyCode, s.amount, Double::plus)
-        }
-        return payments
-    }
-
-    // Collapse bilateral debts and payments into one canonical net entry per (pair, currency).
-    // canonical(A,B) = DebtPair with smaller ID as debtor; the other direction is the reverse.
-    private fun netBalance(
-        debts: Map<DebtPair, Map<String, Double>>,
-        payments: Map<DebtPair, Map<String, Double>>,
-    ): Map<DebtPair, Map<String, Double>> {
-        val canonicalPairs = (debts.keys + payments.keys).map { canonical(it) }.toSet()
+    // Collapse bilateral debts into one canonical net entry per (pair, currency).
+    // canonical(A,B) = DebtPair with smaller ID as debtorId.
+    private fun netBalance(debts: Map<DebtPair, Map<String, Double>>): Map<DebtPair, Map<String, Double>> {
+        val canonicalPairs = debts.keys.map { canonical(it) }.toSet()
         val result = mutableMapOf<DebtPair, MutableMap<String, Double>>()
 
         for (pair in canonicalPairs) {
             val reverse = DebtPair(pair.creditorId, pair.debtorId)
-            val currencies = setOf(
-                debts[pair]?.keys, debts[reverse]?.keys,
-                payments[pair]?.keys, payments[reverse]?.keys,
-            ).filterNotNull().flatten().toSet()
+            val currencies = setOf(debts[pair]?.keys, debts[reverse]?.keys)
+                .filterNotNull().flatten().toSet()
 
             for (currency in currencies) {
-                val netDebt = (debts[pair]?.get(currency) ?: 0.0) - (debts[reverse]?.get(currency) ?: 0.0)
-                // Any payment between A and B (either direction) reduces the outstanding balance
-                val totalPaid = (payments[pair]?.get(currency) ?: 0.0) + (payments[reverse]?.get(currency) ?: 0.0)
-                val remaining = netDebt - totalPaid
+                val net = (debts[pair]?.get(currency) ?: 0.0) - (debts[reverse]?.get(currency) ?: 0.0)
                 when {
-                    remaining > 0.01 -> result.getOrPut(pair) { mutableMapOf() }[currency] = remaining
-                    remaining < -0.01 -> result.getOrPut(reverse) { mutableMapOf() }[currency] = -remaining
+                    net > 0.01 -> result.getOrPut(pair) { mutableMapOf() }[currency] = net
+                    net < -0.01 -> result.getOrPut(reverse) { mutableMapOf() }[currency] = -net
                 }
             }
         }
