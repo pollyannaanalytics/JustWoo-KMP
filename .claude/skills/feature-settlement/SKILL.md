@@ -1,6 +1,6 @@
 ---
 name: feature-settlement
-description: Settlement domain rules for JustWoo — payer/payee ledger with multi-currency balance, ISO 4217 currency strings, immutable settlement records, TDD across all layers, Swagger contract is mandatory. Trigger when touching SettlementRoutes, SettlementService, SettlementRepository, or shared settlement UseCases.
+description: Settlement domain rules for JustWoo — payer/payee ledger with multi-currency balance, ISO 4217 currency strings, mutable-by-payer-or-admin settlement records via PUT, TDD across all layers, Swagger contract is mandatory. Trigger when touching SettlementRoutes, SettlementService, SettlementRepository, or shared settlement UseCases.
 paths: **/SettlementRoutes.kt, **/SettlementService.kt, **/SettlementRepository.kt, **/schema/Settlements.kt, **/domain/usecase/settlement/**, **/ui/nav/settlement/**
 ---
 
@@ -19,7 +19,7 @@ Also read [`backend-best-practice`](../backend-best-practice/SKILL.md) and [`kmp
 
 ## Invariants — non-negotiable
 
-1. **A Settlement is immutable once created.** No `UPDATE` on amount, payer, payee, or currency. The only allowed mutation is `DELETE` (treat as a void / correction) and only by ADMIN or the original payer, within a short window. If you need to "fix" a wrong settlement, create a counter-entry — don't mutate.
+1. **A Settlement can be mutated via `PUT /houses/{id}/settlements/{settlementId}`**, which allows changing `payerId`, `payeeId`, `amount`, `currencyCode`, and `note`. Permitted only for the **original payer or a house ADMIN**, with **no time limit**. The update path re-applies the same validation as create: `payerId != payeeId`, valid amount, valid currency, both users are house members. `id` and `createTime` are preserved. `DELETE` remains available as well, with the same payer-or-ADMIN permission rule.
 2. **`payerId != payeeId`.** Enforced at the service layer and as a DB-level check if possible. A user cannot pay themselves.
 3. **Both users must be members of the house.** Validate at the service layer using the house membership check from [`feature-house`](../feature-house/SKILL.md). Cross-house settlements are rejected.
 4. **`currencyCode` is ISO 4217 `String`, mandatory on every Settlement.** No optional currency, no default currency — every row carries its own currency explicitly.
@@ -37,7 +37,7 @@ Also read [`backend-best-practice`](../backend-best-practice/SKILL.md) and [`kmp
    - Non-member as payer or payee rejected.
    - Multi-currency balance: settlements in USD + EUR + TWD aggregated correctly to the house display currency.
    - Settlement of a missing house → 404, not 500.
-   - Permission to delete: only ADMIN / original payer, within window.
+   - Permission to update/delete: only ADMIN / original payer, no time limit. Updating a missing settlement → `SettlementNotFound` (404), not 500.
 2. **Repository test** against TestContainers Postgres:
    - FK constraints (deleting a house cascades / restricts settlements consistently with policy).
    - Currency string round-trips.
@@ -51,8 +51,11 @@ Also read [`backend-best-practice`](../backend-best-practice/SKILL.md) and [`kmp
 Every change to these requires a YAML update in [`backend/src/main/resources/openapi/documentation.yaml`](../../../backend/src/main/resources/openapi/documentation.yaml):
 
 - `GET/POST /houses/{id}/settlements`
+- `PUT /houses/{id}/settlements/{settlementId}` — documented; requires `UpdateSettlementRequest`/`SettlementResponse` schemas and 400/403/404 error responses.
 - `DELETE /houses/{id}/settlements/{settlementId}`
 - `GET /houses/{id}/settlements/balance` — pay extra attention to the response schema; this is the endpoint clients render headline numbers from. Document the conversion contract (which currency the balance is in, whether the response includes per-currency breakdown).
+
+Note: `GET/POST /houses/{id}/settlements`, `DELETE .../{settlementId}`, and `GET .../balance` are pre-existing undocumented gaps in the YAML — fix opportunistically, but don't block unrelated PUT-endpoint work on backfilling them.
 
 ## Shared / client side
 
@@ -62,7 +65,7 @@ Every change to these requires a YAML update in [`backend/src/main/resources/ope
 
 ## Anti-patterns — reject on sight
 
-- An UPDATE on a settlement row.
+- A mutation to amount/payer/payee/currency outside the dedicated `updateSettlement` service method's validation path (e.g. a raw repository update bypassing permission/validation checks).
 - `currencyCode` typed as an enum.
 - `settlements.map { it.amount }.sum()` over mixed currencies.
 - Using raw `Double` arithmetic to compute a member's outstanding balance.

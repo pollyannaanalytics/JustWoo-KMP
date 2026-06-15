@@ -12,6 +12,7 @@ import com.pollyannawu.justwoo.core.Task
 import com.pollyannawu.justwoo.core.TaskAssignee
 import com.pollyannawu.justwoo.core.TaskStatus
 import com.pollyannawu.justwoo.core.dto.CreateSettlementRequest
+import com.pollyannawu.justwoo.core.dto.UpdateSettlementRequest
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
@@ -156,6 +157,117 @@ class SettlementServiceTest {
 
         assertInstanceOf(SettlementDataResult.Success::class.java, result)
         assertEquals("USD", (result as SettlementDataResult.Success).data.currencyCode)
+    }
+
+    // ── updateSettlement ─────────────────────────────────────────────────────
+
+    @Test
+    fun `updateSettlement returns Success when requester is the original payer`() = runTest {
+        val request = UpdateSettlementRequest(payerId, payeeId, 150.0, "USD", "updated note")
+        coEvery { houseRepo.isMember(requesterId, houseId) } returns true
+        coEvery { settlementRepo.getSettlementById(houseId, 1L) } returns fakeSettlement()
+        coEvery { houseRepo.isAdmin(requesterId, houseId) } returns false
+        coEvery { houseRepo.isMember(payerId, houseId) } returns true
+        coEvery { houseRepo.isMember(payeeId, houseId) } returns true
+        coEvery { settlementRepo.updateSettlement(any()) } returns fakeSettlement(amount = 150.0, currencyCode = "USD")
+
+        val result = service.updateSettlement(houseId, 1L, requesterId, request)
+
+        assertInstanceOf(SettlementDataResult.Success::class.java, result)
+        val data = (result as SettlementDataResult.Success).data
+        assertEquals(150.0, data.amount)
+        assertEquals("USD", data.currencyCode)
+    }
+
+    @Test
+    fun `updateSettlement returns Success when requester is a house admin editing another member's settlement`() = runTest {
+        val adminId = 99L
+        val request = UpdateSettlementRequest(payerId, payeeId, 150.0, "TWD", "updated by admin")
+        coEvery { houseRepo.isMember(adminId, houseId) } returns true
+        coEvery { settlementRepo.getSettlementById(houseId, 1L) } returns fakeSettlement()
+        coEvery { houseRepo.isAdmin(adminId, houseId) } returns true
+        coEvery { houseRepo.isMember(payerId, houseId) } returns true
+        coEvery { houseRepo.isMember(payeeId, houseId) } returns true
+        coEvery { settlementRepo.updateSettlement(any()) } returns fakeSettlement(amount = 150.0)
+
+        val result = service.updateSettlement(houseId, 1L, adminId, request)
+
+        assertInstanceOf(SettlementDataResult.Success::class.java, result)
+    }
+
+    @Test
+    fun `updateSettlement returns Forbidden when requester is neither original payer nor admin`() = runTest {
+        val otherUserId = 99L
+        val request = UpdateSettlementRequest(payerId, payeeId, 150.0, "TWD")
+        coEvery { houseRepo.isMember(otherUserId, houseId) } returns true
+        coEvery { settlementRepo.getSettlementById(houseId, 1L) } returns fakeSettlement()
+        coEvery { houseRepo.isAdmin(otherUserId, houseId) } returns false
+
+        val result = service.updateSettlement(houseId, 1L, otherUserId, request)
+
+        assertInstanceOf(SettlementDataResult.Error.Forbidden::class.java, result)
+    }
+
+    @Test
+    fun `updateSettlement returns SettlementNotFound for missing settlement`() = runTest {
+        val request = UpdateSettlementRequest(payerId, payeeId, 150.0, "TWD")
+        coEvery { houseRepo.isMember(requesterId, houseId) } returns true
+        coEvery { settlementRepo.getSettlementById(houseId, 1L) } returns null
+
+        val result = service.updateSettlement(houseId, 1L, requesterId, request)
+
+        assertInstanceOf(SettlementDataResult.Error.SettlementNotFound::class.java, result)
+    }
+
+    @Test
+    fun `updateSettlement returns SelfPayment when payerId equals payeeId`() = runTest {
+        val request = UpdateSettlementRequest(payerId, payerId, 150.0, "TWD")
+        coEvery { houseRepo.isMember(requesterId, houseId) } returns true
+        coEvery { settlementRepo.getSettlementById(houseId, 1L) } returns fakeSettlement()
+        coEvery { houseRepo.isAdmin(requesterId, houseId) } returns false
+
+        val result = service.updateSettlement(houseId, 1L, requesterId, request)
+
+        assertInstanceOf(SettlementDataResult.Error.SelfPayment::class.java, result)
+    }
+
+    @Test
+    fun `updateSettlement returns InvalidAmount for non-positive amount`() = runTest {
+        val request = UpdateSettlementRequest(payerId, payeeId, 0.0, "TWD")
+        coEvery { houseRepo.isMember(requesterId, houseId) } returns true
+        coEvery { settlementRepo.getSettlementById(houseId, 1L) } returns fakeSettlement()
+        coEvery { houseRepo.isAdmin(requesterId, houseId) } returns false
+
+        val result = service.updateSettlement(houseId, 1L, requesterId, request)
+
+        assertInstanceOf(SettlementDataResult.Error.InvalidAmount::class.java, result)
+    }
+
+    @Test
+    fun `updateSettlement returns InvalidCurrency for malformed code`() = runTest {
+        val request = UpdateSettlementRequest(payerId, payeeId, 100.0, "usd")
+        coEvery { houseRepo.isMember(requesterId, houseId) } returns true
+        coEvery { settlementRepo.getSettlementById(houseId, 1L) } returns fakeSettlement()
+        coEvery { houseRepo.isAdmin(requesterId, houseId) } returns false
+
+        val result = service.updateSettlement(houseId, 1L, requesterId, request)
+
+        assertInstanceOf(SettlementDataResult.Error.InvalidCurrency::class.java, result)
+    }
+
+    @Test
+    fun `updateSettlement returns UserNotAllowed when new payee is not a house member`() = runTest {
+        val outsiderId = 999L
+        val request = UpdateSettlementRequest(payerId, outsiderId, 100.0, "TWD")
+        coEvery { houseRepo.isMember(requesterId, houseId) } returns true
+        coEvery { settlementRepo.getSettlementById(houseId, 1L) } returns fakeSettlement()
+        coEvery { houseRepo.isAdmin(requesterId, houseId) } returns false
+        coEvery { houseRepo.isMember(payerId, houseId) } returns true
+        coEvery { houseRepo.isMember(outsiderId, houseId) } returns false
+
+        val result = service.updateSettlement(houseId, 1L, requesterId, request)
+
+        assertInstanceOf(SettlementDataResult.Error.UserNotAllowed::class.java, result)
     }
 
     // ── getSettlements ────────────────────────────────────────────────────────

@@ -9,5 +9,8 @@ sealed class SettlementDataResult<out T> {
         data class DatabaseError(val message: String) : Error()
         object InvalidAmount : Error()
         data class InvalidCurrency(val code: String) : Error()
+        object SettlementNotFound : Error()
+        data class Forbidden(val id: Long) : Error()
+        object SelfPayment : Error()
     }
 }

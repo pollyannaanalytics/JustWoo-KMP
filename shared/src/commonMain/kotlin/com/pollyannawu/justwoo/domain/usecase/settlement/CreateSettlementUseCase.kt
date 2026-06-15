@@ -19,7 +19,7 @@ class CreateSettlementUseCase(
 ) {
     suspend operator fun invoke(
         payerId: Long,
-        payeeId: Long?,
+        payeeIds: Set<Long>,
         amount: Double,
         currencyCode: String,
         note: String,
@@ -27,10 +27,14 @@ class CreateSettlementUseCase(
         val houseId = getCurrentHouseId()
             ?: return CreateSettlementResult.Failure("No active house")
 
-        return if (payeeId != null) {
-            createSingle(houseId, payerId, payeeId, amount, currencyCode, note)
-        } else {
+        val targetIds = (payeeIds - payerId)
+
+        return if (targetIds.size == 1) {
+            createSingle(houseId, payerId, targetIds.first(), amount, currencyCode, note)
+        } else if (targetIds.isEmpty()) {
             createHouseWide(houseId, payerId, amount, currencyCode, note)
+        } else {
+            createSplit(houseId, payerId, targetIds, amount, currencyCode, note)
         }
     }
 
@@ -58,15 +62,28 @@ class CreateSettlementUseCase(
         note: String,
     ): CreateSettlementResult {
         val members = getHouseMembers(houseId)
-        val otherMembers = members.filter { it.userId != payerId }
-        if (otherMembers.isEmpty()) return CreateSettlementResult.Success
+        val otherMemberIds = members.filter { it.userId != payerId }.map { it.userId }
+        if (otherMemberIds.isEmpty()) return CreateSettlementResult.Success
+        return createSplit(houseId, payerId, otherMemberIds.toSet(), amount, currencyCode, note)
+    }
 
-        val splitAmount = (amount / otherMembers.size * 100).roundToInt() / 100.0
-        val remainder = (amount * 100).roundToInt() - (splitAmount * 100).roundToInt() * otherMembers.size
+    private suspend fun createSplit(
+        houseId: Long,
+        payerId: Long,
+        payeeIds: Set<Long>,
+        amount: Double,
+        currencyCode: String,
+        note: String,
+    ): CreateSettlementResult {
+        val targets = payeeIds.toList()
+        if (targets.isEmpty()) return CreateSettlementResult.Success
 
-        val failedNames = mutableListOf<Long>()
-        otherMembers.forEachIndexed { index, member ->
-            val memberAmount = if (index == otherMembers.lastIndex) {
+        val splitAmount = (amount / targets.size * 100).roundToInt() / 100.0
+        val remainder = (amount * 100).roundToInt() - (splitAmount * 100).roundToInt() * targets.size
+
+        val failedIds = mutableListOf<Long>()
+        targets.forEachIndexed { index, memberId ->
+            val memberAmount = if (index == targets.lastIndex) {
                 splitAmount + remainder / 100.0
             } else {
                 splitAmount
@@ -75,16 +92,16 @@ class CreateSettlementUseCase(
                 houseId,
                 CreateSettlementRequest(
                     payerId = payerId,
-                    payeeId = member.userId,
+                    payeeId = memberId,
                     amount = memberAmount,
                     currencyCode = currencyCode,
                     note = note,
                 ),
             )
-            if (result.isFailure) failedNames.add(member.userId)
+            if (result.isFailure) failedIds.add(memberId)
         }
 
-        return if (failedNames.isEmpty()) CreateSettlementResult.Success
-        else CreateSettlementResult.PartialFailure(failedNames)
+        return if (failedIds.isEmpty()) CreateSettlementResult.Success
+        else CreateSettlementResult.PartialFailure(failedIds)
     }
 }

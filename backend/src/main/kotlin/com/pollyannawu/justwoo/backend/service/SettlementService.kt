@@ -14,6 +14,7 @@ import com.pollyannawu.justwoo.core.dto.BalanceEntry
 import com.pollyannawu.justwoo.core.dto.CreateSettlementRequest
 import com.pollyannawu.justwoo.core.dto.HouseBalanceResponse
 import com.pollyannawu.justwoo.core.dto.SettlementResponse
+import com.pollyannawu.justwoo.core.dto.UpdateSettlementRequest
 import kotlinx.datetime.Clock
 
 interface SettlementService {
@@ -32,6 +33,13 @@ interface SettlementService {
         houseId: Long,
         requesterId: Long,
     ): SettlementDataResult<HouseBalanceResponse>
+
+    suspend fun updateSettlement(
+        houseId: Long,
+        settlementId: Long,
+        requesterId: Long,
+        request: UpdateSettlementRequest,
+    ): SettlementDataResult<SettlementResponse>
 }
 
 private data class DebtPair(val debtorId: Long, val creditorId: Long)
@@ -71,6 +79,57 @@ internal class DefaultSettlementService(
             val profiles = profileRepo.getProfiles(listOf(saved.payerId, saved.payeeId))
                 .associateBy { it.id }
             SettlementDataResult.Success(saved.toResponse(profiles))
+        } catch (e: Exception) {
+            SettlementDataResult.Error.DatabaseError(e.message ?: "Unknown error")
+        }
+    }
+
+    override suspend fun updateSettlement(
+        houseId: Long,
+        settlementId: Long,
+        requesterId: Long,
+        request: UpdateSettlementRequest,
+    ): SettlementDataResult<SettlementResponse> {
+        if (!houseRepo.isMember(requesterId, houseId))
+            return SettlementDataResult.Error.UserNotAllowed(requesterId)
+
+        val existing = settlementRepo.getSettlementById(houseId, settlementId)
+            ?: return SettlementDataResult.Error.SettlementNotFound
+
+        val isAdmin = houseRepo.isAdmin(requesterId, houseId)
+        if (requesterId != existing.payerId && !isAdmin)
+            return SettlementDataResult.Error.Forbidden(requesterId)
+
+        if (request.payerId == request.payeeId)
+            return SettlementDataResult.Error.SelfPayment
+
+        if (request.amount <= 0)
+            return SettlementDataResult.Error.InvalidAmount
+
+        try {
+            CurrencyConverter.validate(request.currencyCode)
+        } catch (_: UnknownCurrencyException) {
+            return SettlementDataResult.Error.InvalidCurrency(request.currencyCode)
+        }
+
+        if (!houseRepo.isMember(request.payerId, houseId))
+            return SettlementDataResult.Error.UserNotAllowed(request.payerId)
+        if (!houseRepo.isMember(request.payeeId, houseId))
+            return SettlementDataResult.Error.UserNotAllowed(request.payeeId)
+
+        return try {
+            val updated = settlementRepo.updateSettlement(
+                existing.copy(
+                    payerId = request.payerId,
+                    payeeId = request.payeeId,
+                    amount = request.amount,
+                    currencyCode = request.currencyCode,
+                    note = request.note,
+                ),
+            )
+            val profiles = profileRepo.getProfiles(listOf(updated.payerId, updated.payeeId))
+                .associateBy { it.id }
+            SettlementDataResult.Success(updated.toResponse(profiles))
         } catch (e: Exception) {
             SettlementDataResult.Error.DatabaseError(e.message ?: "Unknown error")
         }

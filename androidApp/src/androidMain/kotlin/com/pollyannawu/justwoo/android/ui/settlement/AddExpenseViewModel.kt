@@ -8,6 +8,9 @@ import com.pollyannawu.justwoo.domain.usecase.auth.ObserveCurrentUserIdUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.GetHouseMembersUseCase
 import com.pollyannawu.justwoo.domain.usecase.settlement.CreateSettlementResult
 import com.pollyannawu.justwoo.domain.usecase.settlement.CreateSettlementUseCase
+import com.pollyannawu.justwoo.domain.usecase.settlement.GetSettlementByIdUseCase
+import com.pollyannawu.justwoo.domain.usecase.settlement.UpdateSettlementResult
+import com.pollyannawu.justwoo.domain.usecase.settlement.UpdateSettlementUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,12 +23,15 @@ class AddExpenseViewModel(
     private val getHouseMembers: GetHouseMembersUseCase,
     private val getCurrentHouseId: GetCurrentHouseIdUseCase,
     private val observeCurrentUserId: ObserveCurrentUserIdUseCase,
+    private val getSettlementById: GetSettlementByIdUseCase,
+    private val updateSettlement: UpdateSettlementUseCase,
 ) : ViewModel() {
 
     data class UiState(
         val amount: String = "",
         val currencyCode: String = "TWD",
         val selectedPayerId: Long? = null,
+        val selectedPayeeIds: Set<Long> = emptySet(),
         val selectedPayeeId: Long? = null,
         val note: String = "",
         val allMembers: List<HouseMember> = emptyList(),
@@ -35,20 +41,25 @@ class AddExpenseViewModel(
         val error: String? = null,
         val partialFailureIds: List<Long> = emptyList(),
         val saved: Boolean = false,
+        val isEditing: Boolean = false,
+        val editingSettlementId: Long? = null,
     ) {
         val amountValue: Double? get() = amount.toDoubleOrNull()
         val canSubmit: Boolean get() {
             val av = amountValue
-            return av != null && av > 0 && !isLoading && selectedPayerId != null
+            if (av == null || av <= 0 || isLoading || selectedPayerId == null) return false
+            return if (isEditing) {
+                selectedPayeeId != null && selectedPayeeId != selectedPayerId
+            } else {
+                true
+            }
         }
     }
 
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
-    init { loadMembers() }
-
-    private fun loadMembers() {
+    fun bind(settlementId: Long?) {
         viewModelScope.launch {
             val houseId = getCurrentHouseId() ?: return@launch
             val currentUserId = observeCurrentUserId().first()
@@ -61,6 +72,21 @@ class AddExpenseViewModel(
                     selectedPayerId = currentUserId,
                 )
             }
+
+            if (settlementId != null) {
+                val settlement = getSettlementById(settlementId) ?: return@launch
+                _uiState.update {
+                    it.copy(
+                        isEditing = true,
+                        editingSettlementId = settlementId,
+                        amount = settlement.amount.toString(),
+                        currencyCode = settlement.currencyCode,
+                        note = settlement.note,
+                        selectedPayerId = settlement.payerId,
+                        selectedPayeeId = settlement.payeeId,
+                    )
+                }
+            }
         }
     }
 
@@ -71,7 +97,11 @@ class AddExpenseViewModel(
     }
     fun onCurrencyChange(v: String) = _uiState.update { it.copy(currencyCode = v.uppercase()) }
     fun onPayerSelect(payerId: Long?) = _uiState.update { it.copy(selectedPayerId = payerId) }
-    fun onPayeeSelect(payeeId: Long?) = _uiState.update { it.copy(selectedPayeeId = payeeId) }
+    fun onPayeeToggle(payeeId: Long) = _uiState.update {
+        val current = it.selectedPayeeIds
+        it.copy(selectedPayeeIds = if (payeeId in current) current - payeeId else current + payeeId)
+    }
+    fun onEditPayeeSelect(payeeId: Long) = _uiState.update { it.copy(selectedPayeeId = payeeId) }
     fun onNoteChange(v: String) = _uiState.update { it.copy(note = v) }
 
     fun consumeSaved() = _uiState.update { it.copy(saved = false) }
@@ -90,28 +120,51 @@ class AddExpenseViewModel(
                 _uiState.update { it.copy(isLoading = false, error = "Not signed in") }
                 return@launch
             }
-            when (val result = createSettlement(
-                payerId = payerId,
-                payeeId = s.selectedPayeeId,
-                amount = amount,
-                currencyCode = s.currencyCode,
-                note = s.note,
-            )) {
-                CreateSettlementResult.Success ->
-                    _uiState.update { prev ->
-                        UiState(
-                            allMembers = prev.allMembers,
-                            payeeMembers = prev.payeeMembers,
-                            currentUserId = prev.currentUserId,
-                            selectedPayerId = prev.selectedPayerId,
-                            isLoading = false,
-                            saved = true,
-                        )
-                    }
-                is CreateSettlementResult.PartialFailure ->
-                    _uiState.update { it.copy(isLoading = false, partialFailureIds = result.failedMemberIds) }
-                is CreateSettlementResult.Failure ->
-                    _uiState.update { it.copy(isLoading = false, error = result.message) }
+
+            if (s.isEditing) {
+                val settlementId = s.editingSettlementId
+                val payeeId = s.selectedPayeeId
+                if (settlementId == null || payeeId == null) {
+                    _uiState.update { it.copy(isLoading = false, error = "Select a payee") }
+                    return@launch
+                }
+                when (val result = updateSettlement(
+                    settlementId = settlementId,
+                    payerId = payerId,
+                    payeeId = payeeId,
+                    amount = amount,
+                    currencyCode = s.currencyCode,
+                    note = s.note,
+                )) {
+                    UpdateSettlementResult.Success ->
+                        _uiState.update { it.copy(isLoading = false, saved = true) }
+                    is UpdateSettlementResult.Failure ->
+                        _uiState.update { it.copy(isLoading = false, error = result.message) }
+                }
+            } else {
+                when (val result = createSettlement(
+                    payerId = payerId,
+                    payeeIds = s.selectedPayeeIds,
+                    amount = amount,
+                    currencyCode = s.currencyCode,
+                    note = s.note,
+                )) {
+                    CreateSettlementResult.Success ->
+                        _uiState.update { prev ->
+                            UiState(
+                                allMembers = prev.allMembers,
+                                payeeMembers = prev.payeeMembers,
+                                currentUserId = prev.currentUserId,
+                                selectedPayerId = prev.selectedPayerId,
+                                isLoading = false,
+                                saved = true,
+                            )
+                        }
+                    is CreateSettlementResult.PartialFailure ->
+                        _uiState.update { it.copy(isLoading = false, partialFailureIds = result.failedMemberIds) }
+                    is CreateSettlementResult.Failure ->
+                        _uiState.update { it.copy(isLoading = false, error = result.message) }
+                }
             }
         }
     }
