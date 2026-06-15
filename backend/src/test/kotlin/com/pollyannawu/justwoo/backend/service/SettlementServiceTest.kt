@@ -305,19 +305,21 @@ class SettlementServiceTest {
     }
 
     @Test
-    fun `getHouseBalance collapses mutual payments against task debts`() = runTest {
-        // Alice owes Bob 100 from task, Bob paid Alice 30 (reversed settlement) → Alice owes Bob 70
+    fun `getHouseBalance collapses mutual expense settlements against task debts`() = runTest {
+        // Alice owes Bob 100 from task.
+        // Alice also paid for Bob's expense (payerId=Alice, payeeId=Bob, 30) → Bob now owes Alice 30.
+        // Net: Alice owes Bob 70.
         val task = fakeTask(ownerId = payeeId, executorId = payerId, price = 100.0, currencyCode = "TWD")
-        // Bob (payeeId=20) pays Alice (payerId=10) 30 TWD
-        val reversePayment = Settlement(
+        val alicePaidForBob = Settlement(
             id = 2L, houseId = houseId,
-            payerId = payeeId, payeeId = payerId,
+            payerId = payerId,  // Alice paid
+            payeeId = payeeId,  // Bob is beneficiary → Bob owes Alice
             amount = 30.0, currencyCode = "TWD", note = "", createTime = now
         )
 
         coEvery { houseRepo.isMember(requesterId, houseId) } returns true
         coEvery { settlementRepo.getTasksWithPrice(houseId) } returns listOf(task)
-        coEvery { settlementRepo.getSettlements(houseId) } returns listOf(reversePayment)
+        coEvery { settlementRepo.getSettlements(houseId) } returns listOf(alicePaidForBob)
 
         val result = service.getHouseBalance(houseId, requesterId)
 
@@ -328,9 +330,35 @@ class SettlementServiceTest {
     }
 
     @Test
-    fun `getHouseBalance splits price equally among multiple assignees`() = runTest {
-        // Bob (payeeId=20) owns a 300 TWD task; Alice (payerId=10) and a third user (30) are both assignees
-        // each assignee owes Bob 150 TWD (300 / 2)
+    fun `getHouseBalance expense paid by other person creates owe-entry for payer`() = runTest {
+        // Bob (payeeId=20) paid for Alice's (payerId=10) expense 50 TWD
+        // → Alice owes Bob 50 TWD
+        val bobPaidForAlice = Settlement(
+            id = 3L, houseId = houseId,
+            payerId = payeeId,  // Bob paid
+            payeeId = payerId,  // Alice is beneficiary → Alice owes Bob
+            amount = 50.0, currencyCode = "TWD", note = "", createTime = now
+        )
+
+        coEvery { houseRepo.isMember(requesterId, houseId) } returns true
+        coEvery { settlementRepo.getTasksWithPrice(houseId) } returns emptyList()
+        coEvery { settlementRepo.getSettlements(houseId) } returns listOf(bobPaidForAlice)
+
+        val result = service.getHouseBalance(houseId, requesterId)
+
+        assertInstanceOf(SettlementDataResult.Success::class.java, result)
+        val balances = (result as SettlementDataResult.Success).data.balances
+        assertEquals(1, balances.size)
+        val entry = balances.first()
+        assertEquals(payerId, entry.userId)        // Alice (debtor)
+        assertEquals(payeeId, entry.counterpartId) // Bob (creditor)
+        assertEquals(50.0, entry.netAmount, 0.01)
+    }
+
+    @Test
+    fun `getHouseBalance splits price equally among all assignees including owner`() = runTest {
+        // Bob (payeeId=20) owns and pre-paid a 300 TWD task; assignees are Bob, Alice, Charlie (3 total)
+        // share = 300 / 3 = 100 TWD; Alice and Charlie each owe Bob 100 TWD; Bob absorbs his own share
         val thirdUserId = 30L
         val multiAssigneeTask = Task(
             id = 99L,
@@ -342,8 +370,9 @@ class SettlementServiceTest {
             executorId = payerId,
             houseId = houseId,
             assignees = listOf(
-                TaskAssignee(payerId, AssignStatus.ACCEPTED),
-                TaskAssignee(thirdUserId, AssignStatus.ACCEPTED),
+                TaskAssignee(payeeId, AssignStatus.ACCEPTED),  // owner (Bob)
+                TaskAssignee(payerId, AssignStatus.ACCEPTED),  // Alice
+                TaskAssignee(thirdUserId, AssignStatus.ACCEPTED), // Charlie
             ),
             dueTime = now,
             createTime = now,
@@ -368,7 +397,7 @@ class SettlementServiceTest {
         assertEquals(2, balances.size)
         balances.forEach { entry ->
             assertEquals(payeeId, entry.counterpartId)
-            assertEquals(150.0, entry.netAmount, 0.01)
+            assertEquals(100.0, entry.netAmount, 0.01)
         }
     }
 
