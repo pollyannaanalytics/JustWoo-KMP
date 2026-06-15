@@ -136,14 +136,14 @@ class SettlementServiceTest {
     }
 
     @Test
-    fun `createSettlement returns InvalidCurrency for unknown code`() = runTest {
-        val request = CreateSettlementRequest(payerId, payeeId, 100.0, "ZZZ")
+    fun `createSettlement returns InvalidCurrency for malformed code`() = runTest {
+        val request = CreateSettlementRequest(payerId, payeeId, 100.0, "usd")  // lowercase — invalid format
         coEvery { houseRepo.isMember(requesterId, houseId) } returns true
 
         val result = service.createSettlement(houseId, requesterId, request)
 
         assertInstanceOf(SettlementDataResult.Error.InvalidCurrency::class.java, result)
-        assertEquals("ZZZ", (result as SettlementDataResult.Error.InvalidCurrency).code)
+        assertEquals("usd", (result as SettlementDataResult.Error.InvalidCurrency).code)
     }
 
     @Test
@@ -208,6 +208,7 @@ class SettlementServiceTest {
         val entry = balance.balances.first()
         assertEquals(payerId, entry.userId)        // Alice (debtor)
         assertEquals(payeeId, entry.counterpartId) // Bob (creditor)
+        assertEquals("TWD", entry.currencyCode)
         assertEquals(320.0, entry.netAmount, 0.01)
     }
 

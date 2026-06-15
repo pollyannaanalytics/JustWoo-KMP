@@ -1,15 +1,13 @@
 package com.pollyannawu.justwoo.android.ui.common
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.instancekeeper.InstanceKeeper
 import com.arkivanov.essenty.instancekeeper.getOrCreate
 
-/**
- * Ties a [ViewModelStore] to a Decompose component's lifecycle via [InstanceKeeper].
- * The store — and all ViewModels it holds — is cleared when the component is destroyed.
- */
 class ComponentViewModelStoreOwner(context: ComponentContext) : ViewModelStoreOwner {
 
     private val holder = context.instanceKeeper.getOrCreate(::Holder)
@@ -20,4 +18,15 @@ class ComponentViewModelStoreOwner(context: ComponentContext) : ViewModelStoreOw
         val store = ViewModelStore()
         override fun onDestroy() { store.clear() }
     }
+}
+
+private class ViewModelStoreHolder : InstanceKeeper.Instance {
+    val store = ViewModelStore()
+    override fun onDestroy() = store.clear()
+}
+
+@Composable
+fun componentViewModelStoreOwner(context: ComponentContext): ViewModelStoreOwner {
+    val holder = remember(context) { context.instanceKeeper.getOrCreate { ViewModelStoreHolder() } }
+    return remember(holder) { object : ViewModelStoreOwner { override val viewModelStore = holder.store } }
 }

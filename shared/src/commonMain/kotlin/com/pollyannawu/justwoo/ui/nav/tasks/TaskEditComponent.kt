@@ -2,7 +2,7 @@ package com.pollyannawu.justwoo.ui.nav.tasks
 
 import com.arkivanov.decompose.ComponentContext
 
-interface TaskEditComponent {
+interface TaskEditComponent : ComponentContext {
     val editingTaskId: Long?
 
     fun onSave()

@@ -11,6 +11,7 @@ class GetHouseMembersUseCase(
     private val houseRepository: HouseRepository,
 ) {
     suspend operator fun invoke(houseId: Long): List<HouseMember> {
+        houseRepository.refreshHouses()
         val houses = houseRepository.observeHouses().first()
         return houses.firstOrNull { it.id == houseId }?.members.orEmpty()
     }
