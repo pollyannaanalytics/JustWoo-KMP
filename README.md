@@ -1,3 +1,7 @@
+<div align="center">
+      <img src="Screen_recording_20260611_145434.gif" width="300" alt="App Demo">
+</div>
+
 # JustWoo — Household Task Distribution App
 
 Think of it as **Jira for your household** — assign chores to roommates, track who owes what, and settle up when it's payday.
