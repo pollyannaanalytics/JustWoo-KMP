@@ -2,7 +2,9 @@ package com.pollyannawu.justwoo.android.ui.settlement
 
 import com.pollyannawu.justwoo.core.dto.BalanceEntry
 import com.pollyannawu.justwoo.core.dto.HouseBalanceResponse
+import com.pollyannawu.justwoo.domain.usecase.auth.GetCurrentHouseIdUseCase
 import com.pollyannawu.justwoo.domain.usecase.auth.ObserveCurrentUserIdUseCase
+import com.pollyannawu.justwoo.domain.usecase.house.GetHouseMembersUseCase
 import com.pollyannawu.justwoo.domain.usecase.settlement.GetHouseBalanceUseCase
 import com.pollyannawu.justwoo.domain.usecase.settlement.ObserveSettlementsUseCase
 import com.pollyannawu.justwoo.domain.usecase.settlement.SyncSettlementsUseCase
@@ -36,6 +38,8 @@ class SettlementOverviewViewModelTest {
     private val observeSettlements: ObserveSettlementsUseCase = mockk()
     private val syncSettlements: SyncSettlementsUseCase = mockk()
     private val observeCurrentUserId: ObserveCurrentUserIdUseCase = mockk()
+    private val getHouseMembers: GetHouseMembersUseCase = mockk()
+    private val getCurrentHouseId: GetCurrentHouseIdUseCase = mockk()
 
     @Before
     fun setUp() {
@@ -43,6 +47,8 @@ class SettlementOverviewViewModelTest {
         every { observeSettlements() } returns flowOf(emptyList())
         every { observeCurrentUserId() } returns flowOf(1L)
         coEvery { syncSettlements() } returns Unit
+        coEvery { getCurrentHouseId() } returns 1L
+        coEvery { getHouseMembers(any()) } returns emptyList()
     }
 
     @After
@@ -52,7 +58,7 @@ class SettlementOverviewViewModelTest {
 
     private fun buildVm(
         getHouseBalance: GetHouseBalanceUseCase,
-    ) = SettlementOverviewViewModel(observeSettlements, syncSettlements, getHouseBalance, observeCurrentUserId)
+    ) = SettlementOverviewViewModel(observeSettlements, syncSettlements, getHouseBalance, observeCurrentUserId, getHouseMembers, getCurrentHouseId)
 
     @Test
     fun `balance loads successfully and filters to current user`() = runTest {
