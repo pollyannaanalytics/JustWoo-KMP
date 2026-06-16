@@ -115,7 +115,7 @@ fun RootContent(
                         component = child.component,
                     )
 
-                    is RootComponent.Child.AddExpense -> AddExpenseScreen(
+                    is RootComponent.Child.EditExpense -> AddExpenseScreen(
                         component = child.component,
                     )
 

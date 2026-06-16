@@ -4,7 +4,6 @@ import com.pollyannawu.justwoo.core.dto.CreateSettlementRequest
 import com.pollyannawu.justwoo.data.SettlementRepository
 import com.pollyannawu.justwoo.domain.usecase.auth.GetCurrentHouseIdUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.GetHouseMembersUseCase
-import kotlin.math.roundToInt
 
 sealed interface CreateSettlementResult {
     data object Success : CreateSettlementResult
@@ -78,8 +77,8 @@ class CreateSettlementUseCase(
         val targets = payeeIds.toList()
         if (targets.isEmpty()) return CreateSettlementResult.Success
 
-        val splitAmount = (amount / targets.size * 100).roundToInt() / 100.0
-        val remainder = (amount * 100).roundToInt() - (splitAmount * 100).roundToInt() * targets.size
+        val splitAmount = (amount / targets.size * 100).toLong() / 100.0
+        val remainder = (amount * 100).toLong() - (splitAmount * 100).toLong() * targets.size
 
         val failedIds = mutableListOf<Long>()
         targets.forEachIndexed { index, memberId ->

@@ -24,10 +24,10 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -53,7 +53,7 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun AddExpenseScreen(
     component: AddExpenseComponent,
-    viewModel: AddExpenseViewModel = koinViewModel(
+    viewModel: EditExpenseViewModel = koinViewModel(
         viewModelStoreOwner = remember(component) { ComponentViewModelStoreOwner(component) },
     ),
 ) {
@@ -171,69 +171,38 @@ fun AddExpenseScreen(
             item { Spacer(Modifier.height(JustWooSpacing.Default)) }
             item { Text("Payee", fontWeight = JustWooFontWeight.SemiBold) }
             item { Spacer(Modifier.height(JustWooSpacing.Small)) }
-            if (isEditing) {
-                item {
-                    var expanded by remember { mutableStateOf(false) }
-                    val editPayeeCandidates = state.allMembers.filter { it.userId != state.selectedPayerId }
-                    val selectedLabel = editPayeeCandidates
-                        .firstOrNull { it.userId == state.selectedPayeeId }
-                        ?.name
-                        ?: "Select payee"
-
-                    ExposedDropdownMenuBox(
-                        expanded = expanded,
-                        onExpandedChange = { expanded = it },
-                    ) {
-                        OutlinedTextField(
-                            value = selectedLabel,
-                            onValueChange = {},
-                            readOnly = true,
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
-                        )
-                        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                            editPayeeCandidates.forEach { member ->
-                                DropdownMenuItem(
-                                    text = { Text(member.name.ifBlank { "User #${member.userId}" }) },
-                                    onClick = { viewModel.onEditPayeeSelect(member.userId); expanded = false },
-                                )
-                            }
-                        }
-                    }
+            items(state.payeeMembers) { member ->
+                val displayName = member.name.ifBlank { "User #${member.userId}" }
+                val label = if (member.userId == state.currentUserId) "You ($displayName)" else displayName
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { viewModel.onPayeeToggle(member.userId) },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(
+                        checked = member.userId in state.selectedPayeeIds,
+                        onCheckedChange = { viewModel.onPayeeToggle(member.userId) },
+                    )
+                    Text(label)
                 }
-            } else {
-                items(state.payeeMembers) { member ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { viewModel.onPayeeToggle(member.userId) },
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Checkbox(
-                            checked = member.userId in state.selectedPayeeIds,
-                            onCheckedChange = { viewModel.onPayeeToggle(member.userId) },
-                        )
-                        Text(member.name.ifBlank { "User #${member.userId}" })
-                    }
-                }
-                item {
-                    if (state.selectedPayeeIds.isEmpty() && state.payeeMembers.size > 1) {
-                        Spacer(Modifier.height(JustWooSpacing.XSmall))
-                        Text(
-                            "Amount will be split equally among ${state.payeeMembers.size} members",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = JustWooColors.TextSecondary,
-                        )
-                    } else if (state.selectedPayeeIds.size > 1) {
-                        Spacer(Modifier.height(JustWooSpacing.XSmall))
-                        Text(
-                            "Amount will be split equally among ${state.selectedPayeeIds.size} selected members",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = JustWooColors.TextSecondary,
-                        )
-                    }
+            }
+            item {
+                val effectiveCount = state.effectivePayeeIds.size
+                if (effectiveCount == 0 && state.payeeMembers.size > 1) {
+                    Spacer(Modifier.height(JustWooSpacing.XSmall))
+                    Text(
+                        "Amount will be split equally among ${state.payeeMembers.size} members",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = JustWooColors.TextSecondary,
+                    )
+                } else if (effectiveCount > 1) {
+                    Spacer(Modifier.height(JustWooSpacing.XSmall))
+                    Text(
+                        "Amount will be split equally among $effectiveCount selected members",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = JustWooColors.TextSecondary,
+                    )
                 }
             }
 

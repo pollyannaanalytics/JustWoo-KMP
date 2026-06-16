@@ -9,7 +9,7 @@ interface AddExpenseComponent : ComponentContext {
     fun onOpenCurrencyPicker(onResult: (String) -> Unit)
 }
 
-class DefaultAddExpenseComponent(
+class DefaultEditExpenseComponent(
     componentContext: ComponentContext,
     override val editingSettlementId: Long? = null,
     private val onFinished: () -> Unit,
