@@ -1,5 +1,7 @@
 package com.pollyannawu.justwoo.data.network.service
 
+import com.pollyannawu.justwoo.core.dto.EmailInvitationRequest
+import com.pollyannawu.justwoo.core.dto.EmailInvitationResponse
 import com.pollyannawu.justwoo.core.dto.InviteCodeResponse
 import com.pollyannawu.justwoo.core.dto.JoinRequestBody
 import com.pollyannawu.justwoo.core.dto.JoinRequestDecision
@@ -15,6 +17,7 @@ import io.ktor.client.request.setBody
 
 interface HouseInviteApiService {
     suspend fun generateInviteCode(houseId: Long): ApiResult<InviteCodeResponse>
+    suspend fun createEmailInvitation(houseId: Long, email: String): ApiResult<EmailInvitationResponse>
     suspend fun submitJoinRequest(inviteCode: String): ApiResult<JoinRequestResponse>
     suspend fun getPendingRequests(houseId: Long): ApiResult<List<JoinRequestResponse>>
     suspend fun processJoinRequest(requestId: Long, approve: Boolean): ApiResult<JoinRequestResponse>
@@ -28,6 +31,13 @@ class DefaultHouseInviteApiService(
     override suspend fun generateInviteCode(houseId: Long): ApiResult<InviteCodeResponse> =
         safeApiCall(tag = "HouseInviteApi.generateInviteCode") {
             ktorClient.post("/houses/$houseId/invite-codes").body()
+        }
+
+    override suspend fun createEmailInvitation(houseId: Long, email: String): ApiResult<EmailInvitationResponse> =
+        safeApiCall(tag = "HouseInviteApi.createEmailInvitation") {
+            ktorClient.post("/houses/$houseId/invitations") {
+                setBody(EmailInvitationRequest(email = email))
+            }.body()
         }
 
     override suspend fun submitJoinRequest(inviteCode: String): ApiResult<JoinRequestResponse> =

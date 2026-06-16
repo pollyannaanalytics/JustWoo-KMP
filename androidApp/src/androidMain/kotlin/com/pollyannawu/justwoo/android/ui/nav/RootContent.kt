@@ -17,6 +17,7 @@ import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import com.pollyannawu.justwoo.android.ui.home.HomeScreen
 import com.pollyannawu.justwoo.android.ui.home.HouseInfoScreen
+import com.pollyannawu.justwoo.android.ui.house.InviteByEmailScreen
 import com.pollyannawu.justwoo.android.ui.nav.house.HouseOnboardingContent
 import com.pollyannawu.justwoo.android.ui.nav.tasks.TaskContent
 import com.pollyannawu.justwoo.android.ui.nav.tasks.TaskQuickStatusOverlay
@@ -109,6 +110,11 @@ fun RootContent(
 
                     is RootComponent.Child.HouseInfo -> HouseInfoScreen(
                         component = child.component,
+                    )
+
+                    is RootComponent.Child.InviteByEmail -> InviteByEmailScreen(
+                        houseId = child.houseId,
+                        onBack = { component.onHouseInfoClick() },
                     )
 
                     is RootComponent.Child.Settlement -> SettlementOverviewScreen(
