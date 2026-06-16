@@ -60,20 +60,48 @@ Implement tasks from an OpenSpec change.
    - Remaining tasks overview
    - Dynamic instruction from CLI
 
-6. **Implement tasks (loop until done or blocked)**
+6. **Implement tasks (vertical slice, dispatched to platform subagents)**
 
-   For each pending task:
-   - Show which task is being worked on
-   - Make the code changes required
-   - Keep changes minimal and focused
-   - Mark task complete in the tasks file: `- [ ]` → `- [x]`
-   - Continue to next task
+   JustWoo development is **vertical slice**: for each feature, finish backend → shared/kmp → android → verify before moving on to the next feature. **Do NOT do all backend tasks first and then all Android tasks** — that horizontal pattern is what this flow exists to prevent.
+
+   **Default slice order:** `backend` → `kmp` → `android` → `verify`. **iOS is opt-in** — only include it when tasks explicitly tag it (or the change description names iOS).
+
+   **Detecting which slice each task belongs to.** Use task tags first, then path heuristics, then ask if ambiguous:
+
+   | Slice | Tag (preferred) | Path hint |
+   |:---|:---|:---|
+   | `backend` | `[backend]` | `backend/**` |
+   | `kmp` | `[kmp]` or `[shared]` | `shared/**`, `core/**` |
+   | `android` | `[android]` or `[aos]` | `androidApp/**` |
+   | `ios` | `[ios]` | `iosApp/**`, `shared/src/iosMain/**` |
+   | `verify` | `[verify]` | manual / cross-stack run |
+
+   **For each feature group in tasks.md, loop through the slice in order.** For every pending task in the current slice step:
+
+   - Show: `Feature X — slice step (Y/4): <slice-name>`, then the task description.
+   - **Dispatch to the matching platform subagent** via the Agent tool:
+     - `backend` → `subagent_type: "backend-best-practice"`
+     - `kmp` → `subagent_type: "kmp-best-practice"`
+     - `android` → `subagent_type: "aos-best-practice"`
+     - `ios` → `subagent_type: "ios-best-practice"` (opt-in)
+     - `verify` → handle inline (run gradle tests, hit the app, etc.) — no subagent.
+   - The prompt to the subagent must be self-contained: include the task text, the relevant artifact excerpts (proposal / design / spec sections that scope this task), and a reminder to load its SKILL.md first.
+   - When the subagent returns, read its hand-off note and pass anything load-bearing to the next slice step (e.g. backend DTOs that kmp will consume; kmp UseCase names that android will inject).
+   - Mark the task complete in tasks.md: `- [ ]` → `- [x]`.
+
+   **After finishing all tasks in a feature group**, do a `verify` step before starting the next feature:
+   - Run the relevant gradle tests for what changed (`:backend:test`, `:shared:allTests`, `:androidApp:testDebugUnitTest`).
+   - If the change is UI-facing, run the app or open the `@Preview`.
+   - Only move to the next feature when the slice is green.
 
    **Pause if:**
-   - Task is unclear → ask for clarification
-   - Implementation reveals a design issue → suggest updating artifacts
-   - Error or blocker encountered → report and wait for guidance
-   - User interrupts
+   - A task crosses slice boundaries (e.g. asks one subagent to edit another's scope) → split the task or re-dispatch.
+   - Task is unclear → ask for clarification.
+   - Implementation reveals a design issue → suggest updating artifacts.
+   - Error or blocker encountered → report and wait for guidance.
+   - User interrupts.
+
+   **If tasks.md is structured horizontally** (all backend tasks grouped, then all android tasks), do not silently flatten it. Tell the user the task ordering will be re-interleaved per feature and confirm before proceeding — or offer to regenerate tasks.md with vertical grouping via `/opsx:propose`.
 
 7. **On completion or pause, show status**
 
@@ -143,6 +171,8 @@ What would you like to do?
 - Update task checkbox immediately after completing each task
 - Pause on errors, blockers, or unclear requirements - don't guess
 - Use contextFiles from CLI output, don't assume specific file names
+- **Vertical, not horizontal.** Finish one feature's full slice (backend → kmp → android → verify) before starting the next feature. Dispatch each slice step to its platform subagent.
+- **Do not edit code in the main agent for platform-scoped tasks.** If a task is `[backend]`, `[kmp]`, `[android]`, or `[ios]`, route it through the matching subagent so the SKILL rules and scope guardrails apply. The main agent only orchestrates and runs verify steps.
 
 **Fluid Workflow Integration**
 
