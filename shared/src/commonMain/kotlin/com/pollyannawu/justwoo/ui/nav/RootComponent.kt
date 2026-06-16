@@ -29,7 +29,7 @@ import com.pollyannawu.justwoo.ui.nav.profile.ProfileComponent
 import com.pollyannawu.justwoo.ui.nav.profile.ProfileViewComponent
 import com.pollyannawu.justwoo.ui.nav.settlement.AddExpenseComponent
 import com.pollyannawu.justwoo.ui.nav.settlement.CurrencyPickerComponent
-import com.pollyannawu.justwoo.ui.nav.settlement.DefaultAddExpenseComponent
+import com.pollyannawu.justwoo.ui.nav.settlement.DefaultEditExpenseComponent
 import com.pollyannawu.justwoo.ui.nav.settlement.DefaultCurrencyPickerComponent
 import com.pollyannawu.justwoo.ui.nav.settlement.DefaultSettlementComponent
 import com.pollyannawu.justwoo.ui.nav.settlement.SettlementComponent
@@ -68,7 +68,7 @@ interface RootComponent {
         class HouseOnboarding(val component: HouseOnboardingComponent) : Child
         class HouseInfo(val component: HouseInfoComponent) : Child
         class Settlement(val component: SettlementComponent) : Child
-        class AddExpense(val component: AddExpenseComponent) : Child
+        class EditExpense(val component: AddExpenseComponent) : Child
         class CurrencyPicker(val component: CurrencyPickerComponent) : Child
     }
 }
@@ -173,11 +173,11 @@ class DefaultRootComponent(
     }
 
     override fun onAddExpenseClick() {
-        navigation.push(Config.AddExpense())
+        navigation.push(Config.EditExpense())
     }
 
     override fun onEditExpenseClick(settlementId: Long) {
-        navigation.push(Config.AddExpense(settlementId = settlementId))
+        navigation.push(Config.EditExpense(settlementId = settlementId))
     }
 
     private fun createChild(
@@ -237,13 +237,13 @@ class DefaultRootComponent(
             DefaultSettlementComponent(
                 componentContext = childContext,
                 onFinished = { navigation.pop() },
-                onNavigateToAddExpense = { navigation.push(Config.AddExpense()) },
-                onNavigateToEditExpense = { settlementId -> navigation.push(Config.AddExpense(settlementId = settlementId)) },
+                onNavigateToAddExpense = { navigation.push(Config.EditExpense()) },
+                onNavigateToEditExpense = { settlementId -> navigation.push(Config.EditExpense(settlementId = settlementId)) },
             ),
         )
 
-        is Config.AddExpense -> RootComponent.Child.AddExpense(
-            DefaultAddExpenseComponent(
+        is Config.EditExpense -> RootComponent.Child.EditExpense(
+            DefaultEditExpenseComponent(
                 componentContext = childContext,
                 editingSettlementId = config.settlementId,
                 onFinished = { navigation.pop() },
@@ -300,7 +300,7 @@ class DefaultRootComponent(
         @Serializable
         data object Settlement : Config
         @Serializable
-        data class AddExpense(val settlementId: Long? = null) : Config
+        data class EditExpense(val settlementId: Long? = null) : Config
         @Serializable
         data object CurrencyPicker : Config
     }
