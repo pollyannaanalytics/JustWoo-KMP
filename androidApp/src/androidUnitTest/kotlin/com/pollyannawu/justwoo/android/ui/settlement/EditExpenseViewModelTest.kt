@@ -3,20 +3,15 @@ package com.pollyannawu.justwoo.android.ui.settlement
 import com.pollyannawu.justwoo.core.HouseMember
 import com.pollyannawu.justwoo.core.MemberRole
 import com.pollyannawu.justwoo.core.Settlement
-import com.pollyannawu.justwoo.domain.usecase.auth.GetCurrentHouseIdUseCase
-import com.pollyannawu.justwoo.domain.usecase.auth.ObserveCurrentUserIdUseCase
-import com.pollyannawu.justwoo.domain.usecase.house.GetHouseMembersUseCase
-import com.pollyannawu.justwoo.domain.usecase.settlement.CreateSettlementResult
-import com.pollyannawu.justwoo.domain.usecase.settlement.CreateSettlementUseCase
-import com.pollyannawu.justwoo.domain.usecase.settlement.GetSettlementByIdUseCase
-import com.pollyannawu.justwoo.domain.usecase.settlement.UpdateSettlementResult
-import com.pollyannawu.justwoo.domain.usecase.settlement.UpdateSettlementUseCase
+import com.pollyannawu.justwoo.domain.usecase.settlement.EditExpenseInitData
+import com.pollyannawu.justwoo.domain.usecase.settlement.LoadEditExpenseResult
+import com.pollyannawu.justwoo.domain.usecase.settlement.LoadEditExpenseUseCase
+import com.pollyannawu.justwoo.domain.usecase.settlement.SaveExpenseResult
+import com.pollyannawu.justwoo.domain.usecase.settlement.SaveExpenseUseCase
 import io.mockk.coEvery
-import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -33,26 +28,26 @@ import org.junit.Before
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class AddExpenseViewModelTest {
+class EditExpenseViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
 
-    private val createSettlement: CreateSettlementUseCase = mockk()
-    private val getHouseMembers: GetHouseMembersUseCase = mockk()
-    private val getCurrentHouseId: GetCurrentHouseIdUseCase = mockk()
-    private val observeCurrentUserId: ObserveCurrentUserIdUseCase = mockk()
-    private val getSettlementById: GetSettlementByIdUseCase = mockk()
-    private val updateSettlement: UpdateSettlementUseCase = mockk()
+    private val loadEditExpense: LoadEditExpenseUseCase = mockk()
+    private val saveExpense: SaveExpenseUseCase = mockk()
 
     private val currentUser = HouseMember(houseId = 1L, userId = 1L, name = "Alice", role = MemberRole.ADMIN, joinedAt = Clock.System.now())
     private val member = HouseMember(houseId = 1L, userId = 2L, name = "Bob", role = MemberRole.MEMBER, joinedAt = Clock.System.now())
 
+    private val defaultInitData = EditExpenseInitData(
+        currentUserId = 1L,
+        allMembers = listOf(currentUser, member),
+        existingSettlement = null,
+    )
+
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        every { getCurrentHouseId() } returns 1L
-        every { observeCurrentUserId() } returns flowOf(1L)
-        coEvery { getHouseMembers(1L) } returns listOf(currentUser, member)
+        coEvery { loadEditExpense(null) } returns LoadEditExpenseResult.Success(defaultInitData)
     }
 
     @After
@@ -60,9 +55,7 @@ class AddExpenseViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun buildVm() = AddExpenseViewModel(
-        createSettlement, getHouseMembers, getCurrentHouseId, observeCurrentUserId, getSettlementById, updateSettlement,
-    )
+    private fun buildVm() = EditExpenseViewModel(loadEditExpense, saveExpense)
 
     @Test
     fun `canSubmit is false when amount is empty`() = runTest {
@@ -103,7 +96,7 @@ class AddExpenseViewModelTest {
 
     @Test
     fun `submit specific payee succeeds and sets saved`() = runTest {
-        coEvery { createSettlement(any(), any(), any(), any(), any()) } returns CreateSettlementResult.Success
+        coEvery { saveExpense.create(any(), any(), any(), any(), any()) } returns SaveExpenseResult.Success
         val vm = buildVm()
         vm.bind(null)
         vm.onAmountChange("100")
@@ -117,7 +110,7 @@ class AddExpenseViewModelTest {
 
     @Test
     fun `submit house-wide partial failure sets partialFailureIds`() = runTest {
-        coEvery { createSettlement(any(), emptySet(), any(), any(), any()) } returns CreateSettlementResult.PartialFailure(listOf(2L))
+        coEvery { saveExpense.create(any(), emptySet(), any(), any(), any()) } returns SaveExpenseResult.PartialFailure(listOf(2L))
         val vm = buildVm()
         vm.bind(null)
         vm.onAmountChange("90")
@@ -148,7 +141,7 @@ class AddExpenseViewModelTest {
 
     @Test
     fun `onAmountChange clears existing error`() = runTest {
-        coEvery { createSettlement(any(), any(), any(), any(), any()) } returns CreateSettlementResult.Failure("some error")
+        coEvery { saveExpense.create(any(), any(), any(), any(), any()) } returns SaveExpenseResult.Failure("some error")
         val vm = buildVm()
         vm.bind(null)
         vm.onAmountChange("100")
@@ -173,7 +166,7 @@ class AddExpenseViewModelTest {
 
     @Test
     fun `submit api failure shows error message from result`() = runTest {
-        coEvery { createSettlement(any(), any(), any(), any(), any()) } returns CreateSettlementResult.Failure("Amount must be greater than zero")
+        coEvery { saveExpense.create(any(), any(), any(), any(), any()) } returns SaveExpenseResult.Failure("Amount must be greater than zero")
         val vm = buildVm()
         vm.bind(null)
         vm.onAmountChange("333")
@@ -187,14 +180,13 @@ class AddExpenseViewModelTest {
 
     @Test
     fun `isLoading true during submit then cleared on success`() = runTest {
-        coEvery { createSettlement(any(), any(), any(), any(), any()) } returns CreateSettlementResult.Success
+        coEvery { saveExpense.create(any(), any(), any(), any(), any()) } returns SaveExpenseResult.Success
         val vm = buildVm()
         vm.bind(null)
         vm.onAmountChange("50")
         vm.onPayeeToggle(2L)
         advanceUntilIdle()
         vm.submit()
-        // loading starts before coroutine finishes
         assertTrue(vm.uiState.value.isLoading)
         advanceUntilIdle()
         assertFalse(vm.uiState.value.isLoading)
@@ -202,7 +194,7 @@ class AddExpenseViewModelTest {
 
     @Test
     fun `consumeSaved resets saved flag`() = runTest {
-        coEvery { createSettlement(any(), any(), any(), any(), any()) } returns CreateSettlementResult.Success
+        coEvery { saveExpense.create(any(), any(), any(), any(), any()) } returns SaveExpenseResult.Success
         val vm = buildVm()
         vm.bind(null)
         vm.onAmountChange("100")
@@ -242,11 +234,11 @@ class AddExpenseViewModelTest {
     }
 
     @Test
-    fun `submit passes selectedPayerId to createSettlement`() = runTest {
+    fun `submit passes selectedPayerId to saveExpense`() = runTest {
         var capturedPayerId: Long? = null
-        coEvery { createSettlement(any(), any(), any(), any(), any()) } answers {
+        coEvery { saveExpense.create(any(), any(), any(), any(), any()) } answers {
             capturedPayerId = firstArg()
-            CreateSettlementResult.Success
+            SaveExpenseResult.Success
         }
         val vm = buildVm()
         vm.bind(null)
@@ -271,12 +263,12 @@ class AddExpenseViewModelTest {
     }
 
     @Test
-    fun `submit passes selectedPayeeIds to createSettlement`() = runTest {
+    fun `submit passes selectedPayeeIds to saveExpense`() = runTest {
         var capturedPayeeIds: Set<Long>? = null
-        coEvery { createSettlement(any(), any(), any(), any(), any()) } answers {
+        coEvery { saveExpense.create(any(), any(), any(), any(), any()) } answers {
             @Suppress("UNCHECKED_CAST")
             capturedPayeeIds = secondArg<Set<Long>>()
-            CreateSettlementResult.Success
+            SaveExpenseResult.Success
         }
         val vm = buildVm()
         vm.bind(null)
@@ -296,9 +288,15 @@ class AddExpenseViewModelTest {
         createTime = Clock.System.now(),
     )
 
+    private fun stubEditLoad() {
+        coEvery { loadEditExpense(5L) } returns LoadEditExpenseResult.Success(
+            defaultInitData.copy(existingSettlement = editingSettlement)
+        )
+    }
+
     @Test
     fun `bind with settlementId loads settlement into state`() = runTest {
-        coEvery { getSettlementById(5L) } returns editingSettlement
+        stubEditLoad()
         val vm = buildVm()
         vm.bind(5L)
         advanceUntilIdle()
@@ -306,29 +304,30 @@ class AddExpenseViewModelTest {
         val state = vm.uiState.value
         assertTrue(state.isEditing)
         assertEquals(5L, state.editingSettlementId)
-        assertEquals("250.0", state.amount)
+        assertEquals("250", state.amount)
         assertEquals("USD", state.currencyCode)
         assertEquals("dinner", state.note)
         assertEquals(1L, state.selectedPayerId)
-        assertEquals(2L, state.selectedPayeeId)
+        assertEquals(setOf(2L), state.selectedPayeeIds)
     }
 
     @Test
-    fun `canSubmit is false in edit mode when payee equals payer`() = runTest {
-        coEvery { getSettlementById(5L) } returns editingSettlement
+    fun `canSubmit is false in edit mode when all selected payees equal payer`() = runTest {
+        stubEditLoad()
         val vm = buildVm()
         vm.bind(5L)
         advanceUntilIdle()
         assertTrue(vm.uiState.value.canSubmit)
 
-        vm.onEditPayeeSelect(1L)
+        vm.onPayeeToggle(2L)
+        vm.onPayeeToggle(1L)
         assertFalse(vm.uiState.value.canSubmit)
     }
 
     @Test
-    fun `submit in edit mode calls updateSettlement and sets saved`() = runTest {
-        coEvery { getSettlementById(5L) } returns editingSettlement
-        coEvery { updateSettlement(any(), any(), any(), any(), any(), any()) } returns UpdateSettlementResult.Success
+    fun `submit in edit mode calls saveExpense update and sets saved`() = runTest {
+        stubEditLoad()
+        coEvery { saveExpense.update(any(), any(), any(), any(), any(), any()) } returns SaveExpenseResult.Success
         val vm = buildVm()
         vm.bind(5L)
         advanceUntilIdle()
@@ -341,8 +340,8 @@ class AddExpenseViewModelTest {
 
     @Test
     fun `submit in edit mode failure sets error`() = runTest {
-        coEvery { getSettlementById(5L) } returns editingSettlement
-        coEvery { updateSettlement(any(), any(), any(), any(), any(), any()) } returns UpdateSettlementResult.Failure("Forbidden")
+        stubEditLoad()
+        coEvery { saveExpense.update(any(), any(), any(), any(), any(), any()) } returns SaveExpenseResult.Failure("Forbidden")
         val vm = buildVm()
         vm.bind(5L)
         advanceUntilIdle()
@@ -354,12 +353,17 @@ class AddExpenseViewModelTest {
     }
 
     @Test
-    fun `onEditPayeeSelect updates selectedPayeeId in edit mode`() = runTest {
-        coEvery { getSettlementById(5L) } returns editingSettlement
+    fun `onPayeeToggle adds and removes payees in edit mode`() = runTest {
+        stubEditLoad()
         val vm = buildVm()
         vm.bind(5L)
         advanceUntilIdle()
-        vm.onEditPayeeSelect(2L)
-        assertEquals(2L, vm.uiState.value.selectedPayeeId)
+        assertEquals(setOf(2L), vm.uiState.value.selectedPayeeIds)
+
+        vm.onPayeeToggle(3L)
+        assertEquals(setOf(2L, 3L), vm.uiState.value.selectedPayeeIds)
+
+        vm.onPayeeToggle(2L)
+        assertEquals(setOf(3L), vm.uiState.value.selectedPayeeIds)
     }
 }

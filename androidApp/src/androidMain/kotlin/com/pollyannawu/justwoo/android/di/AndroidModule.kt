@@ -11,7 +11,7 @@ import com.pollyannawu.justwoo.android.ui.house.PendingRequestsViewModel
 import com.pollyannawu.justwoo.android.ui.home.HouseInfoViewModel
 import com.pollyannawu.justwoo.android.ui.profile.ProfileEditViewModel
 import com.pollyannawu.justwoo.android.ui.profile.ProfileViewViewModel
-import com.pollyannawu.justwoo.android.ui.settlement.AddExpenseViewModel
+import com.pollyannawu.justwoo.android.ui.settlement.EditExpenseViewModel
 import com.pollyannawu.justwoo.android.ui.settlement.SettlementOverviewViewModel
 import com.pollyannawu.justwoo.android.ui.task.CreateTaskViewModel
 import com.pollyannawu.justwoo.android.ui.task.TaskExplorationViewModel
@@ -54,7 +54,9 @@ import com.pollyannawu.justwoo.domain.usecase.settlement.CreateSettlementUseCase
 import com.pollyannawu.justwoo.domain.usecase.settlement.DefaultGetHouseBalanceUseCase
 import com.pollyannawu.justwoo.domain.usecase.settlement.GetHouseBalanceUseCase
 import com.pollyannawu.justwoo.domain.usecase.settlement.GetSettlementByIdUseCase
+import com.pollyannawu.justwoo.domain.usecase.settlement.LoadEditExpenseUseCase
 import com.pollyannawu.justwoo.domain.usecase.settlement.ObserveSettlementsUseCase
+import com.pollyannawu.justwoo.domain.usecase.settlement.SaveExpenseUseCase
 import com.pollyannawu.justwoo.domain.usecase.settlement.SyncSettlementsUseCase
 import com.pollyannawu.justwoo.domain.usecase.settlement.UpdateSettlementUseCase
 import com.pollyannawu.justwoo.domain.usecase.task.CreateTaskUseCase
@@ -148,6 +150,8 @@ val androidModule = module {
     factory { CreateSettlementUseCase(get<SettlementRepository>(), get(), get()) }
     factory { GetSettlementByIdUseCase(get()) }
     factory { UpdateSettlementUseCase(get<SettlementRepository>(), get()) }
+    factory { LoadEditExpenseUseCase(get(), get(), get(), get()) }
+    factory { SaveExpenseUseCase(get(), get()) }
 
     viewModel { MainViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { SignInViewModel(get()) }
@@ -162,6 +166,6 @@ val androidModule = module {
     viewModel { GenerateInviteCodeViewModel(get(), get(), get(), get()) }
     viewModel { PendingRequestsViewModel(get(), get(), get(), get()) }
     viewModel { HouseInfoViewModel(get(), get()) }
-    viewModel { SettlementOverviewViewModel(get(), get(), get(), get()) }
-    viewModel { AddExpenseViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel { SettlementOverviewViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel { EditExpenseViewModel(get(), get()) }
 }
