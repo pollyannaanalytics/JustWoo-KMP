@@ -555,6 +555,42 @@ paths:
         "404":
           description: Profile not found
 
+  # ── Email Invitations ─────────────────────────────────
+  /houses/{houseId}/invitations:
+    post:
+      tags: [Invitations]
+      summary: Create an email-targeted invitation
+      description: >-
+        Admin creates an email-targeted invitation for a specific person.
+        Generates a random 8-char code scoped to that email, valid for 7 days.
+        Any existing non-expired invitation for the same house+email is invalidated.
+      operationId: createEmailInvitation
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/houseId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailInvitationRequest"
+      responses:
+        "200":
+          description: Invitation created, code returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmailInvitationResponse"
+        "400":
+          description: Invalid or missing email
+        "401":
+          description: Unauthorized
+        "403":
+          description: Caller is not an ADMIN of this house
+        "404":
+          description: House not found
+
   # ── Health ────────────────────────────────────────────
   /hello:
     get:
@@ -990,6 +1026,35 @@ components:
         note:
           type: string
         createTime:
+          type: string
+          format: date-time
+
+    EmailInvitationRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+          example: "friend@example.com"
+
+    EmailInvitationResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        houseId:
+          type: integer
+          format: int64
+        houseName:
+          type: string
+        houseAvatar:
+          type: string
+        code:
+          type: string
+          example: "A1B2C3D4"
+        expiresAt:
           type: string
           format: date-time
 

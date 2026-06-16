@@ -20,7 +20,7 @@ import org.koin.dsl.module
 
 val servicesModule = module {
     single<HouseService>{ DefaultHouseService(get(), get()) }
-    single<HouseInviteService> { DefaultHouseInviteService(get(), get(), get()) }
+    single<HouseInviteService> { DefaultHouseInviteService(get(), get(), get(), get()) }
     single<TaskService>{ DefaultTaskService(get(), get(), get()) }
     single<AuthService> { DefaultAuthService(get(), get(), get(), get(), get(), get()) }
     single<ProfileService> { DefaultProfileService(get()) }
