@@ -1,8 +1,8 @@
+# JustWoo — Household Task Distribution App
+
 <div align="center">
       <img src="Screen_recording_20260611_145434.gif" width="300" alt="App Demo">
 </div>
-
-# JustWoo — Household Task Distribution App
 
 Think of it as **Jira for your household** — assign chores to roommates, track who owes what, and settle up when it's payday.
 
@@ -24,13 +24,13 @@ A **full-stack Kotlin Multiplatform** application for household task management 
 
 - [Tech Stack](#tech-stack)
 - [Architecture Overview](#architecture-overview)
+- [AI-Assisted Development](#ai-assisted-development)
 - [Technical Decisions](#technical-decisions)
 - [Backend API](#backend-api)
 - [Database Schema](#database-schema)
 - [Getting Started](#getting-started)
 - [CI/CD](#cicd)
 - [Production Infrastructure](#production-infrastructure)
-- [Claude Code Skills](#claude-code-skills)
 - [Project Status](#project-status)
 
 ---
@@ -118,6 +118,70 @@ graph TD
 | **`:core`** | Shared DTOs and domain models, compiled for all targets. Acts as the API contract between server and clients — a field change breaks compilation on both sides, preventing runtime mismatches. |
 | **`:shared`** | Platform-agnostic business logic. Defines `DataSource` interfaces for local persistence and `Repository` implementations that coordinate between network and local storage. Each platform provides its own `DataSource` implementation using native database solutions. |
 | **`:backend`** | Ktor server with layered architecture: routes handle HTTP, services encapsulate business rules, repositories manage data access via Exposed ORM against PostgreSQL. Redis handles session tokens and login attempt rate limiting. |
+
+---
+
+## AI-Assisted Development
+
+Claude Code is treated as a structured collaborator. A spec-driven workflow (`/opsx`) plans the change, then dispatches each **vertical slice** — backend → shared → Android → verify — to a platform-scoped subagent that loads only the rules for its layer. Cross-stack non-negotiables (TDD, Swagger contract, sealed result types, ISO 4217 currency) live in [`CLAUDE.md`](CLAUDE.md).
+
+```mermaid
+flowchart LR
+    Propose["/opsx:propose<br/>proposal · design · tasks"]
+    Ship["🚢 git-pr-flow<br/>PR → develop → merge"]
+    Archive["/opsx:archive"]
+
+    subgraph Slice["/opsx:apply — one feature end-to-end"]
+        direction LR
+        BE["🖥 backend"]
+        KMP["🔗 shared / kmp"]
+        AOS["🤖 android"]
+        IOS["🍎 ios"]
+        Verify["✅ verify"]
+        BE --> KMP --> AOS --> Verify
+        AOS -. opt-in .-> IOS -. opt-in .-> Verify
+    end
+
+    Propose --> Slice --> Ship --> Archive
+```
+
+A feature lands end-to-end before the next one starts — no horizontal “all backend, then all Android” phases. iOS is opt-in. Shipping runs through `git-pr-flow`, which gates the PR on green build + clean rebase against `develop`/`main` and verifies every merge action.
+
+### Platform subagents
+
+Each slice step runs in its own subagent so only the relevant rules load into context.
+
+| Subagent | Scope | Enforces |
+|:---|:---|:---|
+| `backend-best-practice` | `backend/**`, `openapi/**` | Ktor layering · TDD · Swagger as contract |
+| `kmp-best-practice` | `shared/**`, `core/**` | Cross-stack DTOs · UseCases · sealed results |
+| `aos-best-practice` | `androidApp/**` | Decompose · Compose · Koin · coroutines |
+| `ios-best-practice` | `iosApp/**`, `shared/iosMain/**` | SwiftUI ↔ Decompose binding |
+| `build-verifier` | gradle targets inferred from diff | Compile + test pass/fail report |
+
+### Path-triggered skills
+
+Auto-load when matching files are edited — no manual invocation.
+
+| Worker skill | Trigger | Focus |
+|:---|:---|:---|
+| `compose-authoring` | `androidApp/**/ui/**/*.kt` | One `@Composable` per file, mandatory `@Preview`, state hoisting |
+| `decompose-nav` | `**/ui/nav/**`, `*Component.kt` | Component+Content pattern, `@Serializable` configs |
+
+| Feature skill | Domain invariants |
+|:---|:---|
+| `feature-auth` | Bcrypt only · JWT 1h + Redis refresh 7d · rate-limited login |
+| `feature-house` | ADMIN/MEMBER roles · last-admin protection · single-use invite TTL |
+| `feature-task` | House-scoped · status state machine · optional price + ISO 4217 currency |
+| `feature-settlement` | Immutable ledger · `payerId ≠ payeeId` · multi-currency balance |
+
+### Intent-triggered skills
+
+Load when the user's request matches the workflow, not the file path.
+
+| Skill | Trigger phrases | Enforces |
+|:---|:---|:---|
+| `git-pr-flow` | "open a PR", "送 PR", "merge the PR", "幫我 merge" | Pre-PR: build + tests green, no conflict against `develop`/`main`. PR target is always `develop`. Post-merge: re-read `gh pr view` state and fix anything left red instead of trusting the exit code. |
 
 ---
 
@@ -378,48 +442,6 @@ ssh -L 9000:localhost:9000 -i ~/.ssh/your-key.pem ubuntu@your-server-ip
 # Then open in browser
 http://localhost:9000
 ```
-
----
-
-## Claude Code Skills
-
-This repo ships with a `.claude/skills/` directory that codifies the project's conventions for AI coding assistants. The full set of non-negotiable rules — TDD by default, Swagger as the API contract, money as ISO 4217 string, sealed result types — lives in [`CLAUDE.md`](CLAUDE.md). Each skill below extends that baseline for its scope. Skills auto-trigger by file path (`paths:` frontmatter) so only the relevant rules load into context.
-
-### Worker — best-practice rules per platform
-
-Defines the engineering shape of each module. Loads when you edit files under that scope.
-
-| Skill | Scope | Auto-triggers on |
-|:---|:---|:---|
-| `backend-best-practice` | Ktor + Exposed + Postgres + Redis, layered routes/service/repository, Swagger mandatory | `backend/src/**/*.kt`, `openapi/**` |
-| `aos-best-practice` | Android non-Composable code — Components, ViewModels, Koin, coroutines | `androidApp/**/*.kt` |
-| `ios-best-practice` | SwiftUI bound to Decompose Components, Keychain, ISO 4217 display | `iosApp/**`, `shared/src/iosMain/**` |
-| `kmp-best-practice` | `:core` cross-stack contract, `shared/commonMain` UseCases, `expect`/`actual` discipline | `shared/src/**`, `core/**` |
-| `compose-authoring` | One `@Composable` per file, mandatory `@Preview`, state hoisting, design tokens | `androidApp/**/ui/**/*.kt` |
-| `decompose-nav` | Component + Content pattern, `@Serializable` configs, no `NavController` | `**/ui/nav/**`, `*Component.kt` |
-
-### Feature context — domain invariants
-
-Pins the business rules that must survive any refactor in that domain.
-
-| Skill | Invariants enforced |
-|:---|:---|
-| `feature-auth` | Bcrypt only, JWT 1h + Redis refresh 7d, rate-limited login, generic auth errors (no email enumeration) |
-| `feature-house` | `ADMIN` / `MEMBER` roles, last-admin protection, invite codes single-use + TTL, no cross-house data leakage |
-| `feature-task` | House-scoped, owner/executor/assignee role split, status state machine, optional `price` + mandatory `currencyCode` when present |
-| `feature-settlement` | Immutable ledger, `payerId ≠ payeeId`, multi-currency balance via `BigDecimal`, decoupled from `Task` |
-
-### Agent — runs in a forked subagent
-
-Skills with `context: fork` execute in an isolated subagent and return a concise report, keeping the main conversation clean.
-
-| Skill | Purpose |
-|:---|:---|
-| `build-verifier` | Picks gradle targets from `git diff` (or an explicit arg), runs compile + tests, returns pass/fail with the first error block per target. Use after non-trivial edits, before declaring done. |
-
-### How they fit together
-
-When you edit `backend/.../service/SettlementService.kt`, `backend-best-practice` and `feature-settlement` both auto-load — the worker skill enforces layering and TDD flow, the feature skill enforces the domain invariants. Once the change is in place, invoke `/build-verifier` (or let Claude trigger it) to confirm the targets compile and tests pass.
 
 ---
 
