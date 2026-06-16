@@ -147,6 +147,7 @@ fun SettlementOverviewScreen(
                         SettlementHistoryItem(
                             settlement = settlement,
                             currentUserId = state.currentUserId,
+                            memberNames = state.memberNames,
                             onClick = { component.onEditSettlement(settlement.id) },
                         )
                     }
@@ -303,7 +304,12 @@ private data class BalanceRowStyle(
 )
 
 @Composable
-private fun SettlementHistoryItem(settlement: Settlement, currentUserId: Long?, onClick: () -> Unit) {
+private fun SettlementHistoryItem(
+    settlement: Settlement,
+    currentUserId: Long?,
+    memberNames: Map<Long, String>,
+    onClick: () -> Unit,
+) {
     val date = settlement.createTime.toLocalDateTime(TimeZone.currentSystemDefault()).date
 
     val isPayer = currentUserId != null && settlement.payerId == currentUserId
@@ -320,8 +326,8 @@ private fun SettlementHistoryItem(settlement: Settlement, currentUserId: Long?, 
         else -> JustWooColors.TextPrimary
     }
 
-    val payerLabel = if (isPayer) "You" else "#${settlement.payerId}"
-    val payeeLabel = if (isPayee) "You" else "#${settlement.payeeId}"
+    val payerLabel = if (isPayer) "You" else memberNames[settlement.payerId] ?: "#${settlement.payerId}"
+    val payeeLabel = if (isPayee) "You" else memberNames[settlement.payeeId] ?: "#${settlement.payeeId}"
 
     Row(
         modifier = Modifier

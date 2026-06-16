@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pollyannawu.justwoo.core.Settlement
 import com.pollyannawu.justwoo.core.dto.BalanceEntry
+import com.pollyannawu.justwoo.domain.usecase.auth.GetCurrentHouseIdUseCase
 import com.pollyannawu.justwoo.domain.usecase.auth.ObserveCurrentUserIdUseCase
+import com.pollyannawu.justwoo.domain.usecase.house.GetHouseMembersUseCase
 import kotlinx.coroutines.flow.first
 import com.pollyannawu.justwoo.domain.usecase.settlement.GetHouseBalanceUseCase
 import com.pollyannawu.justwoo.domain.usecase.settlement.ObserveSettlementsUseCase
@@ -22,6 +24,8 @@ class SettlementOverviewViewModel(
     private val syncSettlements: SyncSettlementsUseCase,
     private val getHouseBalance: GetHouseBalanceUseCase,
     private val observeCurrentUserId: ObserveCurrentUserIdUseCase,
+    private val getHouseMembers: GetHouseMembersUseCase,
+    private val getCurrentHouseId: GetCurrentHouseIdUseCase,
 ) : ViewModel() {
 
     data class CurrencySummary(val currencyCode: String, val amount: Double)
@@ -34,44 +38,55 @@ class SettlementOverviewViewModel(
         val oweSummary: List<CurrencySummary> = emptyList(),
         val owedSummary: List<CurrencySummary> = emptyList(),
         val currentUserId: Long? = null,
+        val memberNames: Map<Long, String> = emptyMap(),
     )
 
     private val _isBalanceLoading = MutableStateFlow(true)
     private val _balanceError = MutableStateFlow<String?>(null)
     private val _balanceEntries = MutableStateFlow<List<BalanceEntry>>(emptyList())
     private val _currentUserId = MutableStateFlow<Long?>(null)
+    private val _memberNames = MutableStateFlow<Map<Long, String>>(emptyMap())
 
     val uiState: StateFlow<UiState> = combine(
-        observeSettlements(),
-        _balanceEntries,
-        _isBalanceLoading,
-        _balanceError,
-        _currentUserId,
-    ) { settlements, entries, loading, error, currentUserId ->
-        UiState(
-            settlements = settlements,
-            balanceEntries = entries,
-            isBalanceLoading = loading,
-            balanceError = error,
-            currentUserId = currentUserId,
-            oweSummary = entries
-                .filter { it.netAmount > 0.0 }
-                .groupBy { it.currencyCode }
-                .map { (code, list) -> CurrencySummary(code, list.sumOf { it.netAmount }) },
-            owedSummary = entries
-                .filter { it.netAmount < 0.0 }
-                .groupBy { it.currencyCode }
-                .map { (code, list) -> CurrencySummary(code, list.sumOf { -it.netAmount }) },
-        )
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, UiState())
+        combine(observeSettlements(), _balanceEntries, _isBalanceLoading, _balanceError, _currentUserId) {
+            settlements, entries, loading, error, currentUserId ->
+            UiState(
+                settlements = settlements,
+                balanceEntries = entries,
+                isBalanceLoading = loading,
+                balanceError = error,
+                currentUserId = currentUserId,
+                oweSummary = entries
+                    .filter { it.netAmount > 0.0 }
+                    .groupBy { it.currencyCode }
+                    .map { (code, list) -> CurrencySummary(code, list.sumOf { it.netAmount }) },
+                owedSummary = entries
+                    .filter { it.netAmount < 0.0 }
+                    .groupBy { it.currencyCode }
+                    .map { (code, list) -> CurrencySummary(code, list.sumOf { -it.netAmount }) },
+            )
+        },
+        _memberNames,
+    ) { state, memberNames -> state.copy(memberNames = memberNames) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, UiState())
 
     init {
         loadBalance()
+        loadMembers()
     }
 
     fun refresh() {
         viewModelScope.launch { syncSettlements() }
         loadBalance()
+        loadMembers()
+    }
+
+    private fun loadMembers() {
+        viewModelScope.launch {
+            val houseId = getCurrentHouseId() ?: return@launch
+            val members = getHouseMembers(houseId)
+            _memberNames.value = members.associate { it.userId to it.name }
+        }
     }
 
     private fun loadBalance() {
