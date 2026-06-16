@@ -2,7 +2,6 @@ package com.pollyannawu.justwoo.backend.database
 
 import com.pollyannawu.justwoo.backend.schema.Chats
 import com.pollyannawu.justwoo.backend.schema.ChatsTasks
-import com.pollyannawu.justwoo.backend.schema.EmailInvitations
 import com.pollyannawu.justwoo.backend.schema.HouseMembers
 import com.pollyannawu.justwoo.backend.schema.Houses
 import com.pollyannawu.justwoo.backend.schema.InviteCodes
@@ -51,7 +50,6 @@ object DatabaseFactory {
                     Tasks, Houses, Profiles, Chats,
                     TasksAssignees, HouseMembers, ChatsTasks,
                     Users, Settlements, InviteCodes, JoinRequests,
-                    EmailInvitations,
                 )
                 SchemaUtils.create(*tables)
                 SchemaUtils.createMissingTablesAndColumns(*tables)

@@ -6,7 +6,6 @@ import com.pollyannawu.justwoo.android.ui.auth.SignInViewModel
 import com.pollyannawu.justwoo.android.ui.home.HomeViewModel
 import com.pollyannawu.justwoo.android.ui.house.CreateHouseViewModel
 import com.pollyannawu.justwoo.android.ui.house.GenerateInviteCodeViewModel
-import com.pollyannawu.justwoo.android.ui.house.InviteByEmailViewModel
 import com.pollyannawu.justwoo.android.ui.house.JoinHouseViewModel
 import com.pollyannawu.justwoo.android.ui.house.PendingRequestsViewModel
 import com.pollyannawu.justwoo.android.ui.home.HouseInfoViewModel
@@ -42,7 +41,6 @@ import com.pollyannawu.justwoo.domain.usecase.auth.ObserveCurrentUserIdUseCase
 import com.pollyannawu.justwoo.domain.usecase.auth.ObserveIsAuthenticatedUseCase
 import com.pollyannawu.justwoo.domain.usecase.auth.RegisterUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.ApproveMemberUseCase
-import com.pollyannawu.justwoo.domain.usecase.house.CreateEmailInvitationUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.CreateHouseUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.GenerateInviteCodeUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.GetHouseMembersUseCase
@@ -137,7 +135,6 @@ val androidModule = module {
     factory { GetHouseMembersUseCase(get()) }
     factory { CreateHouseUseCase(get()) }
     factory { GenerateInviteCodeUseCase(get()) }
-    factory { CreateEmailInvitationUseCase(get()) }
     factory { SubmitJoinRequestUseCase(get()) }
     factory { ApproveMemberUseCase(get()) }
     factory { RejectMemberUseCase(get()) }
@@ -166,7 +163,6 @@ val androidModule = module {
     viewModel { ProfileViewViewModel(get(), get(), get()) }
     viewModel { CreateHouseViewModel(get()) }
     viewModel { JoinHouseViewModel(get(), get()) }
-    viewModel { InviteByEmailViewModel(get()) }
     viewModel { GenerateInviteCodeViewModel(get(), get(), get(), get()) }
     viewModel { PendingRequestsViewModel(get(), get(), get(), get()) }
     viewModel { HouseInfoViewModel(get(), get()) }
