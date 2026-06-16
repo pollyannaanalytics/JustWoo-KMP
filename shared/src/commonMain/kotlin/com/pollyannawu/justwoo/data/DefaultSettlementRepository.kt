@@ -9,6 +9,7 @@ import com.pollyannawu.justwoo.data.datasource.SettlementDataSource
 import com.pollyannawu.justwoo.data.network.service.SettlementApiService
 import com.pollyannawu.justwoo.model.ApiResult
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.onStart
 import kotlinx.datetime.Instant
 
 class DefaultSettlementRepository(
@@ -18,6 +19,7 @@ class DefaultSettlementRepository(
 
     override fun observeSettlements(houseId: Long): Flow<List<Settlement>> =
         settlementDataSource.getSettlementsByHouseId(houseId)
+            .onStart { syncSettlements(houseId) }
 
     override suspend fun syncSettlements(houseId: Long) {
         val result = settlementApiService.getSettlements(houseId)
