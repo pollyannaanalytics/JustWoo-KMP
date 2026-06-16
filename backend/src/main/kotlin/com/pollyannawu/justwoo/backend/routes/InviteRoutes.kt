@@ -2,7 +2,6 @@ package com.pollyannawu.justwoo.backend.routes
 
 import com.pollyannawu.justwoo.backend.service.HouseInviteService
 import com.pollyannawu.justwoo.backend.utils.dataresult.HouseDataResult
-import com.pollyannawu.justwoo.core.dto.EmailInvitationRequest
 import com.pollyannawu.justwoo.core.dto.JoinRequestBody
 import com.pollyannawu.justwoo.core.dto.JoinRequestDecision
 import io.ktor.http.HttpStatusCode
@@ -35,24 +34,6 @@ fun Route.inviteRoute() {
                     ?: return@post call.respond(HttpStatusCode.BadRequest, "Invalid House ID")
                 val result = inviteService.generateInviteCode(userId, houseId)
                 call.respondInviteResult(result)
-            }
-        }
-
-        route("/houses/{houseId}/invitations") {
-            post {
-                val userId = getUserId(call) ?: return@post call.respond(HttpStatusCode.Unauthorized)
-                val houseId = call.parameters["houseId"]?.toLongOrNull()
-                    ?: return@post call.respond(HttpStatusCode.BadRequest, "Invalid House ID")
-                try {
-                    val body = call.receive<EmailInvitationRequest>()
-                    if (body.email.isBlank()) {
-                        return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Email is required"))
-                    }
-                    val result = inviteService.createEmailInvitation(userId, houseId, body.email)
-                    call.respondInviteResult(result)
-                } catch (e: ContentTransformationException) {
-                    call.respond(HttpStatusCode.BadRequest, "Invalid request body")
-                }
             }
         }
 

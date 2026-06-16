@@ -1,7 +1,6 @@
 package com.pollyannawu.justwoo.data
 
 import com.pollyannawu.justwoo.core.House
-import com.pollyannawu.justwoo.core.dto.EmailInvitationResponse
 import com.pollyannawu.justwoo.core.dto.InviteCodeResponse
 import com.pollyannawu.justwoo.core.dto.JoinRequestResponse
 import com.pollyannawu.justwoo.data.network.service.HouseInviteApiService
@@ -10,7 +9,6 @@ import kotlinx.datetime.Clock
 
 interface HouseInviteRepository {
     suspend fun generateInviteCode(houseId: Long): InviteCodeResponse
-    suspend fun createEmailInvitation(houseId: Long, email: String): EmailInvitationResponse
     suspend fun createHouse(name: String, description: String)
     suspend fun submitJoinRequest(inviteCode: String): JoinRequestResponse
     suspend fun getPendingRequests(houseId: Long): List<JoinRequestResponse>
@@ -26,13 +24,6 @@ class DefaultHouseInviteRepository(
 
     override suspend fun generateInviteCode(houseId: Long): InviteCodeResponse {
         val result = houseInviteApiService.generateInviteCode(houseId)
-        if (result is ApiResult.Success) return result.data
-        if (result is ApiResult.Error) throw Exception(result.exception)
-        error("Unexpected state")
-    }
-
-    override suspend fun createEmailInvitation(houseId: Long, email: String): EmailInvitationResponse {
-        val result = houseInviteApiService.createEmailInvitation(houseId, email)
         if (result is ApiResult.Success) return result.data
         if (result is ApiResult.Error) throw Exception(result.exception)
         error("Unexpected state")

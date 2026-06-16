@@ -1,6 +1,5 @@
 package com.pollyannawu.justwoo.backend.service
 
-import com.pollyannawu.justwoo.backend.repositories.EmailInvitationRepository
 import com.pollyannawu.justwoo.backend.repositories.HouseRepository
 import com.pollyannawu.justwoo.backend.repositories.InviteCodeRepository
 import com.pollyannawu.justwoo.backend.repositories.JoinRequestRepository
@@ -8,17 +7,14 @@ import com.pollyannawu.justwoo.backend.utils.dataresult.HouseDataResult
 import com.pollyannawu.justwoo.backend.utils.dataresult.HouseUserType
 import com.pollyannawu.justwoo.core.JoinRequestStatus
 import com.pollyannawu.justwoo.core.MemberRole
-import com.pollyannawu.justwoo.core.dto.EmailInvitationResponse
 import com.pollyannawu.justwoo.core.dto.InviteCodeResponse
 import com.pollyannawu.justwoo.core.dto.JoinRequestResponse
 import kotlinx.datetime.Clock
 import kotlin.random.Random
-import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
 
 interface HouseInviteService {
     suspend fun generateInviteCode(adminId: Long, houseId: Long): HouseDataResult<InviteCodeResponse>
-    suspend fun createEmailInvitation(adminId: Long, houseId: Long, email: String): HouseDataResult<EmailInvitationResponse>
     suspend fun submitJoinRequest(userId: Long, inviteCode: String): HouseDataResult<JoinRequestResponse>
     suspend fun getPendingRequests(adminId: Long, houseId: Long): HouseDataResult<List<JoinRequestResponse>>
     suspend fun processJoinRequest(adminId: Long, requestId: Long, approve: Boolean): HouseDataResult<JoinRequestResponse>
@@ -29,7 +25,6 @@ class DefaultHouseInviteService(
     private val houseRepository: HouseRepository,
     private val inviteCodeRepository: InviteCodeRepository,
     private val joinRequestRepository: JoinRequestRepository,
-    private val emailInvitationRepository: EmailInvitationRepository,
 ) : HouseInviteService {
 
     override suspend fun generateInviteCode(adminId: Long, houseId: Long): HouseDataResult<InviteCodeResponse> {
@@ -41,36 +36,6 @@ class DefaultHouseInviteService(
         val row = inviteCodeRepository.create(houseId, code, expiresAt, adminId)
         return HouseDataResult.Success(
             InviteCodeResponse(code = row.code, expiresAt = row.expiresAt, houseId = row.houseId)
-        )
-    }
-
-    override suspend fun createEmailInvitation(
-        adminId: Long,
-        houseId: Long,
-        email: String,
-    ): HouseDataResult<EmailInvitationResponse> {
-        if (!houseRepository.isAdmin(adminId, houseId)) {
-            return HouseDataResult.Error.UserNotAllowed(adminId, HouseUserType.ADMIN)
-        }
-        val house = houseRepository.findById(houseId)
-            ?: return HouseDataResult.Error.HouseNotFound
-
-        val normalizedEmail = email.lowercase().trim()
-        emailInvitationRepository.invalidateExisting(houseId, normalizedEmail)
-
-        val code = generateEmailInviteCode()
-        val expiresAt = Clock.System.now() + 7.days
-        val row = emailInvitationRepository.create(houseId, normalizedEmail, code, expiresAt)
-
-        return HouseDataResult.Success(
-            EmailInvitationResponse(
-                id = row.id,
-                houseId = row.houseId,
-                houseName = house.name,
-                houseAvatar = house.avatar,
-                code = row.code,
-                expiresAt = row.expiresAt,
-            )
         )
     }
 
@@ -145,11 +110,6 @@ class DefaultHouseInviteService(
     private fun generateCode(): String {
         val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
         return (1..6).map { chars[Random.nextInt(chars.length)] }.joinToString("")
-    }
-
-    private fun generateEmailInviteCode(): String {
-        val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-        return (1..8).map { chars[Random.nextInt(chars.length)] }.joinToString("")
     }
 }
 

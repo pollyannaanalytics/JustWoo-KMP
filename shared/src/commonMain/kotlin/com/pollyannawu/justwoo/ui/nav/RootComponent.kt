@@ -53,7 +53,6 @@ interface RootComponent {
     fun onSettlementClick()
     fun onAddExpenseClick()
     fun onEditExpenseClick(settlementId: Long)
-    fun onInviteByEmailClick(houseId: Long)
     fun onSessionChanged(isAuthenticated: Boolean)
     fun onCheckingHouse()
     fun onHouseOnboardingRequired()
@@ -71,7 +70,6 @@ interface RootComponent {
         class Settlement(val component: SettlementComponent) : Child
         class EditExpense(val component: AddExpenseComponent) : Child
         class CurrencyPicker(val component: CurrencyPickerComponent) : Child
-        class InviteByEmail(val houseId: Long) : Child
     }
 }
 
@@ -182,10 +180,6 @@ class DefaultRootComponent(
         navigation.push(Config.EditExpense(settlementId = settlementId))
     }
 
-    override fun onInviteByEmailClick(houseId: Long) {
-        navigation.push(Config.InviteByEmail(houseId = houseId))
-    }
-
     private fun createChild(
         config: Config,
         childContext: ComponentContext,
@@ -236,7 +230,6 @@ class DefaultRootComponent(
             DefaultHouseInfoComponent(
                 componentContext = childContext,
                 onClose = { navigation.pop() },
-                onInviteMember = { houseId -> navigation.push(Config.InviteByEmail(houseId)) },
             ),
         )
 
@@ -273,8 +266,6 @@ class DefaultRootComponent(
                 },
             ),
         )
-
-        is Config.InviteByEmail -> RootComponent.Child.InviteByEmail(houseId = config.houseId)
     }
 
     private fun createSlotChild(
@@ -312,8 +303,6 @@ class DefaultRootComponent(
         data class EditExpense(val settlementId: Long? = null) : Config
         @Serializable
         data object CurrencyPicker : Config
-        @Serializable
-        data class InviteByEmail(val houseId: Long) : Config
     }
 
     @Serializable
