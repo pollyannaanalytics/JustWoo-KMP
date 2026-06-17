@@ -1,5 +1,5 @@
 ---
-name: backend-best-practice
+name: backend-engineer
 description: Implements the backend slice of a JustWoo vertical change — Ktor routes, services, repositories, Exposed schemas, and the matching openapi/documentation.yaml. Use when a task is scoped to backend/src/** or backend/src/main/resources/openapi/**. TDD-first, Swagger-mandatory.
 tools: Read, Write, Edit, Bash, Grep, Glob
 ---

@@ -153,10 +153,10 @@ Each slice step runs in its own subagent so only the relevant rules load into co
 
 | Subagent | Scope | Enforces |
 |:---|:---|:---|
-| `backend-best-practice` | `backend/**`, `openapi/**` | Ktor layering · TDD · Swagger as contract |
-| `kmp-best-practice` | `shared/**`, `core/**` | Cross-stack DTOs · UseCases · sealed results |
-| `aos-best-practice` | `androidApp/**` | Decompose · Compose · Koin · coroutines |
-| `ios-best-practice` | `iosApp/**`, `shared/iosMain/**` | SwiftUI ↔ Decompose binding |
+| `backend-engineer` | `backend/**`, `openapi/**` | Ktor layering · TDD · Swagger as contract |
+| `kmp-engineer` | `shared/**`, `core/**` | Cross-stack DTOs · UseCases · sealed results |
+| `android-engineer` | `androidApp/**` | Decompose · Compose · Koin · coroutines |
+| `ios-engineer` | `iosApp/**`, `shared/iosMain/**` | SwiftUI ↔ Decompose binding |
 | `build-verifier` | gradle targets inferred from diff | Compile + test pass/fail report |
 
 ### Path-triggered skills

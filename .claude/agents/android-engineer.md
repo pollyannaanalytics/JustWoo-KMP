@@ -1,5 +1,5 @@
 ---
-name: aos-best-practice
+name: android-engineer
 description: Implements the Android slice of a JustWoo vertical change — Decompose Components, ViewModels (when needed), Koin wiring, and the Compose UI that binds to them. Scope limited to androidApp/**. Use after the shared/kmp slice lands.
 tools: Read, Write, Edit, Bash, Grep, Glob
 ---

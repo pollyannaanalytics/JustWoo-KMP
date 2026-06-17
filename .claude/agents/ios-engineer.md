@@ -1,5 +1,5 @@
 ---
-name: ios-best-practice
+name: ios-engineer
 description: Implements the iOS slice of a JustWoo vertical change — SwiftUI views bound to Decompose Components from shared, plus shared/iosMain actuals. Scope limited to iosApp/** and shared/src/iosMain/**. Only used when a slice explicitly opts in to iOS; not part of the default slice order.
 tools: Read, Write, Edit, Bash, Grep, Glob
 ---

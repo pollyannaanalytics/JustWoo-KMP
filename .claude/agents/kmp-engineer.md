@@ -1,5 +1,5 @@
 ---
-name: kmp-best-practice
+name: kmp-engineer
 description: Implements the shared (KMP) slice of a JustWoo vertical change — :core DTOs, shared/commonMain UseCases, DataSource/Repository interfaces, ApiService wiring, SQLDelight queries, Koin modules. Use after the backend slice lands, before Android/iOS. Edits scoped to shared/** and core/**.
 tools: Read, Write, Edit, Bash, Grep, Glob
 ---
