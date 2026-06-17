@@ -80,10 +80,10 @@ Implement tasks from an OpenSpec change.
 
    - Show: `Feature X — slice step (Y/4): <slice-name>`, then the task description.
    - **Dispatch to the matching platform subagent** via the Agent tool:
-     - `backend` → `subagent_type: "backend-best-practice"`
-     - `kmp` → `subagent_type: "kmp-best-practice"`
-     - `android` → `subagent_type: "aos-best-practice"`
-     - `ios` → `subagent_type: "ios-best-practice"` (opt-in)
+     - `backend` → `subagent_type: "backend-engineer"`
+     - `kmp` → `subagent_type: "kmp-engineer"`
+     - `android` → `subagent_type: "android-engineer"`
+     - `ios` → `subagent_type: "ios-engineer"` (opt-in)
      - `verify` → handle inline (run gradle tests, hit the app, etc.) — no subagent.
    - The prompt to the subagent must be self-contained: include the task text, the relevant artifact excerpts (proposal / design / spec sections that scope this task), and a reminder to load its SKILL.md first.
    - When the subagent returns, read its hand-off note and pass anything load-bearing to the next slice step (e.g. backend DTOs that kmp will consume; kmp UseCase names that android will inject).
