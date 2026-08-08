@@ -35,3 +35,6 @@ INSERT OR REPLACE INTO SettlementEntity (
 
 deleteById:
 DELETE FROM SettlementEntity WHERE id = :id;
+
+deleteAll:
+DELETE FROM SettlementEntity;
