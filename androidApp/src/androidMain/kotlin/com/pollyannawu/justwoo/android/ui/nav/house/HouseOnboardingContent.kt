@@ -9,6 +9,7 @@ import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
 import com.pollyannawu.justwoo.android.ui.house.CreateHouseScreen
 import com.pollyannawu.justwoo.android.ui.house.HouseOnboardingScreen
 import com.pollyannawu.justwoo.android.ui.house.JoinHouseScreen
+import com.pollyannawu.justwoo.android.ui.house.PendingInvitationsScreen
 import com.pollyannawu.justwoo.ui.nav.house.HouseOnboardingComponent
 
 @Composable
@@ -21,12 +22,18 @@ fun HouseOnboardingContent(component: HouseOnboardingComponent) {
             is HouseOnboardingComponent.Child.SelectAction -> HouseOnboardingScreen(
                 onJoinClick = child.component::onJoinSelected,
                 onCreateClick = child.component::onCreateSelected,
+                onMyInvitationsClick = child.component::onMyInvitationsSelected,
             )
             is HouseOnboardingComponent.Child.JoinHouse -> JoinHouseScreen(
                 component = child.component,
             )
             is HouseOnboardingComponent.Child.CreateHouse -> CreateHouseScreen(
                 component = child.component,
+            )
+            is HouseOnboardingComponent.Child.PendingInvitations -> PendingInvitationsScreen(
+                componentContext = child.component,
+                onBack = child.component::onBack,
+                onJoinSuccess = child.component::onCompleted,
             )
         }
     }
