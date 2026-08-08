@@ -591,6 +591,67 @@ paths:
         "404":
           description: House not found
 
+  /invitations/me:
+    get:
+      tags: [Invitations]
+      summary: List pending email invitations for the current user
+      description: >-
+        Returns all active (non-expired, unused) email invitations addressed to the
+        caller's email, inferred from the JWT. No query parameter is accepted or required.
+      operationId: getMyInvitations
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of pending invitations (may be empty)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EmailInvitationResponse"
+        "401":
+          description: Unauthorized
+
+  /join-requests:
+    post:
+      tags: [Invitations]
+      summary: Submit a join request using an invite code
+      description: >-
+        If the submitted code matches an active email invitation addressed to the
+        caller's email, the user is added as MEMBER immediately and the invitation is
+        marked used — the response status is `APPROVED` and no pending join request is
+        created. Otherwise the code is evaluated against the generic invite-code flow,
+        creating a `PENDING` join request for an admin to approve/reject.
+      operationId: submitJoinRequest
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JoinRequestBody"
+      responses:
+        "200":
+          description: >-
+            Join request created (status PENDING) or, for a matching email invitation,
+            the user was auto-approved (status APPROVED) immediately.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JoinRequestResponse"
+        "400":
+          description: >-
+            Invite code is invalid, expired, or already used. This applies both to
+            generic invite codes and to email-invitation codes (expired/used/wrong-email
+            email invitations also return this generic 400 to avoid leaking which case
+            applied).
+        "401":
+          description: Unauthorized
+        "409":
+          description: Caller already belongs to a house
+
   # ── Health ────────────────────────────────────────────
   /hello:
     get:
@@ -1055,6 +1116,39 @@ components:
           type: string
           example: "A1B2C3D4"
         expiresAt:
+          type: string
+          format: date-time
+
+    JoinRequestBody:
+      type: object
+      required: [inviteCode]
+      properties:
+        inviteCode:
+          type: string
+          description: >-
+            Either a generic 6-char house invite code, or an 8-char email-invitation
+            code. Both share this one field.
+          example: "A1B2C3D4"
+
+    JoinRequestResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: >-
+            Join request ID for the generic invite-code flow, or the email invitation ID
+            when auto-approved via an email invitation.
+        houseId:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        status:
+          type: string
+          enum: [PENDING, APPROVED, REJECTED]
+        createdAt:
           type: string
           format: date-time
 

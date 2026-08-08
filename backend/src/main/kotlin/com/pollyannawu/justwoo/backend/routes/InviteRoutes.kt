@@ -56,6 +56,14 @@ fun Route.inviteRoute() {
             }
         }
 
+        route("/invitations/me") {
+            get {
+                val userId = getUserId(call) ?: return@get call.respond(HttpStatusCode.Unauthorized)
+                val result = inviteService.getMyInvitations(userId)
+                call.respondInviteResult(result)
+            }
+        }
+
         route("/houses/{houseId}/join-requests") {
             get {
                 val userId = getUserId(call) ?: return@get call.respond(HttpStatusCode.Unauthorized)
