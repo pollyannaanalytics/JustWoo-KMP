@@ -40,6 +40,22 @@ UI-only changes (typography, color tweak) skip TDD — `@Preview` is the verific
 - Network / DB on `Dispatchers.IO`. State updates back on `Dispatchers.Main` (or just let `MutableStateFlow` handle it — emissions are thread-safe).
 - Never `runBlocking` outside tests.
 
+## State and streams — Flow / StateFlow only
+
+`LiveData` is **banned**. No exceptions.
+
+- State in a Component or ViewModel → `MutableStateFlow` / `StateFlow`.
+- Event streams → `Flow` (or `SharedFlow` for one-shot events).
+- Collecting in Compose → `collectAsStateWithLifecycle()` (from `lifecycle-runtime-compose`).
+
+```kotlin
+// Correct
+val state: StateFlow<TaskListState> = _state.asStateFlow()
+
+// Wrong — do not write
+val state: LiveData<TaskListState> = MutableLiveData()
+```
+
 ## Cross-platform discipline
 
 If a piece of logic is platform-agnostic, it belongs in `shared/commonMain`, not `androidApp/`. Common offenders that should NOT be Android-only:
