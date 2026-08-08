@@ -22,6 +22,7 @@ interface HouseInviteApiService {
     suspend fun getPendingRequests(houseId: Long): ApiResult<List<JoinRequestResponse>>
     suspend fun processJoinRequest(requestId: Long, approve: Boolean): ApiResult<JoinRequestResponse>
     suspend fun getMyJoinRequestStatus(): ApiResult<JoinRequestResponse>
+    suspend fun getMyEmailInvitations(): ApiResult<List<EmailInvitationResponse>>
 }
 
 class DefaultHouseInviteApiService(
@@ -62,5 +63,10 @@ class DefaultHouseInviteApiService(
     override suspend fun getMyJoinRequestStatus(): ApiResult<JoinRequestResponse> =
         safeApiCall(tag = "HouseInviteApi.getMyJoinRequestStatus") {
             ktorClient.get("/join-requests/me").body()
+        }
+
+    override suspend fun getMyEmailInvitations(): ApiResult<List<EmailInvitationResponse>> =
+        safeApiCall(tag = "HouseInviteApi.getMyEmailInvitations") {
+            ktorClient.get("/invitations/me").body()
         }
 }

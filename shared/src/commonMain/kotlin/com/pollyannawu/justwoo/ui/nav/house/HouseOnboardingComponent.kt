@@ -14,6 +14,7 @@ interface HouseOnboardingComponent : ComponentContext {
 
     fun onJoinSelected()
     fun onCreateSelected()
+    fun onMyInvitationsSelected()
     fun onBack()
     fun onCompleted()
 
@@ -21,6 +22,7 @@ interface HouseOnboardingComponent : ComponentContext {
         class SelectAction(val component: HouseOnboardingComponent) : Child
         class JoinHouse(val component: HouseOnboardingComponent) : Child
         class CreateHouse(val component: HouseOnboardingComponent) : Child
+        class PendingInvitations(val component: HouseOnboardingComponent) : Child
     }
 }
 
@@ -42,6 +44,7 @@ class DefaultHouseOnboardingComponent(
 
     override fun onJoinSelected() = navigation.push(Config.JoinHouse)
     override fun onCreateSelected() = navigation.push(Config.CreateHouse)
+    override fun onMyInvitationsSelected() = navigation.push(Config.PendingInvitations)
     override fun onBack() = navigation.pop()
     override fun onCompleted() = onCompleted.invoke()
 
@@ -52,6 +55,7 @@ class DefaultHouseOnboardingComponent(
         Config.SelectAction -> HouseOnboardingComponent.Child.SelectAction(this)
         Config.JoinHouse -> HouseOnboardingComponent.Child.JoinHouse(this)
         Config.CreateHouse -> HouseOnboardingComponent.Child.CreateHouse(this)
+        Config.PendingInvitations -> HouseOnboardingComponent.Child.PendingInvitations(this)
     }
 
     @Serializable
@@ -59,5 +63,6 @@ class DefaultHouseOnboardingComponent(
         @Serializable data object SelectAction : Config
         @Serializable data object JoinHouse : Config
         @Serializable data object CreateHouse : Config
+        @Serializable data object PendingInvitations : Config
     }
 }
