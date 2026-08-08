@@ -4,6 +4,8 @@ import com.pollyannawu.justwoo.core.JoinRequestStatus
 import com.pollyannawu.justwoo.core.dto.EmailInvitationResponse
 import com.pollyannawu.justwoo.core.dto.InviteCodeResponse
 import com.pollyannawu.justwoo.core.dto.JoinRequestResponse
+import com.pollyannawu.justwoo.core.dto.OtpConfirmRequest
+import com.pollyannawu.justwoo.core.dto.OtpInviteSession
 import com.pollyannawu.justwoo.data.HouseInviteRepository
 import kotlinx.datetime.Instant
 
@@ -34,6 +36,9 @@ internal class FakeHouseInviteRepository(
     var submitJoinRequestError: Throwable? = null,
     var createEmailInvitationResult: EmailInvitationResponse = stubEmailInvitationResponse(),
     var createEmailInvitationError: Throwable? = null,
+    var generateOtpSessionResult: OtpInviteSession? = null,
+    var generateOtpSessionError: Throwable? = null,
+    var confirmOtpInviteError: Throwable? = null,
 ) : HouseInviteRepository {
 
     val submittedCodes = mutableListOf<String>()
@@ -73,5 +78,14 @@ internal class FakeHouseInviteRepository(
         getMyEmailInvitationsCallCount++
         myEmailInvitationsError?.let { throw it }
         return myEmailInvitations
+    }
+
+    override suspend fun generateOtpSession(): OtpInviteSession {
+        generateOtpSessionError?.let { throw it }
+        return generateOtpSessionResult ?: error("generateOtpSessionResult not set")
+    }
+
+    override suspend fun confirmOtpInvite(request: OtpConfirmRequest) {
+        confirmOtpInviteError?.let { throw it }
     }
 }

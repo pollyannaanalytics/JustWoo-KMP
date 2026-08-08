@@ -28,6 +28,8 @@ fun HouseOnboardingScreen(
     onJoinClick: () -> Unit,
     onCreateClick: () -> Unit,
     onMyInvitationsClick: () -> Unit,
+    onShowMyCodeClick: () -> Unit = {},
+    onConfirmInviteCodeClick: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -67,6 +69,22 @@ fun HouseOnboardingScreen(
         TextButton(onClick = onMyInvitationsClick) {
             Text(
                 text = "My Invitations",
+                color = JustWooColors.Primary,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = JustWooFontWeight.Bold,
+            )
+        }
+        TextButton(onClick = onShowMyCodeClick) {
+            Text(
+                text = "Show My Code",
+                color = JustWooColors.Primary,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = JustWooFontWeight.Bold,
+            )
+        }
+        TextButton(onClick = onConfirmInviteCodeClick) {
+            Text(
+                text = "Confirm Invite Code",
                 color = JustWooColors.Primary,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = JustWooFontWeight.Bold,

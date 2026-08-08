@@ -613,6 +613,70 @@ paths:
         "401":
           description: Unauthorized
 
+  /invite/otp/session:
+    post:
+      tags: [Invitations]
+      summary: Generate an OTP invite session
+      description: >-
+        Generates a 6-digit numeric OTP code and a 2-digit display number for the
+        authenticated user. The session is stored in Redis with a 60-second TTL.
+        If the user already has an active OTP session, it is deleted before creating
+        the new one.
+      operationId: generateOtpSession
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OTP session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OtpInviteSession"
+        "401":
+          description: Unauthorized
+
+  /invite/otp/confirm:
+    post:
+      tags: [Invitations]
+      summary: Confirm an OTP invite session
+      description: >-
+        Called by an ADMIN to confirm that the invitee's OTP session is valid.
+        Validates the code exists in Redis, that the displayNumber matches the stored
+        value, then adds the matched user as a MEMBER of the house and deletes both
+        Redis keys to consume the session.
+      operationId: confirmOtpInvite
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OtpConfirmRequest"
+      responses:
+        "200":
+          description: Invite confirmed; user added as MEMBER
+        "400":
+          description: Display number does not match the stored OTP session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Caller is not an ADMIN of the specified house
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: OTP code not found or expired
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /join-requests:
     post:
       tags: [Invitations]
@@ -1151,6 +1215,41 @@ components:
         createdAt:
           type: string
           format: date-time
+
+    OtpConfirmRequest:
+      type: object
+      required: [code, displayNumber, houseId]
+      properties:
+        code:
+          type: string
+          description: 6-digit numeric OTP code shown to the invitee
+          example: "482931"
+        displayNumber:
+          type: integer
+          description: 2-digit display number the invitee reads back to the admin
+          example: 42
+        houseId:
+          type: integer
+          format: int64
+          description: ID of the house the invitee should be added to
+          example: 7
+
+    OtpInviteSession:
+      type: object
+      required: [code, displayNumber, expiresInSeconds]
+      properties:
+        code:
+          type: string
+          description: 6-digit numeric OTP code
+          example: "482931"
+        displayNumber:
+          type: integer
+          description: 2-digit display number shown to the inviting user (10–99)
+          example: 42
+        expiresInSeconds:
+          type: integer
+          description: Seconds until the session expires (always 60)
+          example: 60
 
     ErrorResponse:
       type: object

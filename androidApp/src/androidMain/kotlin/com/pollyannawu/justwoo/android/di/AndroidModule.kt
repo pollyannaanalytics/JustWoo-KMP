@@ -8,6 +8,8 @@ import com.pollyannawu.justwoo.android.ui.house.CreateHouseViewModel
 import com.pollyannawu.justwoo.android.ui.house.GenerateInviteCodeViewModel
 import com.pollyannawu.justwoo.android.ui.house.InviteByEmailViewModel
 import com.pollyannawu.justwoo.android.ui.house.JoinHouseViewModel
+import com.pollyannawu.justwoo.android.ui.house.ConfirmOtpInviteViewModel
+import com.pollyannawu.justwoo.android.ui.house.OtpSessionViewModel
 import com.pollyannawu.justwoo.android.ui.house.PendingInvitationsViewModel
 import com.pollyannawu.justwoo.android.ui.house.PendingRequestsViewModel
 import com.pollyannawu.justwoo.android.ui.home.HouseInfoViewModel
@@ -46,6 +48,8 @@ import com.pollyannawu.justwoo.domain.usecase.house.ApproveMemberUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.CreateEmailInvitationUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.CreateHouseUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.GenerateInviteCodeUseCase
+import com.pollyannawu.justwoo.domain.usecase.house.ConfirmOtpInviteUseCase
+import com.pollyannawu.justwoo.domain.usecase.house.GenerateOtpSessionUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.GetHouseMembersUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.GetJoinRequestStatusUseCase
 import com.pollyannawu.justwoo.domain.usecase.house.GetMyEmailInvitationsUseCase
@@ -143,6 +147,8 @@ val androidModule = module {
     factory { GetHouseMembersUseCase(get()) }
     factory { CreateHouseUseCase(get()) }
     factory { GenerateInviteCodeUseCase(get()) }
+    factory { GenerateOtpSessionUseCase(get()) }
+    factory { ConfirmOtpInviteUseCase(get()) }
     factory { CreateEmailInvitationUseCase(get()) }
     factory { SubmitJoinRequestUseCase(get()) }
     factory { ApproveMemberUseCase(get()) }
@@ -181,4 +187,6 @@ val androidModule = module {
     viewModel { HouseInfoViewModel(get(), get()) }
     viewModel { SettlementOverviewViewModel(get(), get(), get(), get(), get(), get()) }
     viewModel { EditExpenseViewModel(get(), get()) }
+    viewModel { OtpSessionViewModel(get()) }
+    viewModel { ConfirmOtpInviteViewModel(get(), get()) }
 }

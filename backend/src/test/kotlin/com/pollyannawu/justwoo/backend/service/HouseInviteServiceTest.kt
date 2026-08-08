@@ -8,6 +8,12 @@ import com.pollyannawu.justwoo.backend.repositories.auth.AuthRepository
 import com.pollyannawu.justwoo.backend.schema.EmailInvitationRow
 import com.pollyannawu.justwoo.backend.utils.dataresult.HouseDataResult
 import com.pollyannawu.justwoo.backend.utils.mapper.User
+import com.pollyannawu.justwoo.core.dto.OtpInviteSession
+import io.mockk.every
+import io.mockk.slot
+import io.mockk.verify
+import redis.clients.jedis.Jedis
+import redis.clients.jedis.JedisPool
 import com.pollyannawu.justwoo.core.House
 import com.pollyannawu.justwoo.core.JoinRequestStatus
 import com.pollyannawu.justwoo.core.MemberRole
@@ -31,9 +37,11 @@ class HouseInviteServiceTest {
     private val joinRequestRepo: JoinRequestRepository = mockk()
     private val emailInvitationRepo: EmailInvitationRepository = mockk()
     private val authRepo: AuthRepository = mockk()
+    private val jedis: Jedis = mockk(relaxed = true)
+    private val jedisPool: JedisPool = mockk()
 
     private val service: HouseInviteService = DefaultHouseInviteService(
-        houseRepo, inviteCodeRepo, joinRequestRepo, emailInvitationRepo, authRepo
+        houseRepo, inviteCodeRepo, joinRequestRepo, emailInvitationRepo, authRepo, jedisPool
     )
 
     private val now = Clock.System.now()
@@ -229,5 +237,117 @@ class HouseInviteServiceTest {
         val result = service.submitJoinRequest(inviteeId, emailCode)
 
         assertInstanceOf(HouseDataResult.Error.InvalidCode::class.java, result)
+    }
+
+    // ── generateOtpSession ──────────────────────────────────────────────
+
+    @BeforeEach
+    fun setupRedis() {
+        every { jedisPool.resource } returns jedis
+        every { jedis.close() } returns Unit
+    }
+
+    @Test
+    fun `generateOtpSession returns OtpInviteSession with correct structure`() = runTest {
+        every { jedis.get("otp:invite:user:1") } returns null
+
+        val result = service.generateOtpSession("1")
+
+        assertInstanceOf(HouseDataResult.Success::class.java, result)
+        val session = (result as HouseDataResult.Success<OtpInviteSession>).data
+        assertEquals(6, session.code.length)
+        assert(session.code.all { it.isDigit() }) { "code should be all digits" }
+        assert(session.displayNumber in 10..99) { "displayNumber should be 10..99" }
+        assertEquals(60, session.expiresInSeconds)
+    }
+
+    @Test
+    fun `generateOtpSession returns existing session when one is still active`() = runTest {
+        val existingCode = "123456"
+        val sessionJson = """{"userId":"1","displayNumber":42}"""
+        every { jedis.get("otp:invite:user:1") } returns existingCode
+        every { jedis.ttl("otp:invite:user:1") } returns 35L
+        every { jedis.get("otp:invite:$existingCode") } returns sessionJson
+
+        val result = service.generateOtpSession("1")
+
+        assertInstanceOf(HouseDataResult.Success::class.java, result)
+        val session = (result as HouseDataResult.Success<OtpInviteSession>).data
+        assertEquals(existingCode, session.code)
+        assertEquals(42, session.displayNumber)
+        assertEquals(35, session.expiresInSeconds)
+        // Must NOT generate a new code or delete the existing session
+        verify(exactly = 0) { jedis.del(any<String>()) }
+        verify(exactly = 0) { jedis.setex(any<String>(), any<Long>(), any<String>()) }
+    }
+
+    // TODO: test that Redis key expires after 60 seconds — requires real Redis (TestContainers)
+
+    // ── confirmOtpInvite ────────────────────────────────────────────────
+
+    private val memberId = 99L
+    private val memberIdStr = memberId.toString()
+    private val validCode = "123456"
+    private val validDisplayNumber = 42
+    private val validSessionJson = """{"userId":"$memberIdStr","displayNumber":$validDisplayNumber}"""
+
+    @Test
+    fun `confirmOtpInvite success - code found, number matches, caller is ADMIN`() = runTest {
+        coEvery { houseRepo.isAdmin(adminId, houseId) } returns true
+        every { jedis.get("otp:invite:$validCode") } returns validSessionJson
+        coEvery { houseRepo.addMember(memberId, MemberRole.MEMBER, houseId, any()) } returns fakeHouse
+        every { jedis.del("otp:invite:$validCode") } returns 1L
+        every { jedis.del("otp:invite:user:$memberIdStr") } returns 1L
+
+        val result = service.confirmOtpInvite(validCode, validDisplayNumber, houseId, adminId)
+
+        assertInstanceOf(HouseDataResult.Success::class.java, result)
+        coVerify { houseRepo.addMember(memberId, MemberRole.MEMBER, houseId, any()) }
+        verify { jedis.del("otp:invite:$validCode") }
+        verify { jedis.del("otp:invite:user:$memberIdStr") }
+    }
+
+    @Test
+    fun `confirmOtpInvite returns UserNotAllowed when caller is not ADMIN`() = runTest {
+        coEvery { houseRepo.isAdmin(adminId, houseId) } returns false
+
+        val result = service.confirmOtpInvite(validCode, validDisplayNumber, houseId, adminId)
+
+        assertInstanceOf(HouseDataResult.Error.UserNotAllowed::class.java, result)
+    }
+
+    @Test
+    fun `confirmOtpInvite returns NotFound when code is missing or expired`() = runTest {
+        coEvery { houseRepo.isAdmin(adminId, houseId) } returns true
+        every { jedis.get("otp:invite:$validCode") } returns null
+
+        val result = service.confirmOtpInvite(validCode, validDisplayNumber, houseId, adminId)
+
+        assertInstanceOf(HouseDataResult.Error.NotFound::class.java, result)
+    }
+
+    @Test
+    fun `confirmOtpInvite returns ValidationError when display number does not match`() = runTest {
+        coEvery { houseRepo.isAdmin(adminId, houseId) } returns true
+        every { jedis.get("otp:invite:$validCode") } returns validSessionJson
+
+        val result = service.confirmOtpInvite(validCode, 99, houseId, adminId)
+
+        assertInstanceOf(HouseDataResult.Error.ValidationError::class.java, result)
+    }
+
+    @Test
+    fun `confirmOtpInvite second call with same code returns NotFound after session consumed`() = runTest {
+        coEvery { houseRepo.isAdmin(adminId, houseId) } returns true
+        every { jedis.get("otp:invite:$validCode") } returnsMany listOf(validSessionJson, null)
+        coEvery { houseRepo.addMember(memberId, MemberRole.MEMBER, houseId, any()) } returns fakeHouse
+
+        // first call succeeds
+        service.confirmOtpInvite(validCode, validDisplayNumber, houseId, adminId)
+
+        // second call — Redis now returns null (keys deleted)
+        val result = service.confirmOtpInvite(validCode, validDisplayNumber, houseId, adminId)
+
+        assertInstanceOf(HouseDataResult.Error.NotFound::class.java, result)
     }
 }

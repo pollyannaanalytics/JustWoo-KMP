@@ -13,7 +13,16 @@ import com.pollyannawu.justwoo.core.MemberRole
 import com.pollyannawu.justwoo.core.dto.EmailInvitationResponse
 import com.pollyannawu.justwoo.core.dto.InviteCodeResponse
 import com.pollyannawu.justwoo.core.dto.JoinRequestResponse
+import com.pollyannawu.justwoo.core.dto.OtpInviteSession
 import kotlinx.datetime.Clock
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
+import redis.clients.jedis.JedisPool
+import java.security.SecureRandom
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
@@ -26,6 +35,8 @@ interface HouseInviteService {
     suspend fun processJoinRequest(adminId: Long, requestId: Long, approve: Boolean): HouseDataResult<JoinRequestResponse>
     suspend fun getMyJoinRequestStatus(userId: Long): HouseDataResult<JoinRequestResponse>
     suspend fun getMyInvitations(userId: Long): HouseDataResult<List<EmailInvitationResponse>>
+    suspend fun generateOtpSession(userId: String): HouseDataResult<OtpInviteSession>
+    suspend fun confirmOtpInvite(code: String, displayNumber: Int, houseId: Long, requestingUserId: Long): HouseDataResult<Unit>
 }
 
 class DefaultHouseInviteService(
@@ -34,7 +45,81 @@ class DefaultHouseInviteService(
     private val joinRequestRepository: JoinRequestRepository,
     private val emailInvitationRepository: EmailInvitationRepository,
     private val authRepository: AuthRepository,
+    private val jedisPool: JedisPool,
 ) : HouseInviteService {
+
+    private val secureRandom = SecureRandom()
+
+    private fun otpKey(code: String) = "otp:invite:$code"
+    private fun otpUserKey(userId: String) = "otp:invite:user:$userId"
+
+    override suspend fun generateOtpSession(userId: String): HouseDataResult<OtpInviteSession> {
+        jedisPool.resource.use { jedis ->
+            // Return existing session if one is still active
+            val existingCode = jedis.get(otpUserKey(userId))
+            if (existingCode != null) {
+                val remaining = jedis.ttl(otpUserKey(userId))
+                val sessionJson = jedis.get(otpKey(existingCode))
+                if (sessionJson != null && remaining > 0) {
+                    val obj = Json.parseToJsonElement(sessionJson).jsonObject
+                    val displayNumber = obj["displayNumber"]!!.jsonPrimitive.content.toInt()
+                    return HouseDataResult.Success(OtpInviteSession(existingCode, displayNumber, remaining.toInt()))
+                }
+            }
+
+            // No active session — generate a new one
+            val code = (100_000 + secureRandom.nextInt(900_000)).toString()
+            val displayNumber = 10 + secureRandom.nextInt(90)
+            val ttlSeconds = 60L
+
+            val value = buildJsonObject {
+                put("userId", userId)
+                put("displayNumber", displayNumber)
+            }.toString()
+
+            jedis.setex(otpKey(code), ttlSeconds, value)
+            jedis.setex(otpUserKey(userId), ttlSeconds, code)
+
+            return HouseDataResult.Success(OtpInviteSession(code, displayNumber, ttlSeconds.toInt()))
+        }
+    }
+
+    override suspend fun confirmOtpInvite(
+        code: String,
+        displayNumber: Int,
+        houseId: Long,
+        requestingUserId: Long,
+    ): HouseDataResult<Unit> {
+        if (!houseRepository.isAdmin(requestingUserId, houseId)) {
+            return HouseDataResult.Error.UserNotAllowed(requestingUserId, HouseUserType.ADMIN)
+        }
+
+        jedisPool.resource.use { jedis ->
+            val sessionJson = jedis.get(otpKey(code))
+                ?: return HouseDataResult.Error.NotFound
+
+            val obj = Json.parseToJsonElement(sessionJson).jsonObject
+            val storedDisplay = obj["displayNumber"]!!.jsonPrimitive.content.toInt()
+            val storedUserId = obj["userId"]!!.jsonPrimitive.content
+
+            if (displayNumber != storedDisplay) {
+                return HouseDataResult.Error.ValidationError("Code and number do not match")
+            }
+
+            val memberId = storedUserId.toLong()
+            houseRepository.addMember(
+                userId = memberId,
+                memberRole = MemberRole.MEMBER,
+                houseId = houseId,
+                joinedAt = Clock.System.now(),
+            )
+
+            jedis.del(otpKey(code))
+            jedis.del(otpUserKey(storedUserId))
+
+            return HouseDataResult.Success(Unit)
+        }
+    }
 
     override suspend fun generateInviteCode(adminId: Long, houseId: Long): HouseDataResult<InviteCodeResponse> {
         if (!houseRepository.isAdmin(adminId, houseId)) {
