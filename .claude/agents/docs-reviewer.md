@@ -39,6 +39,7 @@ Ask yourself these questions. They reveal whether the mental model a new develop
 - Did it add a **new external dependency or service** (new database, new third-party API, new infra component)?
 - Did it change how to **run or set up** the project locally (new env var, new migration step, new tool required)?
 - Did it change the **request/response flow** in a way that makes the architecture diagram or module overview wrong?
+- Was a **Claude subagent added, removed, or significantly changed**? The Platform subagents table in `README.md` must always reflect the current agent team.
 
 **If all answers are NO** — report back that no change is needed and briefly state why. Done.
 

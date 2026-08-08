@@ -158,6 +158,7 @@ Each slice step runs in its own subagent so only the relevant rules load into co
 | `android-engineer` | `androidApp/**` | Decompose · Compose · Koin · coroutines |
 | `ios-engineer` | `iosApp/**`, `shared/iosMain/**` | SwiftUI ↔ Decompose binding |
 | `build-verifier` | gradle targets inferred from diff | Compile + test pass/fail report |
+| `docs-reviewer` | `README.md`, `CLAUDE.md` | System-thinking filter on whether docs need updating after a feature lands — proposes exact changes, never edits without approval |
 
 ### Path-triggered skills
 
