@@ -24,3 +24,6 @@ INSERT OR REPLACE INTO ProfileEntity (
 
 deleteById:
 DELETE FROM ProfileEntity WHERE id = :id;
+
+deleteAll:
+DELETE FROM ProfileEntity;

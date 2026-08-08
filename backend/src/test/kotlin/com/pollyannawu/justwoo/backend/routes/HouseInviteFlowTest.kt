@@ -2,6 +2,7 @@ package com.pollyannawu.justwoo.backend.routes
 
 import com.pollyannawu.justwoo.backend.diModule
 import com.pollyannawu.justwoo.core.dto.AuthResponse
+import com.pollyannawu.justwoo.core.dto.EmailInvitationResponse
 import com.pollyannawu.justwoo.core.dto.HouseResponse
 import com.pollyannawu.justwoo.core.dto.InviteCodeResponse
 import com.pollyannawu.justwoo.core.dto.JoinRequestResponse
@@ -95,6 +96,20 @@ class HouseInviteFlowTest {
             setBody("""{"inviteCode":"$code"}""")
         }
         assertEquals(HttpStatusCode.OK, response.status, "submitJoinRequest failed: ${response.bodyAsText()}")
+        return json.decodeFromString(response.bodyAsText())
+    }
+
+    private suspend fun ApplicationTestBuilder.createEmailInvitation(
+        token: String,
+        houseId: Long,
+        email: String,
+    ): EmailInvitationResponse {
+        val response = client.post("/houses/$houseId/invitations") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json)
+            header(HttpHeaders.Authorization, "Bearer $token")
+            setBody("""{"email":"$email"}""")
+        }
+        assertEquals(HttpStatusCode.OK, response.status, "createEmailInvitation failed: ${response.bodyAsText()}")
         return json.decodeFromString(response.bodyAsText())
     }
 
@@ -335,5 +350,139 @@ class HouseInviteFlowTest {
             setBody("""{"inviteCode":"${code2.code}"}""")
         }
         assertEquals(HttpStatusCode.Conflict, response.status)
+    }
+
+    // ── invitee-pending-list: GET /invitations/me + auto-approval ────────────
+
+    @Test
+    fun `getMyInvitations returns only the caller's active invitations`() = testApplication {
+        environment { config = testConfig() }
+        application { diModule() }
+
+        val adminToken = login(register("admin-inv-list@test.com").user.email).accessToken
+        val house = createHouse(adminToken)
+        createEmailInvitation(adminToken, house.id, "invitee-list@test.com")
+
+        register("invitee-list@test.com")
+        val inviteeToken = login("invitee-list@test.com").accessToken
+
+        val response = client.get("/invitations/me") {
+            header(HttpHeaders.Authorization, "Bearer $inviteeToken")
+        }
+        assertEquals(HttpStatusCode.OK, response.status, "getMyInvitations failed: ${response.bodyAsText()}")
+        val invitations = json.decodeFromString<List<EmailInvitationResponse>>(response.bodyAsText())
+        assertEquals(1, invitations.size)
+        assertEquals(house.id, invitations.first().houseId)
+        assertEquals(house.name, invitations.first().houseName)
+    }
+
+    @Test
+    fun `getMyInvitations returns empty list for a user with no invitations`() = testApplication {
+        environment { config = testConfig() }
+        application { diModule() }
+
+        val noInviteToken = login(register("no-invite@test.com").user.email).accessToken
+
+        val response = client.get("/invitations/me") {
+            header(HttpHeaders.Authorization, "Bearer $noInviteToken")
+        }
+        assertEquals(HttpStatusCode.OK, response.status)
+        val invitations = json.decodeFromString<List<EmailInvitationResponse>>(response.bodyAsText())
+        assertTrue(invitations.isEmpty())
+    }
+
+    @Test
+    fun `submitJoinRequest with correct email invitation code auto-approves and adds member`() = testApplication {
+        environment { config = testConfig() }
+        application { diModule() }
+
+        val adminToken = login(register("admin-inv-approve@test.com").user.email).accessToken
+        val house = createHouse(adminToken)
+        val invitation = createEmailInvitation(adminToken, house.id, "invitee-approve@test.com")
+
+        register("invitee-approve@test.com")
+        val inviteeToken = login("invitee-approve@test.com").accessToken
+
+        val response = client.post("/join-requests") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json)
+            header(HttpHeaders.Authorization, "Bearer $inviteeToken")
+            setBody("""{"inviteCode":"${invitation.code}"}""")
+        }
+        assertEquals(HttpStatusCode.OK, response.status, "auto-approve failed: ${response.bodyAsText()}")
+        val joinResponse = json.decodeFromString<JoinRequestResponse>(response.bodyAsText())
+        assertEquals("APPROVED", joinResponse.status.name)
+        assertEquals(house.id, joinResponse.houseId)
+
+        // member is now in the house; submitting any other code fails with Conflict (already a member)
+        val secondAttempt = client.post("/join-requests") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json)
+            header(HttpHeaders.Authorization, "Bearer $inviteeToken")
+            setBody("""{"inviteCode":"ANYCODE1"}""")
+        }
+        assertEquals(HttpStatusCode.Conflict, secondAttempt.status)
+    }
+
+    @Test
+    fun `submitJoinRequest with incorrect code returns 400`() = testApplication {
+        environment { config = testConfig() }
+        application { diModule() }
+
+        val inviteeToken = login(register("invitee-wrong-code@test.com").user.email).accessToken
+
+        val response = client.post("/join-requests") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json)
+            header(HttpHeaders.Authorization, "Bearer $inviteeToken")
+            setBody("""{"inviteCode":"NOPE0000"}""")
+        }
+        assertEquals(HttpStatusCode.BadRequest, response.status)
+    }
+
+    @Test
+    fun `submitJoinRequest with already-used email invitation code returns 400`() = testApplication {
+        environment { config = testConfig() }
+        application { diModule() }
+
+        val adminToken = login(register("admin-inv-used@test.com").user.email).accessToken
+        val house = createHouse(adminToken)
+        val invitation = createEmailInvitation(adminToken, house.id, "invitee-used@test.com")
+
+        register("invitee-used@test.com")
+        val inviteeToken = login("invitee-used@test.com").accessToken
+
+        // first redemption succeeds and marks the invitation used
+        val firstResponse = client.post("/join-requests") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json)
+            header(HttpHeaders.Authorization, "Bearer $inviteeToken")
+            setBody("""{"inviteCode":"${invitation.code}"}""")
+        }
+        assertEquals(HttpStatusCode.OK, firstResponse.status)
+
+        // a second user tries to redeem the same already-used code
+        val otherToken = login(register("invitee-used-2@test.com").user.email).accessToken
+        val secondResponse = client.post("/join-requests") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json)
+            header(HttpHeaders.Authorization, "Bearer $otherToken")
+            setBody("""{"inviteCode":"${invitation.code}"}""")
+        }
+        assertEquals(HttpStatusCode.BadRequest, secondResponse.status)
+    }
+
+    @Test
+    fun `submitJoinRequest with email invitation code addressed to a different email returns 400`() = testApplication {
+        environment { config = testConfig() }
+        application { diModule() }
+
+        val adminToken = login(register("admin-inv-wrong-email@test.com").user.email).accessToken
+        val house = createHouse(adminToken)
+        val invitation = createEmailInvitation(adminToken, house.id, "intended-invitee@test.com")
+
+        // a different user tries to redeem a code that was scoped to someone else's email
+        val otherToken = login(register("not-the-invitee@test.com").user.email).accessToken
+        val response = client.post("/join-requests") {
+            header(HttpHeaders.ContentType, ContentType.Application.Json)
+            header(HttpHeaders.Authorization, "Bearer $otherToken")
+            setBody("""{"inviteCode":"${invitation.code}"}""")
+        }
+        assertEquals(HttpStatusCode.BadRequest, response.status)
     }
 }

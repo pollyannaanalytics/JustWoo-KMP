@@ -110,6 +110,7 @@ private suspend inline fun <reified T : Any> ApplicationCall.respondResult(resul
                 HouseDataResult.Error.AlreadyMember -> HttpStatusCode.Conflict to "User already belongs to a house"
                 HouseDataResult.Error.InvalidCode -> HttpStatusCode.BadRequest to "Code is invalid or expired. Ask your admin to generate a new one."
                 HouseDataResult.Error.AlreadyProcessed -> HttpStatusCode.Conflict to "Join request has already been processed"
+                is HouseDataResult.Error.ValidationError -> HttpStatusCode.BadRequest to result.message
             }
             respond(status, mapOf("error" to message))
         }

@@ -51,6 +51,10 @@ class SqlDelightHouseDataSource(
         }
     }
 
+    override suspend fun clearAll(): Unit = withContext(dispatcher) {
+        houseQueries.deleteAll()
+    }
+
     private suspend fun upsertOne(house: House) = withContext(dispatcher) {
         houseQueries.transaction {
             writeHouseInTransaction(house)

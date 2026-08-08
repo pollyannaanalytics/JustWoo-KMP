@@ -15,6 +15,9 @@ interface EmailInvitationRepository {
     suspend fun create(houseId: Long, email: String, code: String, expiresAt: Instant): EmailInvitationRow
     suspend fun invalidateExisting(houseId: Long, email: String)
     suspend fun findActiveByHouseAndEmail(houseId: Long, email: String): EmailInvitationRow?
+    suspend fun findActiveByEmail(email: String): List<EmailInvitationRow>
+    suspend fun findByCode(code: String): EmailInvitationRow?
+    suspend fun markUsed(id: Long): Boolean
 }
 
 internal class DefaultEmailInvitationRepository : EmailInvitationRepository {
@@ -56,5 +59,28 @@ internal class DefaultEmailInvitationRepository : EmailInvitationRepository {
             (EmailInvitations.used eq false) and
             (EmailInvitations.expiresAt greater now)
         }.singleOrNull()?.let { EmailInvitations.toDomain(it) }
+    }
+
+    override suspend fun findActiveByEmail(email: String): List<EmailInvitationRow> = dbQuery {
+        val now = Clock.System.now()
+        EmailInvitations.selectAll().where {
+            (EmailInvitations.inviteeEmail eq email) and
+            (EmailInvitations.used eq false) and
+            (EmailInvitations.expiresAt greater now)
+        }.map { EmailInvitations.toDomain(it) }
+    }
+
+    override suspend fun findByCode(code: String): EmailInvitationRow? = dbQuery {
+        EmailInvitations.selectAll().where { EmailInvitations.code eq code }
+            .singleOrNull()?.let { EmailInvitations.toDomain(it) }
+    }
+
+    override suspend fun markUsed(id: Long): Boolean = dbQuery {
+        val updated = EmailInvitations.update({
+            (EmailInvitations.id eq id) and (EmailInvitations.used eq false)
+        }) {
+            it[used] = true
+        }
+        updated > 0
     }
 }

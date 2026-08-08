@@ -79,6 +79,7 @@ fun RootContent(
 
                     is RootComponent.Child.Auth -> AuthContent(
                         component = child.component,
+                        onRegisterSuccess = component::onHouseOnboardingRequired,
                     )
 
                     is RootComponent.Child.Home -> MainShell { padding ->

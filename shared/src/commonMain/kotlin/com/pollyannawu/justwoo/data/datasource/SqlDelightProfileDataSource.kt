@@ -49,6 +49,10 @@ class SqlDelightProfileDataSource(
             queries.deleteById(id)
         }
     }
+
+    override suspend fun clearAll(): Unit = withContext(dispatcher) {
+        queries.deleteAll()
+    }
 }
 
 private fun Profile.toEntity(): ProfileEntity = ProfileEntity(

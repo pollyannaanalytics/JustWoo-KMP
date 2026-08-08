@@ -4,6 +4,8 @@ import com.pollyannawu.justwoo.core.House
 import com.pollyannawu.justwoo.core.dto.EmailInvitationResponse
 import com.pollyannawu.justwoo.core.dto.InviteCodeResponse
 import com.pollyannawu.justwoo.core.dto.JoinRequestResponse
+import com.pollyannawu.justwoo.core.dto.OtpConfirmRequest
+import com.pollyannawu.justwoo.core.dto.OtpInviteSession
 import com.pollyannawu.justwoo.data.network.service.HouseInviteApiService
 import com.pollyannawu.justwoo.model.ApiResult
 import kotlinx.datetime.Clock
@@ -17,6 +19,9 @@ interface HouseInviteRepository {
     suspend fun approveRequest(requestId: Long): JoinRequestResponse
     suspend fun rejectRequest(requestId: Long): JoinRequestResponse
     suspend fun getMyJoinRequestStatus(): JoinRequestResponse?
+    suspend fun getMyEmailInvitations(): List<EmailInvitationResponse>
+    suspend fun generateOtpSession(): OtpInviteSession
+    suspend fun confirmOtpInvite(request: OtpConfirmRequest)
 }
 
 class DefaultHouseInviteRepository(
@@ -84,5 +89,26 @@ class DefaultHouseInviteRepository(
         val result = houseInviteApiService.getMyJoinRequestStatus()
         if (result is ApiResult.Success) return result.data
         return null
+    }
+
+    override suspend fun getMyEmailInvitations(): List<EmailInvitationResponse> {
+        val result = houseInviteApiService.getMyEmailInvitations()
+        if (result is ApiResult.Success) return result.data
+        if (result is ApiResult.Error) throw Exception(result.exception)
+        error("Unexpected state")
+    }
+
+    override suspend fun generateOtpSession(): OtpInviteSession {
+        val result = houseInviteApiService.generateOtpSession()
+        if (result is ApiResult.Success) return result.data
+        if (result is ApiResult.Error) throw Exception(result.exception)
+        error("Unexpected state")
+    }
+
+    override suspend fun confirmOtpInvite(request: OtpConfirmRequest) {
+        val result = houseInviteApiService.confirmOtpInvite(request)
+        if (result is ApiResult.Success) return
+        if (result is ApiResult.Error) throw Exception(result.exception)
+        error("Unexpected state")
     }
 }

@@ -51,6 +51,10 @@ class SqlDelightTaskDataSource(
         }
     }
 
+    override suspend fun clearAll(): Unit = withContext(dispatcher) {
+        taskQueries.deleteAll()
+    }
+
     private suspend fun upsertOne(task: Task) = withContext(dispatcher) {
         taskQueries.transaction {
             writeTaskInTransaction(task)
