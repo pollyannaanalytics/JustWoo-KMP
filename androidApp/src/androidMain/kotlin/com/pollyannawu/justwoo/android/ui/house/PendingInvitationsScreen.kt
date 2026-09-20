@@ -6,16 +6,23 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -88,13 +95,22 @@ private fun PendingInvitationsContent(
             .background(JustWooColors.Cream)
             .padding(horizontal = JustWooSpacing.Large),
     ) {
-        Spacer(Modifier.height(JustWooSpacing.Large))
-        Text(
-            text = "My Invitations",
-            color = JustWooColors.Primary,
-            fontSize = DesignTokens.FontSize.TitleLarge.sp,
-            fontWeight = JustWooFontWeight.Bold,
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.statusBars),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = JustWooColors.TextPrimary)
+            }
+            Text(
+                text = "My Invitations",
+                color = JustWooColors.Primary,
+                fontSize = DesignTokens.FontSize.TitleLarge.sp,
+                fontWeight = JustWooFontWeight.Bold,
+            )
+        }
         Spacer(Modifier.height(JustWooSpacing.Large))
 
         when (listState) {
