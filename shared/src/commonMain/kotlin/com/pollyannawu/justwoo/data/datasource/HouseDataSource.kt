@@ -10,4 +10,5 @@ interface HouseDataSource {
     suspend fun updateHouse(house: House)
     suspend fun updateHouses(houses: List<House>)
     suspend fun deleteHouse(id: Long)
+    suspend fun clearAll()
 }

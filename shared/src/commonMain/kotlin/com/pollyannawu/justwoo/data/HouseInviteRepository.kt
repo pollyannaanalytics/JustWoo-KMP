@@ -1,20 +1,27 @@
 package com.pollyannawu.justwoo.data
 
 import com.pollyannawu.justwoo.core.House
+import com.pollyannawu.justwoo.core.dto.EmailInvitationResponse
 import com.pollyannawu.justwoo.core.dto.InviteCodeResponse
 import com.pollyannawu.justwoo.core.dto.JoinRequestResponse
+import com.pollyannawu.justwoo.core.dto.OtpConfirmRequest
+import com.pollyannawu.justwoo.core.dto.OtpInviteSession
 import com.pollyannawu.justwoo.data.network.service.HouseInviteApiService
 import com.pollyannawu.justwoo.model.ApiResult
 import kotlinx.datetime.Clock
 
 interface HouseInviteRepository {
     suspend fun generateInviteCode(houseId: Long): InviteCodeResponse
+    suspend fun createEmailInvitation(houseId: Long, email: String): EmailInvitationResponse
     suspend fun createHouse(name: String, description: String)
     suspend fun submitJoinRequest(inviteCode: String): JoinRequestResponse
     suspend fun getPendingRequests(houseId: Long): List<JoinRequestResponse>
     suspend fun approveRequest(requestId: Long): JoinRequestResponse
     suspend fun rejectRequest(requestId: Long): JoinRequestResponse
     suspend fun getMyJoinRequestStatus(): JoinRequestResponse?
+    suspend fun getMyEmailInvitations(): List<EmailInvitationResponse>
+    suspend fun generateOtpSession(): OtpInviteSession
+    suspend fun confirmOtpInvite(request: OtpConfirmRequest)
 }
 
 class DefaultHouseInviteRepository(
@@ -24,6 +31,13 @@ class DefaultHouseInviteRepository(
 
     override suspend fun generateInviteCode(houseId: Long): InviteCodeResponse {
         val result = houseInviteApiService.generateInviteCode(houseId)
+        if (result is ApiResult.Success) return result.data
+        if (result is ApiResult.Error) throw Exception(result.exception)
+        error("Unexpected state")
+    }
+
+    override suspend fun createEmailInvitation(houseId: Long, email: String): EmailInvitationResponse {
+        val result = houseInviteApiService.createEmailInvitation(houseId, email)
         if (result is ApiResult.Success) return result.data
         if (result is ApiResult.Error) throw Exception(result.exception)
         error("Unexpected state")
@@ -75,5 +89,26 @@ class DefaultHouseInviteRepository(
         val result = houseInviteApiService.getMyJoinRequestStatus()
         if (result is ApiResult.Success) return result.data
         return null
+    }
+
+    override suspend fun getMyEmailInvitations(): List<EmailInvitationResponse> {
+        val result = houseInviteApiService.getMyEmailInvitations()
+        if (result is ApiResult.Success) return result.data
+        if (result is ApiResult.Error) throw Exception(result.exception)
+        error("Unexpected state")
+    }
+
+    override suspend fun generateOtpSession(): OtpInviteSession {
+        val result = houseInviteApiService.generateOtpSession()
+        if (result is ApiResult.Success) return result.data
+        if (result is ApiResult.Error) throw Exception(result.exception)
+        error("Unexpected state")
+    }
+
+    override suspend fun confirmOtpInvite(request: OtpConfirmRequest) {
+        val result = houseInviteApiService.confirmOtpInvite(request)
+        if (result is ApiResult.Success) return
+        if (result is ApiResult.Error) throw Exception(result.exception)
+        error("Unexpected state")
     }
 }

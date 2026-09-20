@@ -56,6 +56,9 @@ Three platform skills plus one cross-cutting skill cover the implementation:
 3. **`:core` is the cross-stack contract.** DTOs there are compiled into backend, Android, and iOS. Renaming a field is a breaking change on three sides at once — be deliberate.
 4. **Money is `Double price` + `String currencyCode` (ISO 4217).** Never compare amounts across currencies without explicit conversion. Never store currency as an enum.
 5. **Sealed result types over exceptions across module boundaries.** `ApiResult<T>`, `AuthDataResult`, etc. Exceptions are for genuinely exceptional conditions, not for control flow.
+6. **UseCases must never expose `ApiResult`.** A UseCase that wraps a Repository call must define and return its own domain-specific sealed class (e.g. `sealed class GetTaskResult`). `ApiResult` is a network-layer type and must not leak into the domain layer.
+7. **Every `ApiService` call must log the HTTP response code.** Immediately after receiving a response (or in `safeApiCall`), emit a log line that includes the endpoint and the status code. No silent network calls.
+8. **Flow / StateFlow only — no LiveData.** `LiveData` is banned across the entire project. Use `StateFlow` for state holders and `Flow` for streams. This applies in Components, ViewModels, and any shared code.
 
 ## Skill conflicts
 

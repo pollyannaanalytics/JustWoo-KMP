@@ -35,6 +35,7 @@ interface HouseRepository {
     suspend fun removeMember(userId: Long, houseId: Long): House
     suspend fun updateHouseContent(house: House): House
     suspend fun getHouseMembers(houseId: Long): List<HouseMember>
+    suspend fun findById(houseId: Long): House?
 }
 
 internal class DefaultHouseRepository: HouseRepository{
@@ -161,6 +162,8 @@ internal class DefaultHouseRepository: HouseRepository{
         }
         return@dbQuery members
     }
+
+    override suspend fun findById(houseId: Long): House? = dbQuery { getHouseById(houseId) }
 
     private fun getHouseById(houseId: Long): House? {
         val houseExists = Houses.selectAll().where { Houses.id eq houseId }.any()

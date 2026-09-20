@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -58,6 +59,7 @@ fun HouseInfoScreen(
         house = house,
         currentUserId = currentUserId,
         onClose = component::onClose,
+        onInviteMember = { houseId -> component.onInviteMember(houseId) },
     )
 }
 
@@ -66,6 +68,7 @@ private fun HouseInfoContent(
     house: House?,
     currentUserId: Long?,
     onClose: () -> Unit,
+    onInviteMember: (Long) -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -140,6 +143,18 @@ private fun HouseInfoContent(
 
             items(house.members) { member ->
                 MemberRow(member = member, isCurrentUser = member.userId == currentUserId)
+            }
+
+            val isAdmin = house.members.firstOrNull { it.userId == currentUserId }?.role == MemberRole.ADMIN
+            if (isAdmin) {
+                item {
+                    Button(
+                        onClick = { onInviteMember(house.id) },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("Invite Member")
+                    }
+                }
             }
 
             item { Spacer(Modifier.height(JustWooSpacing.Large)) }

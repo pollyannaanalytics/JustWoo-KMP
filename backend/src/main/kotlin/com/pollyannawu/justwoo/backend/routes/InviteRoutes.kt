@@ -2,8 +2,10 @@ package com.pollyannawu.justwoo.backend.routes
 
 import com.pollyannawu.justwoo.backend.service.HouseInviteService
 import com.pollyannawu.justwoo.backend.utils.dataresult.HouseDataResult
+import com.pollyannawu.justwoo.core.dto.EmailInvitationRequest
 import com.pollyannawu.justwoo.core.dto.JoinRequestBody
 import com.pollyannawu.justwoo.core.dto.JoinRequestDecision
+import com.pollyannawu.justwoo.core.dto.OtpConfirmRequest
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.auth.UserIdPrincipal
@@ -34,6 +36,53 @@ fun Route.inviteRoute() {
                     ?: return@post call.respond(HttpStatusCode.BadRequest, "Invalid House ID")
                 val result = inviteService.generateInviteCode(userId, houseId)
                 call.respondInviteResult(result)
+            }
+        }
+
+        route("/houses/{houseId}/invitations") {
+            post {
+                val userId = getUserId(call) ?: return@post call.respond(HttpStatusCode.Unauthorized)
+                val houseId = call.parameters["houseId"]?.toLongOrNull()
+                    ?: return@post call.respond(HttpStatusCode.BadRequest, "Invalid House ID")
+                try {
+                    val body = call.receive<EmailInvitationRequest>()
+                    if (body.email.isBlank()) {
+                        return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Email is required"))
+                    }
+                    val result = inviteService.createEmailInvitation(userId, houseId, body.email)
+                    call.respondInviteResult(result)
+                } catch (e: ContentTransformationException) {
+                    call.respond(HttpStatusCode.BadRequest, "Invalid request body")
+                }
+            }
+        }
+
+        route("/invitations/me") {
+            get {
+                val userId = getUserId(call) ?: return@get call.respond(HttpStatusCode.Unauthorized)
+                val result = inviteService.getMyInvitations(userId)
+                call.respondInviteResult(result)
+            }
+        }
+
+        route("/invite/otp/session") {
+            post {
+                val userId = getUserId(call) ?: return@post call.respond(HttpStatusCode.Unauthorized)
+                val result = inviteService.generateOtpSession(userId.toString())
+                call.respondInviteResult(result)
+            }
+        }
+
+        route("/invite/otp/confirm") {
+            post {
+                val userId = getUserId(call) ?: return@post call.respond(HttpStatusCode.Unauthorized)
+                try {
+                    val body = call.receive<OtpConfirmRequest>()
+                    val result = inviteService.confirmOtpInvite(body.code, body.displayNumber, body.houseId, userId)
+                    call.respondInviteResult(result)
+                } catch (e: ContentTransformationException) {
+                    call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid request body"))
+                }
             }
         }
 
@@ -94,6 +143,7 @@ private suspend inline fun <reified T : Any> ApplicationCall.respondInviteResult
                 HouseDataResult.Error.AlreadyMember -> HttpStatusCode.Conflict to "User already belongs to a house"
                 HouseDataResult.Error.InvalidCode -> HttpStatusCode.BadRequest to "Code is invalid or expired. Ask your admin to generate a new one."
                 HouseDataResult.Error.AlreadyProcessed -> HttpStatusCode.Conflict to "Join request has already been processed"
+                is HouseDataResult.Error.ValidationError -> HttpStatusCode.BadRequest to result.message
             }
             respond(status, mapOf("error" to message))
         }

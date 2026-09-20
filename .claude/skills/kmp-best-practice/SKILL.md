@@ -72,6 +72,52 @@ class TaskRepository(
 - Repositories return **sealed result types** (`ApiResult<T>`, `AuthDataResult`, `HouseDataResult`). Never `throw` across a Repository boundary.
 - New failure mode → new sealed subtype, not a magic string.
 
+## UseCase result types
+
+UseCases sit above the Repository layer. They must **never** return `ApiResult<T>` — that is a network-layer type. Define a domain-specific sealed class per UseCase:
+
+```kotlin
+sealed class GetTaskResult {
+    data class Success(val task: Task) : GetTaskResult()
+    object NotFound : GetTaskResult()
+    data class Error(val message: String) : GetTaskResult()
+}
+
+class GetTaskUseCase(private val repository: TaskRepository) {
+    suspend operator fun invoke(taskId: Long): GetTaskResult {
+        return when (val result = repository.getTask(taskId)) {
+            is ApiResult.Success -> GetTaskResult.Success(result.data)
+            is ApiResult.HttpError -> if (result.code == 404) GetTaskResult.NotFound
+                                      else GetTaskResult.Error(result.message)
+            is ApiResult.NetworkError -> GetTaskResult.Error(result.message)
+        }
+    }
+}
+```
+
+Rule of thumb: if a caller (Component / ViewModel) would need to import `ApiResult` to handle a UseCase return value, the UseCase is wrong.
+
+## ApiService logging
+
+Every call through `ApiService` must produce a log line with the endpoint and HTTP status code. Apply this in `safeApiCall` (or the equivalent wrapper) so it cannot be forgotten per-call:
+
+```kotlin
+suspend inline fun <reified T> safeApiCall(
+    tag: String,
+    crossinline block: suspend HttpClient.() -> HttpResponse,
+): ApiResult<T> {
+    val response = client.block()
+    println("[$tag] HTTP ${response.status.value}")   // or use your logging abstraction
+    return if (response.status.isSuccess()) {
+        ApiResult.Success(response.body<T>())
+    } else {
+        ApiResult.HttpError(response.status.value, response.bodyAsText())
+    }
+}
+```
+
+Never add an `ApiService` method without ensuring the response code surfaces in logs.
+
 ## `expect` / `actual` — only at platform seams
 
 Use `expect`/`actual` for: SQLDelight driver, HTTP client engine, secure storage (Keychain / EncryptedSharedPreferences), platform date formatting, file paths. **Not** for business rules — those are in `commonMain` and platform-pure.
@@ -108,6 +154,8 @@ If any of these fail, the change is not done.
 - DTO in `:core` referencing `java.time.Instant` or any JVM-only type — use `kotlinx.datetime.Instant`.
 - `expect fun fetchTasks(): List<Task>` — that's domain logic, must be in `commonMain` only.
 - A Repository throwing instead of returning a sealed result.
+- A UseCase returning `ApiResult<T>` — define a domain-specific sealed class instead.
+- An `ApiService` call with no log of the HTTP response code.
 - `runBlocking` outside tests.
 - Two parallel `androidMain` / `iosMain` implementations of the same business rule — refactor up to `commonMain`.
 - Editing an existing migration `.sq` block instead of adding a new versioned one.

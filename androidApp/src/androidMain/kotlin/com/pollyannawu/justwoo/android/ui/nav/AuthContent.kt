@@ -11,7 +11,10 @@ import com.pollyannawu.justwoo.android.ui.auth.SignInScreen
 import com.pollyannawu.justwoo.ui.nav.auth.AuthComponent
 
 @Composable
-fun AuthContent(component: AuthComponent) {
+fun AuthContent(
+    component: AuthComponent,
+    onRegisterSuccess: () -> Unit = {},
+) {
     Children(
         stack = component.stack,
         animation = stackAnimation(fade() + slide()),
@@ -22,7 +25,7 @@ fun AuthContent(component: AuthComponent) {
                 onNavigateToRegister = child.component::onSwitchToRegister,
             )
             is AuthComponent.Child.Register -> RegisterScreen(
-                onRegisterSuccess = {},
+                onRegisterSuccess = onRegisterSuccess,
                 onNavigateToSignIn = child.component::onSwitchToSignIn,
             )
         }

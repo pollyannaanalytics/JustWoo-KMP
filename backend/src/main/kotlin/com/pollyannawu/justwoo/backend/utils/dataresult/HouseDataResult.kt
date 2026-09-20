@@ -12,6 +12,7 @@ sealed class HouseDataResult<out T> {
         object InvalidCode : Error()
         object AlreadyProcessed : Error()
         data class BadRequest(val message: String) : Error()
+        data class ValidationError(val message: String) : Error()
     }
 }
 

@@ -10,4 +10,5 @@ interface ProfileDataSource {
     suspend fun saveProfile(profile: Profile)
     suspend fun saveProfiles(profiles: List<Profile>)
     suspend fun deleteProfile(id: Long)
+    suspend fun clearAll()
 }

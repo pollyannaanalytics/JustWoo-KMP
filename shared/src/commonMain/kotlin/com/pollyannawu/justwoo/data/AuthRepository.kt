@@ -1,6 +1,9 @@
 package com.pollyannawu.justwoo.data
 
 import com.pollyannawu.justwoo.core.dto.AuthResponse
+import com.pollyannawu.justwoo.data.datasource.HouseDataSource
+import com.pollyannawu.justwoo.data.datasource.ProfileDataSource
+import com.pollyannawu.justwoo.data.datasource.TaskDataSource
 import com.pollyannawu.justwoo.data.datasource.auth.DeviceIdProvider
 import com.pollyannawu.justwoo.data.datasource.auth.TokenStorage
 import com.pollyannawu.justwoo.data.datasource.auth.UserStorage
@@ -40,6 +43,9 @@ class DefaultAuthRepository(
     private val tokenStorage: TokenStorage,
     private val userStorage: UserStorage,
     private val deviceIdProvider: DeviceIdProvider,
+    private val houseDataSource: HouseDataSource,
+    private val taskDataSource: TaskDataSource,
+    private val profileDataSource: ProfileDataSource,
 ) : AuthRepository {
 
     override val currentUserId: Flow<Long?> = userStorage.userFlow.map { it?.id }
@@ -117,6 +123,9 @@ class DefaultAuthRepository(
     }
 
     override suspend fun logout() {
+        houseDataSource.clearAll()
+        taskDataSource.clearAll()
+        profileDataSource.clearAll()
         tokenStorage.clear()
         userStorage.clear()
     }

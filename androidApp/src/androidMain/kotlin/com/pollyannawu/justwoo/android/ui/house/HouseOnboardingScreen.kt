@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,6 +27,9 @@ import com.pollyannawu.justwoo.design.DesignTokens
 fun HouseOnboardingScreen(
     onJoinClick: () -> Unit,
     onCreateClick: () -> Unit,
+    onMyInvitationsClick: () -> Unit,
+    onShowMyCodeClick: () -> Unit = {},
+    onConfirmInviteCodeClick: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -61,6 +65,31 @@ fun HouseOnboardingScreen(
             onClick = onCreateClick,
             modifier = Modifier.fillMaxWidth(),
         )
+        Spacer(Modifier.height(JustWooSpacing.Default))
+        TextButton(onClick = onMyInvitationsClick) {
+            Text(
+                text = "My Invitations",
+                color = JustWooColors.Primary,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = JustWooFontWeight.Bold,
+            )
+        }
+        TextButton(onClick = onShowMyCodeClick) {
+            Text(
+                text = "Show My Code",
+                color = JustWooColors.Primary,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = JustWooFontWeight.Bold,
+            )
+        }
+        TextButton(onClick = onConfirmInviteCodeClick) {
+            Text(
+                text = "Confirm Invite Code",
+                color = JustWooColors.Primary,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = JustWooFontWeight.Bold,
+            )
+        }
     }
 }
 
@@ -70,5 +99,6 @@ private fun HouseOnboardingScreenPreview() {
     HouseOnboardingScreen(
         onJoinClick = {},
         onCreateClick = {},
+        onMyInvitationsClick = {},
     )
 }
